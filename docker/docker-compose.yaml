@@ -278,6 +278,25 @@ services:
     networks:
       - minare_net
 
+# Evennia MUD
+  evennia:
+    image: evennia/evennia:latest
+    container_name: evennia-mud
+    hostname: evennia
+    ports:
+      - "4000:4000"
+      - "4001:4001"
+      - "4002:4002"
+    volumes:
+      - ../evennia:/usr/src/game
+    environment:
+      - TZ=UTC
+    networks:
+      - minare_net
+    stdin_open: true
+    tty: true
+    command: ["evennia", "start", "-l"]
+
 networks:
   minare_net:
     driver: bridge
