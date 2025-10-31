@@ -1,0 +1,283 @@
+version: '3.8'
+
+services:
+  # HAProxy Load Balancer
+  haproxy:
+    image: haproxy:2.8
+    container_name: haproxy
+    hostname: haproxy
+    ports:
+      - "8080:8080"   # Main HTTP server
+      - "4225:4225"   # Up socket (commands)
+      - "4226:4226"   # Down socket (updates)
+      - "8404:8404"   # HAProxy stats
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - minare_net
+    depends_on:
+      - app-coordinator
+      - worker
+    healthcheck:
+      test: ["CMD", "haproxy", "-c", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Minare Application - Coordinator Instance
+  app-coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: minare-app-coordinator
+    hostname: app-coordinator
+    volumes:
+      - ./app.jar:/app/app.jar:ro
+      - ./logs:/app/logs
+    environment:
+      # Role configuration
+      - INSTANCE_ROLE=COORDINATOR
+      - LOG_PATH=/app/logs
+
+      # Cluster configuration
+      - VERTX_CLUSTER_HOST=app-coordinator
+      - HAZELCAST_CLUSTER_NAME=minare-cluster
+
+      # Database configuration
+      - RESET_STATE=true # Development only
+      - MONGO_URI=mongodb://mongodb-rs:27017/minare?replicaSet=rs0
+      - REDIS_URI=redis://redis:6379
+
+      # JVM configuration
+      - JAVA_OPTS=-Xmx512m -XX:+UseContainerSupport
+      - NTP_URL=ntp.local
+
+      # Kafka configuration
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_TOPIC_PARTITIONS=3
+      - KAFKA_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_PRODUCER_ACKS=all
+      - KAFKA_PRODUCER_COMPRESSION=gzip
+      - KAFKA_PRODUCER_RETRIES=3
+
+      # Kafka consumer configuration
+      - KAFKA_CONSUMER_GROUP=minare-coordinator
+      - KAFKA_SESSION_TIMEOUT_MS=30000
+      - KAFKA_MAX_POLL_RECORDS=100
+      - KAFKA_AUTO_OFFSET_RESET=earliest
+
+      # Debug configuration (conditional)
+      - JAVA_DEBUG=${JAVA_DEBUG:-false}
+      - JAVA_DEBUG_PORT=${JAVA_DEBUG_PORT:-5005}
+      - JAVA_DEBUG_SUSPEND=${JAVA_DEBUG_SUSPEND:-n}
+    ports:
+      # Debug port (only active when JAVA_DEBUG=true)
+      - "${JAVA_DEBUG_PORT:-5005}:${JAVA_DEBUG_PORT:-5005}"
+      # Monitoring port for frame coordination status
+      - "9090:9090"
+    networks:
+      - minare_net
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    cap_add:
+      - SYS_TIME
+    expose:
+      - "8080"
+      - "4225"
+      - "4226"
+      - "9090"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/workers"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Infrastructure container
+  infra:
+    image: alpine:latest
+    container_name: minare-infra
+    hostname: infra
+    networks:
+      - minare_net
+    depends_on:
+      app-coordinator:
+        condition: service_healthy
+    volumes:
+      - ./scripts/infra:/scripts:ro
+    environment:
+      # Coordinator connection
+      - COORDINATOR_HOST=app-coordinator
+      - COORDINATOR_PORT=9090
+
+      # Worker configuration - will be dynamic based on scaled instances
+      - WORKER_PREFIX=minare_worker
+      - WORKER_COUNT=${WORKER_COUNT:-1}
+
+      # Timing configuration
+      - STARTUP_DELAY=5
+      - RETRY_INTERVAL=2
+      - MAX_RETRIES=10
+    entrypoint: ["/scripts/infra-entrypoint-dynamic.sh"]
+
+  # Minare Application - Worker Service (scalable)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # No container_name - let Docker generate it for scaling
+    volumes:
+      - ./app.jar:/app/app.jar:ro
+      - ./logs:/app/logs
+    environment:
+      # Role configuration
+      - INSTANCE_ROLE=WORKER
+      - LOG_PATH=/app/logs
+
+      # Cluster configuration - use HOSTNAME for unique cluster identity
+      - VERTX_CLUSTER_HOST=${HOSTNAME}
+      - VERTX_CLUSTERED=true
+      - HAZELCAST_CLUSTER_NAME=minare-cluster
+
+      # Database configuration
+      - MONGO_URI=mongodb://mongodb-rs:27017/minare?replicaSet=rs0
+      - REDIS_URI=redis://redis:6379
+
+      # JVM configuration
+      - JAVA_OPTS=-Xmx512m -XX:+UseContainerSupport
+      - NTP_URL=ntp.local
+
+      # Kafka configuration
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - KAFKA_TOPIC_PARTITIONS=3
+      - KAFKA_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_PRODUCER_ACKS=all
+      - KAFKA_PRODUCER_COMPRESSION=gzip
+      - KAFKA_PRODUCER_RETRIES=3
+
+      # Kafka consumer configuration
+      - KAFKA_CONSUMER_GROUP=minare-worker
+      - KAFKA_SESSION_TIMEOUT_MS=30000
+      - KAFKA_MAX_POLL_RECORDS=100
+      - KAFKA_AUTO_OFFSET_RESET=earliest
+
+      # Debug configuration (conditional)
+      - JAVA_DEBUG=${JAVA_DEBUG:-false}
+      - JAVA_DEBUG_SUSPEND=${JAVA_DEBUG_SUSPEND:-n}
+    networks:
+      - minare_net
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    cap_add:
+      - SYS_TIME
+    expose:
+      - "8080"
+      - "4225"
+      - "4226"
+      - "9090"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # MongoDB with Replica Set
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    hostname: mongodb-rs
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/db:/data/db
+      - ./scripts:/scripts
+    networks:
+      minare_net:
+        aliases:
+          - mongodb-rs
+    healthcheck:
+      test: mongosh --eval "db.adminCommand('ping')"
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    entrypoint: ["/scripts/init.sh"]
+
+  # Redis
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: redis
+    hostname: redis
+    command: redis-stack-server --save 60 1 --appendonly yes --protected-mode no
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - minare_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Kafka (KRaft mode - no Zookeeper needed)
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    networks:
+      - minare_net
+    volumes:
+      - ./data/kafka:/tmp/kraft-combined-logs
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Kafka UI for development and debugging
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    hostname: kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: minare-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      - kafka
+    networks:
+      - minare_net
+
+networks:
+  minare_net:
+    driver: bridge

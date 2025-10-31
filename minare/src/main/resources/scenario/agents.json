@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Zemar",
+    "population": 35,
+    "culture": "Canaanite",
+    "behavior": "None",
+    "x": 4,
+    "y": 4
+  },
+  {
+    "name": "Baalel",
+    "population": 35,
+    "culture": "Canaanite",
+    "behavior": "None",
+    "x": 2,
+    "y": 2
+  },
+  {
+    "name": "Yassar",
+    "population": 35,
+    "culture": "Shasu",
+    "behavior": "None",
+    "x": 3,
+    "y": 8
+  },
+  {
+    "name": "Tesubi",
+    "population": 35,
+    "culture": "Hurrian",
+    "behavior": "None",
+    "x": 10,
+    "y": 1
+  },
+  {
+    "name": "Medyat",
+    "population": 35,
+    "culture": "Amorite",
+    "behavior": "None",
+    "x": 10,
+    "y": 7
+  },
+  {
+    "name": "Astur",
+    "population": 35,
+    "culture": "Habiru",
+    "behavior": "None",
+    "x": 8,
+    "y": 4
+  }
+]
