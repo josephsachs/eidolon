@@ -1,0 +1,10 @@
+.DS_Store
+.idea/
+docker/config/mongodb.key
+docker/data
+docker/app.jar
+logs/
+logs2/
+target/
+client/node_modules
+dbExec.sh
