@@ -1,35 +1,40 @@
 #!/bin/bash
 
-# Parse command line arguments
 WORKER_COUNT=${1:-1}
 
 cd docker
-docker compose down -v
 
-cd ../minare
-mvn package
+while getopts "me" flag; do
+  case "${flag}" in
+    m)
+      echo "Rebuilding Minare..."
+      cd docker
+      docker compose down -v haproxy app-coordinator infra worker mongodb redis kafka kafka-ui evennia
+      cd ../minare
+      mvn package
+      rm -rf logs/*.log
+      rm -rf data/{db,redis,kafka}/*
+      chmod 755 data/{db,redis,kafka}
+      mkdir -p ../logs
+      docker compose build --no-cache haproxy app-coordinator infra worker mongodb redis kafka kafka-ui evennia
+      ;;
+    e)
+      echo "Rebuilding Evennia..."
+      cd docker
+      docker compose down -v haproxy app-coordinator infra worker mongodb redis kafka kafka-ui evennia
+      rm -f ../evennia/server/evennia.db3
+      rm -rf ../evennia/server/logs/*
+      docker compose build --no-cache evennia
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+  esac
+done
 
 cd ../docker
+WORKER_COUNT=${WORKER_COUNT} docker compose up -d --scale worker=${WORKER_COUNT} haproxy app-coordinator infra worker mongodb redis kafka kafka-ui
+docker compose up -d evennia
 
-# Clean up all log files
-rm -rf logs/*.log
-rm -rf data/{db,redis,kafka}/*
-chmod 755 data/{db,redis,kafka}
-
-# Clean Evennia database and logs
-rm -f ../evennia/server/evennia.db3
-rm -rf ../evennia/server/logs/*
-
-# Create log directory if it doesn't exist
-mkdir -p logs
-
-docker compose build --no-cache
-
-# Re-initialize Evennia
-docker run --rm -v $PWD/../evennia:/usr/src/game evennia/evennia evennia migrate
-
-# Start services with specified worker count
-WORKER_COUNT=${WORKER_COUNT} docker compose up -d --scale worker=${WORKER_COUNT}
-
-# Follow logs for all services
 docker compose logs -f
