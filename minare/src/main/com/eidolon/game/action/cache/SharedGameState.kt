@@ -1,11 +1,11 @@
 package eidolon.game.action.cache
 
-import eidolon.game.action.cache.services.MapDataCacheBuilder.Companion.MapCacheItem
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.hazelcast.core.HazelcastInstance
 import com.minare.core.utils.DistributedGridMap
 import com.minare.core.utils.PushVar
+import eidolon.game.action.cache.services.RoomDataCacheBuilder
 import io.vertx.core.impl.logging.LoggerFactory
 
 @Singleton
@@ -35,7 +35,7 @@ class SharedGameState @Inject constructor(
         _gameClockState.set(GameClockState.RUNNING)
     }
 
-    val mapDataCache = distributedGridMap.create<MapCacheItem>(hazelcastInstance)
+    val roomDataCache = distributedGridMap.create<RoomDataCacheBuilder.Companion.RoomCacheItem>(hazelcastInstance)
 
     companion object {
         enum class GameClockState {

@@ -12,7 +12,7 @@ object Main {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        log.info("Starting CHIEFTAIN Game Application")
+        log.info("Starting EIDOLON Game Application")
 
 
         MinareApplication.start(GameApplication::class.java, args)

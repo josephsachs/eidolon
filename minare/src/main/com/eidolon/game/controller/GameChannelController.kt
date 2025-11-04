@@ -19,6 +19,7 @@ class GameChannelController @Inject constructor(
 
     companion object {
         private const val DEFAULT_CHANNEL_KEY = "Game.defaultChannel"
+        private const val SYSTEM_MESSAGE_CHANNEL_KEY = "Game.systemChannel"
     }
 
     /**
@@ -34,5 +35,20 @@ class GameChannelController @Inject constructor(
      */
     suspend fun getDefaultChannel(): String? {
         return appStateProvider.get().get(DEFAULT_CHANNEL_KEY)
+    }
+
+    /**
+     * Set the system channel ID for this application
+     */
+    suspend fun setSystemMessagesChannel(channelId: String) {
+        log.info("Setting system messages channel to: {}", channelId)
+        return appStateProvider.get().set(SYSTEM_MESSAGE_CHANNEL_KEY, channelId)
+    }
+
+    /**
+     * Set the system channel ID for this application
+     */
+    suspend fun getSystemMessagesChannel(): String? {
+        return appStateProvider.get().get(SYSTEM_MESSAGE_CHANNEL_KEY)
     }
 }

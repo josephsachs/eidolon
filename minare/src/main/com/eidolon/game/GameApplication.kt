@@ -6,8 +6,6 @@ import com.eidolon.game.config.GameModule
 import com.eidolon.game.controller.GameChannelController
 import eidolon.game.action.cache.SharedGameState
 import io.vertx.core.DeploymentOptions
-import io.vertx.core.buffer.Buffer
-import io.vertx.core.http.HttpHeaders
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
@@ -17,8 +15,7 @@ import io.vertx.kotlin.coroutines.await
 import javax.inject.Inject
 
 /**
- * Game application that demonstrates the framework capabilities.
- * Creates a complex node graph with parent/child relationships using JGraphT.
+ * Eidolon controls a thin implementation of Evennia over WebSockets
  */
 class GameApplication : MinareApplication() {
     private val log = LoggerFactory.getLogger(GameApplication::class.java)
@@ -33,8 +30,10 @@ class GameApplication : MinareApplication() {
         try {
             val defaultChannelId = channelController.createChannel()
             log.info("EIDOLON: Created default channel: $defaultChannelId")
-
             channelController.setDefaultChannel(defaultChannelId)
+
+            val systemChannelId = channelController.createChannel()
+            channelController.setSystemMessagesChannel(systemChannelId)
 
             try {
                 getGameState()
@@ -63,6 +62,7 @@ class GameApplication : MinareApplication() {
 
     private fun getGameInitializer(): com.eidolon.game.scenario.GameInitializer {
         // IMPORTANT: Gotta get these from tne injector, because GameState depends on the CP subsystem
+
         return injector.getInstance(com.eidolon.game.scenario.GameInitializer::class.java)
     }
 
@@ -81,22 +81,6 @@ class GameApplication : MinareApplication() {
             .await()
 
         log.info("Main application HTTP server started on port $serverPort")
-
-        // Register specific routes FIRST
-        router.get("/client").handler { ctx ->
-            val resource = Thread.currentThread().contextClassLoader.getResourceAsStream("webroot/index.html")
-
-            if (resource != null) {
-                val content = resource.readAllBytes()
-                ctx.response()
-                    .putHeader(HttpHeaders.CONTENT_TYPE, "text/html")
-                    .end(Buffer.buffer(content))
-            } else {
-                ctx.response()
-                    .setStatusCode(404)
-                    .end("Couldn't find index.html in resources")
-            }
-        }
 
         router.get("/debug").handler { ctx ->
             val classLoader = Thread.currentThread().contextClassLoader
@@ -128,6 +112,15 @@ class GameApplication : MinareApplication() {
     }
 
     companion object {
+        // Game
+        const val EVENNIA_TELNET_PORT = 4000
+        const val EVENNIA_SOCKET_PORT = 4001
+        const val EVENNIA_WEBCLIENT_PORT = 4002
+
+        // Portal
+        const val EVENNIA_WEBSERVER_PORT = 4005
+        const val EVENNIA_AMP_PORT = 4006
+
         /**
          * Returns the Guice module for this application
          */

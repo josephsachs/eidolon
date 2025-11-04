@@ -6,19 +6,19 @@ import com.google.inject.Singleton
 import io.vertx.core.json.JsonObject
 
 @Singleton
-class ConsoleController @Inject constructor(
+class SystemMessageController @Inject constructor(
     private val channelController: GameChannelController
 ) {
     suspend fun broadcast(message: String) {
-        val defaultChannelId = channelController.getDefaultChannel()
+        val systemChannelId = channelController.getSystemMessagesChannel()
 
-        if (defaultChannelId.isNullOrBlank()) {
+        if (systemChannelId.isNullOrBlank()) {
             return
         }
 
         channelController.broadcast(
-            defaultChannelId,
-            JsonObject().put("console", message)
+            systemChannelId,
+            JsonObject().put("minare_system", message)
         )
     }
 }

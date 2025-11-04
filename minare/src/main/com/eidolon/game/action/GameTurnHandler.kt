@@ -16,7 +16,6 @@ import kotlinx.coroutines.CoroutineScope
 // TODO: Rename this class since it's no longer a handler really
 @Singleton
 class GameTurnHandler @Inject constructor(
-    private val clanTurnHandler: ClanTurnHandler,
     private val entityController: EntityController,
     private val stateStore: StateStore,
     private val scope: CoroutineScope,
@@ -30,22 +29,19 @@ class GameTurnHandler @Inject constructor(
     private val actAction: suspend (StateFlowContext) -> Unit = { context ->
         log.info("TURN_LOOP: ACT Phase Start")
         setGameProperties(TurnPhase.ACT, true)
-
-        clanTurnHandler.handleTurn(TurnPhase.ACT)
+        //characterTurnHandler.handleTurn(TurnPhase.ACT)
     }
 
     private val executeAction: suspend (StateFlowContext) -> Unit = { context ->
         log.info("TURN_LOOP: EXECUTE Phase Start")
         setGameProperties(TurnPhase.EXECUTE, true)
-
-        clanTurnHandler.handleTurn(TurnPhase.EXECUTE)
+        //characterTurnHandler.handleTurn(TurnPhase.EXECUTE)
     }
 
     private val resolveAction: suspend (StateFlowContext) -> Unit = { context ->
         log.info("TURN_LOOP: RESOLVE Phase Start")
         setGameProperties(TurnPhase.RESOLVE, true)
-
-        clanTurnHandler.handleTurn(TurnPhase.RESOLVE)
+        //characterTurnHandler.handleTurn(TurnPhase.RESOLVE)
     }
 
     private val turnEndAction: suspend (StateFlowContext) -> Unit = { _ ->

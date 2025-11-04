@@ -13,17 +13,18 @@ class GameStateVerticle @Inject constructor(
     private var injector: Injector,
     private var sharedGameState: SharedGameState
 ) : CoroutineVerticle() {
-    lateinit var gameTurnHandler: GameTurnHandler
+    //lateinit var gameTurnHandler: GameTurnHandler
 
     override suspend fun start() {
-        gameTurnHandler = injector.getInstance(GameTurnHandler::class.java)
+        // Services get injected with the injector instance
+        //gameTurnHandler = injector.getInstance(GameTurnHandler::class.java)
         sharedGameState.resumeGameClock()
 
         vertx.eventBus().consumer<JsonObject>(ADDRESS_NEXT_FRAME, {
             launch {
                 if (sharedGameState.isGamePaused()) return@launch
 
-                gameTurnHandler.handleFrame()
+                //gameTurnHandler.handleFrame()
             }
         })
     }

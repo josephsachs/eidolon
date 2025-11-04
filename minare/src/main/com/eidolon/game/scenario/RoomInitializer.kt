@@ -1,12 +1,12 @@
 package com.eidolon.game.scenario
 
 import com.eidolon.game.controller.GameChannelController
+import com.eidolon.game.models.entity.Room
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
 import com.minare.core.entity.factories.EntityFactory
 import com.minare.core.entity.models.Entity
-import eidolon.game.models.entity.agent.EvenniaCharacter
 import io.vertx.core.Vertx
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
@@ -14,36 +14,43 @@ import io.vertx.core.json.JsonObject
 import io.vertx.kotlin.coroutines.await
 
 @Singleton
-class AgentInitializer @Inject constructor(
+class RoomInitializer @Inject constructor(
     private val gameChannelController: GameChannelController,
     private val entityFactory: EntityFactory,
     private val entityController: EntityController,
     private val vertx: Vertx
 ) {
-    private val log = LoggerFactory.getLogger(AgentInitializer::class.java)
+    private val log = LoggerFactory.getLogger(RoomInitializer::class.java)
 
     suspend fun initialize() {
         val entities = mutableListOf<Entity>()
         val defaultChannelId = gameChannelController.getDefaultChannel()
 
-        readAgentsData().forEach { jsonObject ->
-            val character = entityFactory.createEntity(EvenniaCharacter::class.java) as EvenniaCharacter
-            //character.setConnection(something)
+        log.info("Set default channel: $defaultChannelId")
 
-            entityController.create(character) as EvenniaCharacter
-            entities.add(character)
+        readRoomData().forEach { jsonObject ->
+            val room = entityFactory.createEntity(Room::class.java) as Room
+
+            /**
+            room.evenniaId = jsonObject.getString("evenniaId")
+
+             etc.*/
+
+            entityController.create(room) as Room
+            entities.add(room)
         }
 
         gameChannelController.addEntitiesToChannel(entities.toList(), defaultChannelId!!)
     }
 
-    suspend fun readAgentsData(): List<JsonObject> {
+    private suspend fun readRoomData(): List<JsonObject> {
         return try {
-            val buffer = vertx.fileSystem().readFile("scenario/agents.json").await()
+            val buffer = vertx.fileSystem().readFile("scenario/rooms.json").await()
 
-            JsonArray(buffer.toString()).map { it as JsonObject }
+            val mapZonesArray = JsonArray(buffer.toString())
+            mapZonesArray.map { it as JsonObject }
         } catch (e: Exception) {
-            log.error("Failed to read agents.json: $e")
+            log.error("Failed to read rooms.json: $e")
             emptyList()
         }
     }

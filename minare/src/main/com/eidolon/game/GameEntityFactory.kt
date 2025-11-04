@@ -1,14 +1,11 @@
 package com.eidolon.game
 
-import eidolon.game.models.entity.agent.Clan
+import com.eidolon.game.models.entity.Room
 import eidolon.game.models.entity.Game
-import eidolon.game.models.entity.mapfeature.Town
 import com.minare.core.entity.factories.EntityFactory
-import com.minare.core.entity.models.Entity
-import com.eidolon.game.models.entity.MapZone
-import com.eidolon.game.models.entity.mapfeature.MapFeature
 import com.google.inject.Inject
 import com.google.inject.Injector
+import eidolon.game.models.entity.agent.EvenniaCharacter
 import javax.inject.Singleton
 
 /**
@@ -22,10 +19,7 @@ class GameEntityFactory @Inject constructor(
     // Just define the map - framework does the rest!
     override val entityTypes = mapOf(
         "Game" to Game::class.java,
-        "MapZone" to MapZone::class.java,
-        "MapFeature" to MapFeature::class.java,
-        "Town" to Town::class.java,
-        "Clan" to Clan::class.java,
-        "Entity" to Entity::class.java
+        "Room" to Room::class.java,
+        "EvenniaCharacter" to EvenniaCharacter::class.java,
     )
 }

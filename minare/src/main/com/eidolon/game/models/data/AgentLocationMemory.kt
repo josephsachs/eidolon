@@ -1,7 +1,5 @@
 package eidolon.game.models.data
 
-import com.eidolon.game.models.data.Depot.Companion.ResourceType
-import com.eidolon.game.models.data.Depot.Companion.ResourceTypeGroup
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.minare.core.entity.models.serializable.Vector2

@@ -8,7 +8,6 @@ while getopts "me" flag; do
   case "${flag}" in
     m)
       echo "Rebuilding Minare..."
-      cd docker
       docker compose down -v haproxy app-coordinator infra worker mongodb redis kafka kafka-ui evennia
       cd ../minare
       mvn package
@@ -20,8 +19,7 @@ while getopts "me" flag; do
       ;;
     e)
       echo "Rebuilding Evennia..."
-      cd docker
-      docker compose down -v haproxy app-coordinator infra worker mongodb redis kafka kafka-ui evennia
+      cd ../docker
       rm -f ../evennia/server/evennia.db3
       rm -rf ../evennia/server/logs/*
       docker compose build --no-cache evennia
@@ -34,7 +32,7 @@ while getopts "me" flag; do
 done
 
 cd ../docker
-WORKER_COUNT=${WORKER_COUNT} docker compose up -d --scale worker=${WORKER_COUNT} haproxy app-coordinator infra worker mongodb redis kafka kafka-ui
-docker compose up -d evennia
+#/WORKER_COUNT=${WORKER_COUNT} docker compose up -d --scale worker=${WORKER_COUNT} haproxy app-coordinator infra worker mongodb redis kafka kafka-ui
+#docker compose up -d evennia
 
 docker compose logs -f
