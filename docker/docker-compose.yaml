@@ -280,7 +280,9 @@ services:
 
 # Evennia MUD
   evennia:
-    image: evennia/evennia:latest
+    #image: evennia/evennia:latest
+    build:
+      context: ../evennia
     container_name: evennia-mud
     hostname: evennia
     ports:
@@ -290,7 +292,10 @@ services:
     volumes:
       - ../evennia:/usr/src/game
     environment:
-      - TZ=UTC
+      TZ: UTC
+      EVENNIA_SUPERUSER_USERNAME: 'admin'
+      EVENNIA_SUPERUSER_PASSWORD: 'admin'
+      EVENNIA_SUPERUSER_EMAIL: 'admin@example.com'
     networks:
       - minare_net
     stdin_open: true
