@@ -1,5 +1,6 @@
 package com.eidolon.game.controller
 
+import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.MessageController
@@ -12,12 +13,13 @@ import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
 
 @Singleton
-class GameMessageController @Inject constructor() : MessageController() {
+class GameMessageController @Inject constructor(
+    private val evenniaCommandHandler: EvenniaCommandHandler
+) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
     override suspend fun handle(connection: Connection, message: JsonObject) {
         when {
-            // We need to implement heartbeat responses or our connections will get cleaned up automatically
             message.getString("type") == "heartbeat_response" -> {
                 val heartbeatCommand = HeartbeatResponse(
                     connection,
@@ -28,17 +30,31 @@ class GameMessageController @Inject constructor() : MessageController() {
                 dispatch(heartbeatCommand)
             }
 
-            message.getString("command") == "sync" -> {
+            message.getString("type") == "sync" -> {
+                val channels = message.getString("channels").split(",").toSet()
+
                 val syncCommand = SyncCommand(
                     connection,
                     SyncCommandType.CHANNEL,
-                    null    // Sync all channels; our NodeGraph app only has one
+                    channels    // null = sync all
                 )
 
                 dispatch(syncCommand)
             }
 
-            // Assuming rather dangerously that any message NOS is an operation
+            message.getString("type") == "command" -> {
+                val response = JsonObject()
+                val requestId = message.getString("request_id")
+
+                response.put("status", "success")
+                response.put("request_id", requestId)
+                response.put("message",
+                    evenniaCommandHandler.dispatch(message)
+                )
+
+                sendToUpSocket(connection, response)
+            }
+
             else -> {
                 val operationCommand = OperationCommand(message)
 
