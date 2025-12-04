@@ -32,7 +32,7 @@ while getopts "me" flag; do
 done
 
 cd ../docker
-/WORKER_COUNT=${WORKER_COUNT} docker compose up -d --scale worker=${WORKER_COUNT} haproxy app-coordinator infra worker mongodb redis kafka kafka-ui
+WORKER_COUNT=${WORKER_COUNT} docker compose up -d --scale worker=${WORKER_COUNT} haproxy app-coordinator infra worker mongodb redis kafka kafka-ui evennia
 docker compose up -d evennia
 
 docker compose logs -f
