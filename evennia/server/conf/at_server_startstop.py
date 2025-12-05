@@ -17,6 +17,7 @@ at_server_cold_stop()
 
 """
 
+from server.conf import minare_client
 
 def at_server_init():
     """
@@ -45,14 +46,16 @@ def at_server_reload_start():
     """
     This is called only when server starts back up after a reload.
     """
-    pass
+    # Start the Minare WebSocket client
+    minare_client.start_minare_client()
 
 
 def at_server_reload_stop():
     """
     This is called only time the server stops before a reload.
     """
-    pass
+    # Stop the Minare WebSocket client cleanly
+    minare_client.stop_minare_client()
 
 
 def at_server_cold_start():
