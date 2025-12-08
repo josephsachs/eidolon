@@ -24,7 +24,7 @@ class RoomDataCacheBuilder @Inject constructor(
      */
     suspend fun rebuild() {
         val allRooms = entityController.findByIds(
-            stateStore.findKeysByType("Room")
+            stateStore.findAllKeysForType("Room")
         )
 
         //for(item in allRooms) {

@@ -23,3 +23,5 @@ RUN bash /usr/src/game/init/install_evennia.sh
 
 # Default entry point (assuming evennia start -l is still desired)
 # RUN evennia start
+
+ENTRYPOINT ["/bin/bash", "-c", "evennia migrate && evennia start -l"]

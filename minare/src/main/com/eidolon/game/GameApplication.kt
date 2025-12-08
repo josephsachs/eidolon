@@ -35,23 +35,23 @@ class GameApplication : MinareApplication() {
             val systemChannelId = channelController.createChannel()
             channelController.setSystemMessagesChannel(systemChannelId)
 
-            try {
-                getGameState()
-                getGameInitializer().initialize()
-            } finally {
-                createVerticle(
-                    GameStateVerticle::class.java,
-                    DeploymentOptions()
-                        .setInstances(1)
-                        .setConfig(JsonObject().put("role", "coordinator"))
-                )
-            }
+            getGameState()
+            getGameInitializer().initialize()
 
             log.info("EIDOLON: Game application started with default channel: $defaultChannelId")
         } catch (e: Exception) {
             log.error("Failed to start Game application", e)
             throw e
         }
+    }
+
+    override suspend fun afterCoordinatorStart() {
+        createVerticle(
+            GameStateVerticle::class.java,
+            DeploymentOptions()
+                .setInstances(1)
+                .setConfig(JsonObject().put("role", "coordinator"))
+        )
     }
 
     override suspend fun onWorkerStart() {

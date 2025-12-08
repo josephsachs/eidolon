@@ -107,7 +107,7 @@ class GameTurnHandler @Inject constructor(
 
     private suspend fun getGame(): Game {
         return entityController
-            .findByIds(stateStore.findKeysByType("Game"))
+            .findByIds(stateStore.findAllKeysForType("Game"))
             .firstNotNullOf { it.value } as Game
     }
 

@@ -295,6 +295,9 @@ services:
       EVENNIA_SUPERUSER_USERNAME: 'admin'
       EVENNIA_SUPERUSER_PASSWORD: 'admin'
       EVENNIA_SUPERUSER_EMAIL: 'admin@example.com'
+      MINARE_HOST: haproxy
+      MINARE_UPSOCKET_PORT: '4225'
+      MINARE_DOWNSOCKET_PORT: '4226'
     networks:
       - minare_net
     stdin_open: true
