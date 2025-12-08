@@ -126,6 +126,13 @@ class MinareDownSocketProtocol(WebSocketClientProtocol):
                 # Initial sync data
                 logger.log_info("Minare DownSocket: Received sync data")
 
+            elif msg_type == 'error':
+                # ADD THIS BLOCK
+                error_code = msg.get('code', 'UNKNOWN')
+                error_msg = msg.get('message', 'No message')
+                logger.log_err(f"Minare DownSocket: Error - code={error_code}, message={error_msg}")
+                logger.log_err(f"Minare DownSocket: Full error payload: {msg}")
+
             elif msg_type == 'message_response':
                 # Handle message responses - broadcast to all players
                 msg_id = msg.get('id')
@@ -182,7 +189,7 @@ class MinareUpSocketFactory(ReconnectingClientFactory, WebSocketClientFactory):
     def connect_downsocket(self):
         """Initiate DownSocket connection after UpSocket is established."""
         if self.downsocket_factory:
-            downsocket_url = f"ws://{MINARE_HOST}:{MINARE_DOWNSOCKET_PORT}"
+            downsocket_url = f"ws://{MINARE_HOST}:{MINARE_DOWNSOCKET_PORT}/update"
             self.downsocket_factory.connection_id = self.connection_id
             reactor.connectTCP(MINARE_HOST, MINARE_DOWNSOCKET_PORT, self.downsocket_factory)
             logger.log_info(f"Minare: Connecting DownSocket to {downsocket_url}")
@@ -224,8 +231,8 @@ class MinareClient:
         logger.log_info("Minare Client: Starting...")
 
         # Create factories
-        upsocket_url = f"ws://{MINARE_HOST}:{MINARE_UPSOCKET_PORT}"
-        downsocket_url = f"ws://{MINARE_HOST}:{MINARE_DOWNSOCKET_PORT}"
+        upsocket_url = f"ws://{MINARE_HOST}:{MINARE_UPSOCKET_PORT}/command"
+        downsocket_url = f"ws://{MINARE_HOST}:{MINARE_DOWNSOCKET_PORT}/update"
 
         self.upsocket_factory = MinareUpSocketFactory(upsocket_url)
         self.downsocket_factory = MinareDownSocketFactory(downsocket_url)

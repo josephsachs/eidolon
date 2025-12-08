@@ -31,7 +31,8 @@ def at_server_start():
     This is called every time the server starts up, regardless of
     how it was shut down.
     """
-    pass
+    # Start the Minare WebSocket client
+    minare_client.start_minare_client()
 
 
 def at_server_stop():
@@ -39,23 +40,21 @@ def at_server_stop():
     This is called just before the server is shut down, regardless
     of it is for a reload, reset or shutdown.
     """
-    pass
+    # Stop the Minare WebSocket client cleanly
+    minare_client.stop_minare_client()
 
 
 def at_server_reload_start():
     """
     This is called only when server starts back up after a reload.
     """
-    # Start the Minare WebSocket client
-    minare_client.start_minare_client()
-
+    pass
 
 def at_server_reload_stop():
     """
     This is called only time the server stops before a reload.
     """
-    # Stop the Minare WebSocket client cleanly
-    minare_client.stop_minare_client()
+    pass
 
 
 def at_server_cold_start():
