@@ -1,6 +1,7 @@
 .DS_Store
+.claude/
 .idea/
-.out/
+out/
 docker/config/mongodb.key
 docker/data
 docker/app.jar
