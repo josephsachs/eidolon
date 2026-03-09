@@ -57,6 +57,17 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
                 msg_id = msg.get('id')
                 logger.log_info(f"Minare UpSocket: Received ACK for message {msg_id}")
 
+            elif msg_type == 'sync':
+                entities = msg.get('data', {}).get('entities', [])
+                self.factory.pending_sync_entities.extend(entities)
+                logger.log_info(f"Minare UpSocket: Sync batch received ({len(entities)} entities)")
+
+            elif msg_type == 'initial_sync_complete':
+                logger.log_info("Minare UpSocket: Initial sync complete — starting typeclass sync")
+                entities = self.factory.pending_sync_entities[:]
+                self.factory.pending_sync_entities.clear()
+                _sync_rooms(entities, self)
+
             elif msg_type == 'heartbeat':
                 # Respond to heartbeat
                 response = json.dumps({
@@ -177,6 +188,7 @@ class MinareUpSocketFactory(ReconnectingClientFactory, WebSocketClientFactory):
         self.connection_id = None
         self.downsocket_factory = None
         self.active_protocol = None  # Track the active protocol instance
+        self.pending_sync_entities = []  # Accumulated during initial sync
 
     def clientConnectionFailed(self, connector, reason):
         logger.log_warn(f"Minare UpSocket: Connection failed - {reason.getErrorMessage()}")
@@ -214,6 +226,58 @@ class MinareDownSocketFactory(ReconnectingClientFactory, WebSocketClientFactory)
     def clientConnectionLost(self, connector, reason):
         logger.log_warn(f"Minare DownSocket: Connection lost - {reason.getErrorMessage()}")
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+
+
+def _sync_rooms(minare_entities, protocol):
+    """
+    Reconcile Evennia Room objects with Minare Room entities.
+    Minare is the source of truth: create Evennia Rooms for new Minare rooms,
+    update descriptions for changed rooms, and archive Evennia Rooms whose
+    Minare entity no longer exists.
+    """
+    from typeclasses.rooms import Room as EvenniaRoom
+    from evennia import create_object
+
+    minare_rooms = {
+        e['_id']: e
+        for e in minare_entities
+        if e.get('type') == 'Room'
+    }
+
+    # Build lookup: minare_id attribute -> Evennia Room
+    evennia_rooms_by_minare_id = {}
+    for room in EvenniaRoom.objects.all():
+        mid = room.db.minare_id
+        if mid:
+            evennia_rooms_by_minare_id[mid] = room
+
+    # Create Evennia Rooms for Minare rooms we don't have yet
+    for minare_id, entity in minare_rooms.items():
+        if minare_id not in evennia_rooms_by_minare_id:
+            state = entity.get('state', {})
+            new_room = create_object(
+                EvenniaRoom,
+                key=state.get('shortDescription', f"Room {minare_id[:8]}"),
+            )
+            new_room.db.minare_id = minare_id
+            new_room.db.desc = state.get('description', '')
+            logger.log_info(f"Minare sync: Created Evennia Room '{new_room.key}' (minare_id={minare_id})")
+        else:
+            # Room exists — update description if it has changed
+            room = evennia_rooms_by_minare_id[minare_id]
+            state = entity.get('state', {})
+            if room.db.desc != state.get('description', ''):
+                room.db.desc = state.get('description', '')
+                logger.log_info(f"Minare sync: Updated Room '{room.key}' description")
+
+    # Archive Evennia Rooms whose Minare entity no longer exists
+    for minare_id, room in evennia_rooms_by_minare_id.items():
+        if minare_id not in minare_rooms:
+            logger.log_info(
+                f"Minare sync: Archiving Room '{room.key}' (minare_id={minare_id} not found in Minare)"
+            )
+            room.db.minare_id = None
+            room.db.minare_archived = True
 
 
 class MinareClient:

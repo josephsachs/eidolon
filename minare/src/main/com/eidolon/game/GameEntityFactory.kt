@@ -1,5 +1,6 @@
 package com.eidolon.game
 
+import com.eidolon.game.models.entity.Exit
 import com.eidolon.game.models.entity.Room
 import eidolon.game.models.entity.Game
 import com.minare.core.entity.factories.EntityFactory
@@ -20,6 +21,7 @@ class GameEntityFactory @Inject constructor(
     override val entityTypes = mapOf(
         "Game" to Game::class.java,
         "Room" to Room::class.java,
+        "Exit" to Exit::class.java,
         "EvenniaCharacter" to EvenniaCharacter::class.java,
     )
 }
