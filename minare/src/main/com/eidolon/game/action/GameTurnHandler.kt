@@ -24,7 +24,12 @@ class GameTurnHandler @Inject constructor(
 ) {
     private var log = LoggerFactory.getLogger(GameTurnHandler::class.java)
 
-    private val turnStateMachine: EventStateFlow
+    private val turnStateMachine: EventStateFlow = EventStateFlow(
+        eventKey = "GAME_TURN_LOOP",
+        coroutineScope = scope,
+        vertx = vertx,
+        looping = true // The sequence must loop indefinitely
+    )
 
     private val actAction: suspend (StateFlowContext) -> Unit = { context ->
         log.info("TURN_LOOP: ACT Phase Start")
@@ -57,12 +62,6 @@ class GameTurnHandler @Inject constructor(
     }
 
     init {
-        turnStateMachine = EventStateFlow(
-            eventKey = "GAME_TURN_LOOP",
-            coroutineScope = scope,
-            vertx = vertx,
-            looping = true // The sequence must loop indefinitely
-        )
 
         turnStateMachine.registerState("ACT_PHASE", actAction)
         turnStateMachine.registerState("EXECUTE_PHASE", executeAction)

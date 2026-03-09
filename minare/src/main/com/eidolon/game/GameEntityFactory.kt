@@ -15,7 +15,7 @@ import javax.inject.Singleton
 @Singleton
 class GameEntityFactory @Inject constructor(
     injector: Injector
-): EntityFactory(injector) {
+): EntityFactory() {
     // Just define the map - framework does the rest!
     override val entityTypes = mapOf(
         "Game" to Game::class.java,

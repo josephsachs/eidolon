@@ -1,6 +1,5 @@
 package com.eidolon.game.config
 
-import com.eidolon.application.config.GameFrameConfiguration
 import com.google.inject.PrivateModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
@@ -17,14 +16,7 @@ import com.eidolon.game.controller.GameConnectionController
 import com.eidolon.game.controller.GameMessageController
 import com.eidolon.game.controller.GameOperationController
 import com.google.inject.AbstractModule
-import com.minare.application.config.FrameConfiguration
-import com.minare.application.config.GameTaskConfiguration
-import com.minare.application.config.TaskConfiguration
-import io.vertx.core.Vertx
-import io.vertx.kotlin.coroutines.dispatcher
-import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
-import kotlin.coroutines.CoroutineContext
 
 /**
  * Application-specific Guice module for the Game app.
@@ -40,14 +32,6 @@ class GameModule : AbstractModule(), DatabaseNameProvider {
         bind(EntityFactory::class.java)
             .annotatedWith(Names.named("user"))
             .to(GameEntityFactory::class.java)
-
-        bind(FrameConfiguration::class.java)
-            .to(GameFrameConfiguration::class.java)
-            .`in`(Singleton::class.java)
-
-        bind(TaskConfiguration::class.java)
-            .to(GameTaskConfiguration::class.java)
-            .`in`(Singleton::class.java)
 
         bind(ChannelController::class.java)
             .to(GameChannelController::class.java)
@@ -68,5 +52,5 @@ class GameModule : AbstractModule(), DatabaseNameProvider {
         log.info("GameModule configured with custom EntityFactory and controllers")
     }
 
-    override fun getDatabaseName(): String = "chieftain_game"
+    override fun getDatabaseName(): String = "eidolon"
 }
