@@ -10,6 +10,7 @@ import com.minare.core.transport.models.message.OperationCommand
 import com.minare.core.transport.models.message.SyncCommand
 import com.minare.core.transport.models.message.SyncCommandType
 import com.minare.core.transport.upsocket.UpSocketVerticle
+import eidolon.game.controller.GameChannelController
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
@@ -18,7 +19,7 @@ import org.slf4j.LoggerFactory
 class GameMessageController @Inject constructor(
     private val vertx: Vertx,
     private val evenniaCommandHandler: EvenniaCommandHandler,
-    private val channelController: GameChannelController
+    private val channelController: GameChannelController,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
