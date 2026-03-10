@@ -10,14 +10,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class GameStateVerticle @Inject constructor(
-    private var injector: Injector,
     private var sharedGameState: SharedGameState
 ) : CoroutineVerticle() {
-    //lateinit var gameTurnHandler: GameTurnHandler
-
     override suspend fun start() {
-        // Services get injected with the injector instance
-        //gameTurnHandler = injector.getInstance(GameTurnHandler::class.java)
         sharedGameState.resumeGameClock()
 
         vertx.eventBus().consumer<JsonObject>(ADDRESS_NEXT_FRAME, {

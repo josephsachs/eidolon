@@ -3,7 +3,6 @@ package com.eidolon.game
 import eidolon.game.GameStateVerticle
 import com.minare.core.MinareApplication
 import com.eidolon.game.config.GameModule
-import com.eidolon.game.controller.GameChannelController
 import eidolon.game.action.cache.SharedGameState
 import io.vertx.core.DeploymentOptions
 import io.vertx.core.impl.logging.LoggerFactory
@@ -12,7 +11,6 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.StaticHandler
 import io.vertx.kotlin.coroutines.await
-import javax.inject.Inject
 
 /**
  * Eidolon controls a thin implementation of Evennia over WebSockets
@@ -20,25 +18,13 @@ import javax.inject.Inject
 class GameApplication : MinareApplication() {
     private val log = LoggerFactory.getLogger(GameApplication::class.java)
 
-    @Inject
-    lateinit var channelController: GameChannelController
-
     /**
      * Application-specific initialization logic that runs after the server starts.
      */
     override suspend fun onCoordinatorStart() {
         try {
-            val defaultChannelId = channelController.createChannel()
-            log.info("EIDOLON: Created default channel: $defaultChannelId")
-            channelController.setDefaultChannel(defaultChannelId)
-
-            val systemChannelId = channelController.createChannel()
-            channelController.setSystemMessagesChannel(systemChannelId)
-
             getGameState()
             getGameInitializer().initialize()
-
-            log.info("EIDOLON: Game application started with default channel: $defaultChannelId")
         } catch (e: Exception) {
             log.error("Failed to start Game application", e)
             throw e

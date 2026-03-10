@@ -7,6 +7,7 @@ import com.google.inject.Inject
 import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 @EntityType("Game")
 class Game: Entity() {
@@ -19,7 +20,7 @@ class Game: Entity() {
         type = "Game"
     }
 
-    var name: String = "MyGame"
+    var name: String = "Eidolon"
 
     @Property
     var currentTurn: Int = 0

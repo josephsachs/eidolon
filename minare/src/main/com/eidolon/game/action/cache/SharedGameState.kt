@@ -3,12 +3,10 @@ package eidolon.game.action.cache
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.hazelcast.core.HazelcastInstance
-import com.minare.core.utils.PushVar
-import io.vertx.core.impl.logging.LoggerFactory
+import com.minare.core.utils.types.PushVar
 
 @Singleton
 class SharedGameState @Inject constructor(
-    private val hazelcastInstance: HazelcastInstance,
     private val pushVar: PushVar.Factory
 ) {
     private val _gameClockState = pushVar.create(

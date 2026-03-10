@@ -1,6 +1,6 @@
 package com.eidolon.game.scenario
 
-import com.eidolon.game.controller.GameChannelController
+import eidolon.game.controller.GameChannelController
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
@@ -24,7 +24,7 @@ class AgentInitializer @Inject constructor(
 
     suspend fun initialize() {
         val entities = mutableListOf<Entity>()
-        val defaultChannelId = gameChannelController.getDefaultChannel()
+        val defaultChannelId = gameChannelController.getDefaultChannel() ?: throw Exception("Default channel not configured- game state issue?")
 
         readAgentsData().forEach { jsonObject ->
             val character = entityFactory.createEntity(EvenniaCharacter::class.java) as EvenniaCharacter

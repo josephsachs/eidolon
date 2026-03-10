@@ -4,16 +4,21 @@ import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.MessageController
+import com.minare.core.transport.adapters.WebsocketProtocol
+import com.minare.core.transport.interfaces.SocketProtocol
 import com.minare.core.transport.models.Connection
 import com.minare.core.transport.models.message.HeartbeatResponse
 import com.minare.core.transport.models.message.OperationCommand
 import com.minare.core.transport.models.message.SyncCommand
 import com.minare.core.transport.models.message.SyncCommandType
+import eidolon.game.controller.GameChannelController
+import io.vertx.core.http.ServerWebSocket
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
 
 @Singleton
 class GameMessageController @Inject constructor(
+    private val protocol: SocketProtocol<WebsocketProtocol>,
     private val evenniaCommandHandler: EvenniaCommandHandler,
     private val channelController: GameChannelController
 ) : MessageController() {
@@ -55,7 +60,7 @@ class GameMessageController @Inject constructor(
                     evenniaCommandHandler.dispatch(message)
                 )
 
-                sendToUpSocket(connection, response)
+                protocol.sockets.send(connection.id, response.toString())
             }
 
             // Handle Evennia-style system messages for tracer bullet
@@ -83,7 +88,7 @@ class GameMessageController @Inject constructor(
         val messageText = message.getString("message", "")
 
         log.info("Received Evennia message from {}: id={}, message={}",
-            connection._id, messageId, messageText)
+            connection.id, messageId, messageText)
 
         // Send ACK immediately to unblock Evennia
         if (messageId != null) {
@@ -91,8 +96,8 @@ class GameMessageController @Inject constructor(
                 .put("type", "ack")
                 .put("id", messageId)
 
-            sendToUpSocket(connection, ack)
-            log.debug("Sent ACK for message {} to connection {}", messageId, connection._id)
+            protocol.sockets.send(connection.id, ack.toString())
+            log.debug("Sent ACK for message {} to connection {}", messageId, connection.id)
         }
 
         // Send response through DownSocket via channel broadcast

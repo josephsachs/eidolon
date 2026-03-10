@@ -1,6 +1,6 @@
 package com.eidolon.game.scenario
 
-import com.eidolon.game.controller.GameChannelController
+import eidolon.game.controller.GameChannelController
 import com.eidolon.game.models.entity.Exit
 import com.eidolon.game.models.entity.Room
 import com.google.inject.Inject

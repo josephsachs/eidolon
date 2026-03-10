@@ -1,17 +1,14 @@
 package com.eidolon.game.config
 
-import com.google.inject.PrivateModule
-import com.google.inject.Provides
 import com.google.inject.Singleton
 import com.google.inject.name.Names
 import com.minare.controller.ChannelController
 import com.minare.controller.ConnectionController
 import com.minare.controller.MessageController
 import com.minare.controller.OperationController
-import com.minare.core.config.DatabaseNameProvider
 import com.minare.core.entity.factories.EntityFactory
 import com.eidolon.game.GameEntityFactory
-import com.eidolon.game.controller.GameChannelController
+import eidolon.game.controller.GameChannelController
 import com.eidolon.game.controller.GameConnectionController
 import com.eidolon.game.controller.GameMessageController
 import com.eidolon.game.controller.GameOperationController
@@ -25,7 +22,7 @@ import org.slf4j.LoggerFactory
  * When combined with the framework through a child injector,
  * bindings defined here will override the framework's default bindings.
  */
-class GameModule : AbstractModule(), DatabaseNameProvider {
+class GameModule : AbstractModule() {
     private val log = LoggerFactory.getLogger(GameModule::class.java)
 
     override fun configure() {
@@ -51,6 +48,4 @@ class GameModule : AbstractModule(), DatabaseNameProvider {
 
         log.info("GameModule configured with custom EntityFactory and controllers")
     }
-
-    override fun getDatabaseName(): String = "eidolon"
 }
