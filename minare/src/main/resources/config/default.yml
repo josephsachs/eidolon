@@ -22,20 +22,20 @@ sockets:
 
 
 entity:
-  factory: com.minare.nodegraph.NodeGraphEntityFactory
+  factory: com.eidolon.game.GameEntityFactory
   update:
     collect_changes: true
-    interval: 50
+    interval: 3000
   graphing:
     store: mongo
 
 
 frames:
-  frame_duration: 10000
-  lookahead: 100
+  frame_duration: 6700
+  lookahead: 25
   session:
     auto_session: frames_per_session
-    frames_per_session: 500
+    frames_per_session: 100
   timeline:
     detach:
       flush_on_detach: true
@@ -49,7 +49,7 @@ frames:
 
 
 tasks:
-  tick_interval: 5000
+  tick_interval: 2300
 
 
 filesystem:

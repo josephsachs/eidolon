@@ -4,21 +4,19 @@ import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.MessageController
-import com.minare.core.transport.adapters.WebsocketProtocol
-import com.minare.core.transport.interfaces.SocketProtocol
 import com.minare.core.transport.models.Connection
 import com.minare.core.transport.models.message.HeartbeatResponse
 import com.minare.core.transport.models.message.OperationCommand
 import com.minare.core.transport.models.message.SyncCommand
 import com.minare.core.transport.models.message.SyncCommandType
-import eidolon.game.controller.GameChannelController
-import io.vertx.core.http.ServerWebSocket
+import com.minare.core.transport.upsocket.UpSocketVerticle
+import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
 
 @Singleton
 class GameMessageController @Inject constructor(
-    private val protocol: SocketProtocol<WebsocketProtocol>,
+    private val vertx: Vertx,
     private val evenniaCommandHandler: EvenniaCommandHandler,
     private val channelController: GameChannelController
 ) : MessageController() {
@@ -60,7 +58,7 @@ class GameMessageController @Inject constructor(
                     evenniaCommandHandler.dispatch(message)
                 )
 
-                protocol.sockets.send(connection.id, response.toString())
+                sendToClient(connection, response)
             }
 
             // Handle Evennia-style system messages for tracer bullet
@@ -96,7 +94,7 @@ class GameMessageController @Inject constructor(
                 .put("type", "ack")
                 .put("id", messageId)
 
-            protocol.sockets.send(connection.id, ack.toString())
+            sendToClient(connection, ack)
             log.debug("Sent ACK for message {} to connection {}", messageId, connection.id)
         }
 
@@ -116,5 +114,18 @@ class GameMessageController @Inject constructor(
         } else {
             log.warn("Cannot send response: defaultChannelId={}, messageId={}", defaultChannelId, messageId)
         }
+    }
+
+    private fun sendToClient(connection: Connection, message: JsonObject) {
+        val deploymentId = connection.upSocketInstanceId ?: run {
+            log.warn("Cannot send to connection {}: no upSocketInstanceId", connection.id)
+            return
+        }
+        vertx.eventBus().send(
+            "${UpSocketVerticle.ADDRESS_SEND_TO_CONNECTION}.${deploymentId}",
+            JsonObject()
+                .put("connectionId", connection.id)
+                .put("message", message)
+        )
     }
 }

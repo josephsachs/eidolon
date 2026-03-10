@@ -10,7 +10,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class GameStateVerticle @Inject constructor(
-    private var sharedGameState: SharedGameState
+    private var sharedGameState: SharedGameState,
+    private var gameTurnHandler: GameTurnHandler
 ) : CoroutineVerticle() {
     override suspend fun start() {
         sharedGameState.resumeGameClock()
@@ -19,7 +20,7 @@ class GameStateVerticle @Inject constructor(
             launch {
                 if (sharedGameState.isGamePaused()) return@launch
 
-                //gameTurnHandler.handleFrame()
+                gameTurnHandler.handleFrame()
             }
         })
     }

@@ -44,6 +44,34 @@
 
         <plugins>
             <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <jvmTarget>11</jvmTarget>
+                    <sourceDirs>
+                        <sourceDir>${project.basedir}/src/main/com</sourceDir>
+                    </sourceDirs>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.2.4</version>
@@ -81,8 +109,8 @@
                         </goals>
                         <configuration>
                             <target>
-                                <copy file="${project.build.directory}/minare-app-fat.jar"
-                                      tofile="${project.basedir}/../../docker/app.jar"
+                                <copy file="${project.build.directory}/eidolon-app-fat.jar"
+                                      tofile="${project.basedir}/../docker/app.jar"
                                       overwrite="true"/>
                                 <echo message="Copied JAR to docker/app.jar for containerization"/>
                             </target>
