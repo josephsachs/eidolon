@@ -24,4 +24,6 @@ RUN bash /usr/src/game/init/install_evennia.sh
 # Default entry point (assuming evennia start -l is still desired)
 # RUN evennia start
 
-ENTRYPOINT ["/bin/bash", "-c", "evennia migrate && evennia start -l"]
+RUN mkdir -p /usr/src/game/server/logs && chmod 777 /usr/src/game/server/logs
+
+ENTRYPOINT ["/bin/bash", "-c", "chmod -R 777 /usr/src/game/server/logs 2>/dev/null; evennia migrate && evennia start -l"]

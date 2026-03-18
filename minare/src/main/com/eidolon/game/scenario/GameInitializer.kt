@@ -1,6 +1,7 @@
 package com.eidolon.game.scenario
 
 import eidolon.game.action.GameTurnHandler.Companion.TurnPhase
+import eidolon.game.controller.GameChannelController
 import eidolon.game.models.entity.Game
 import com.eidolon.game.GameEntityFactory
 import com.google.inject.Inject
@@ -15,6 +16,7 @@ class GameInitializer @Inject constructor(
     private val mapInitializer: RoomInitializer,
     private val entityController: EntityController,
     private val entityFactory: GameEntityFactory,
+    private val channelController: GameChannelController,
     private val vertx: Vertx,
     private val verticleLogger: VerticleLogger
 ) {
@@ -31,6 +33,11 @@ class GameInitializer @Inject constructor(
         )
 
         verticleLogger.logInfo("Initializing game with title ${GAME_TITLE}")
+
+        // Create the default channel before initializing rooms
+        val defaultChannelId = channelController.createChannel()
+        channelController.setDefaultChannel(defaultChannelId)
+        verticleLogger.logInfo("Created default channel: $defaultChannelId")
 
         var startupOptions = JsonObject()
             .put("turnPhase", TurnPhase.ACT)

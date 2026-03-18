@@ -13,9 +13,23 @@ class Exit : Entity(), Serializable {
     }
 
     /**
+     * Direction label, e.g. "north", "south".
+     */
+    @State
+    @Mutable
+    var direction: String = ""
+
+    /**
      * Minare Room entity _id of the destination room.
      */
     @State
     @Mutable
     var destination: String = ""
+
+    /**
+     * Human-readable description of the exit.
+     */
+    @State
+    @Mutable
+    var description: String = ""
 }

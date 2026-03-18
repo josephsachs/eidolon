@@ -67,6 +67,7 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
                 entities = self.factory.pending_sync_entities[:]
                 self.factory.pending_sync_entities.clear()
                 _sync_rooms(entities, self)
+                _sync_exits(entities, self)
 
             elif msg_type == 'heartbeat':
                 # Respond to heartbeat
@@ -278,6 +279,97 @@ def _sync_rooms(minare_entities, protocol):
             )
             room.db.minare_id = None
             room.db.minare_archived = True
+
+
+def _sync_exits(minare_entities, protocol):
+    """
+    Reconcile Evennia Exit objects with Minare Exit entities.
+    Creates Evennia Exits linking source rooms to destination rooms
+    based on the Room.exits state and Exit entity data from Minare.
+    """
+    from typeclasses.exits import Exit as EvenniaExit
+    from typeclasses.rooms import Room as EvenniaRoom
+    from evennia import create_object
+
+    # Build lookups
+    minare_exits = {
+        e['_id']: e
+        for e in minare_entities
+        if e.get('type') == 'Exit'
+    }
+    minare_rooms = {
+        e['_id']: e
+        for e in minare_entities
+        if e.get('type') == 'Room'
+    }
+
+    # Map minare_id -> Evennia Room
+    evennia_rooms_by_minare_id = {}
+    for room in EvenniaRoom.objects.all():
+        mid = room.db.minare_id
+        if mid:
+            evennia_rooms_by_minare_id[mid] = room
+
+    # Map minare_id -> Evennia Exit (existing)
+    evennia_exits_by_minare_id = {}
+    for exit_obj in EvenniaExit.objects.all():
+        mid = exit_obj.db.minare_id
+        if mid:
+            evennia_exits_by_minare_id[mid] = exit_obj
+
+    # For each Room, look at its exits state to find source->exit mappings
+    for room_minare_id, room_entity in minare_rooms.items():
+        source_evennia_room = evennia_rooms_by_minare_id.get(room_minare_id)
+        if not source_evennia_room:
+            continue
+
+        exits_map = room_entity.get('state', {}).get('exits', {})
+        for direction, exit_minare_id in exits_map.items():
+            exit_entity = minare_exits.get(exit_minare_id)
+            if not exit_entity:
+                continue
+
+            exit_state = exit_entity.get('state', {})
+            dest_room_minare_id = exit_state.get('destination', '')
+            dest_evennia_room = evennia_rooms_by_minare_id.get(dest_room_minare_id)
+            if not dest_evennia_room:
+                logger.log_warn(
+                    f"Minare sync: Exit '{direction}' destination room {dest_room_minare_id} "
+                    f"not found in Evennia, skipping"
+                )
+                continue
+
+            if exit_minare_id not in evennia_exits_by_minare_id:
+                # Create new Evennia Exit
+                new_exit = create_object(
+                    EvenniaExit,
+                    key=direction,
+                    location=source_evennia_room,
+                    destination=dest_evennia_room,
+                )
+                new_exit.db.minare_id = exit_minare_id
+                new_exit.db.desc = exit_state.get('description', '')
+                logger.log_info(
+                    f"Minare sync: Created Exit '{direction}' in '{source_evennia_room.key}' "
+                    f"-> '{dest_evennia_room.key}'"
+                )
+            else:
+                # Update existing exit if needed
+                existing_exit = evennia_exits_by_minare_id[exit_minare_id]
+                desc = exit_state.get('description', '')
+                if existing_exit.db.desc != desc:
+                    existing_exit.db.desc = desc
+                    logger.log_info(f"Minare sync: Updated Exit '{direction}' description")
+
+    # Archive exits whose Minare entity no longer exists
+    for minare_id, exit_obj in evennia_exits_by_minare_id.items():
+        if minare_id not in minare_exits:
+            logger.log_info(
+                f"Minare sync: Archiving Exit '{exit_obj.key}' "
+                f"(minare_id={minare_id} not found in Minare)"
+            )
+            exit_obj.db.minare_id = None
+            exit_obj.db.minare_archived = True
 
 
 class MinareClient:
