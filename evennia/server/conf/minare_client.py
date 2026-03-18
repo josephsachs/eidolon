@@ -202,7 +202,7 @@ class MinareUpSocketFactory(ReconnectingClientFactory, WebSocketClientFactory):
     def connect_downsocket(self):
         """Initiate DownSocket connection after UpSocket is established."""
         if self.downsocket_factory:
-            downsocket_url = f"ws://{MINARE_HOST}:{MINARE_DOWNSOCKET_PORT}"
+            downsocket_url = f"ws://{MINARE_HOST}:{MINARE_DOWNSOCKET_PORT}/update"
             self.downsocket_factory.connection_id = self.connection_id
             reactor.connectTCP(MINARE_HOST, MINARE_DOWNSOCKET_PORT, self.downsocket_factory)
             logger.log_info(f"Minare: Connecting DownSocket to {downsocket_url}")
@@ -388,7 +388,7 @@ class MinareClient:
 
         # Create factories
         upsocket_url = f"ws://{MINARE_HOST}:{MINARE_UPSOCKET_PORT}/command"
-        downsocket_url = f"ws://{MINARE_HOST}:{MINARE_DOWNSOCKET_PORT}"
+        downsocket_url = f"ws://{MINARE_HOST}:{MINARE_DOWNSOCKET_PORT}/update"
 
         self.upsocket_factory = MinareUpSocketFactory(upsocket_url)
         self.downsocket_factory = MinareDownSocketFactory(downsocket_url)

@@ -1,0 +1,16 @@
+# Base image with Evennia and all dependencies installed.
+# Rebuild only when init scripts or Evennia version changes:
+#   docker build -f Dockerfile.base -t eidolon-evennia-base .
+FROM evennia/evennia:latest
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apk add build-base
+
+RUN chmod 775 /usr/src/game/init /usr/src/game/init/*.sh
+RUN bash /usr/src/game/init/install_python3.sh
+RUN bash /usr/src/game/init/install_pip.sh
+RUN bash /usr/src/game/init/install_openssl.sh
+RUN bash /usr/src/game/init/install_evennia.sh
+
+RUN mkdir -p /usr/src/game/server/logs && chmod 777 /usr/src/game/server/logs

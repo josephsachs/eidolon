@@ -84,7 +84,7 @@ services:
       app-coordinator:
         condition: service_healthy
     volumes:
-      - ./scripts/infra:/scripts:ro
+      - ./scripts:/scripts:ro
     environment:
       # Coordinator connection
       - COORDINATOR_HOST=app-coordinator
@@ -98,7 +98,7 @@ services:
       - STARTUP_DELAY=0
       - RETRY_INTERVAL=2
       - MAX_RETRIES=100
-    entrypoint: ["/scripts/infra-entrypoint-dynamic.sh"]
+    entrypoint: ["/scripts/infra-entrypoint.sh"]
 
   # Minare Application - Worker Service (scalable)
   worker:
