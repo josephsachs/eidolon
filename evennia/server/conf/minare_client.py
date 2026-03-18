@@ -81,6 +81,15 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
             else:
                 logger.log_info(f"Minare UpSocket: Received message type: {msg_type}")
 
+            # Check for pending callbacks by request_id
+            request_id = msg.get('request_id')
+            if request_id and request_id in self.factory.pending_callbacks:
+                callback = self.factory.pending_callbacks.pop(request_id)
+                try:
+                    callback(msg)
+                except Exception as cb_err:
+                    logger.log_err(f"Minare UpSocket: Callback error for {request_id}: {cb_err}")
+
         except Exception as e:
             logger.log_err(f"Minare UpSocket: Error processing message: {e}")
 
@@ -190,6 +199,7 @@ class MinareUpSocketFactory(ReconnectingClientFactory, WebSocketClientFactory):
         self.downsocket_factory = None
         self.active_protocol = None  # Track the active protocol instance
         self.pending_sync_entities = []  # Accumulated during initial sync
+        self.pending_callbacks = {}  # request_id -> callback for async responses
 
     def clientConnectionFailed(self, connector, reason):
         logger.log_warn(f"Minare UpSocket: Connection failed - {reason.getErrorMessage()}")
@@ -432,6 +442,24 @@ class MinareClient:
             self.upsocket_factory.active_protocol.send_message(message_dict)
         else:
             logger.log_warn("Minare Client: Not connected, cannot send message")
+
+    def send_with_callback(self, message_dict, callback):
+        """
+        Send a message to Minare and register a callback for the response.
+        The callback will be called with the response message dict when
+        a response with the matching request_id arrives.
+
+        Args:
+            message_dict: Dictionary containing the message to send.
+                          A request_id will be generated if not present.
+            callback: Function to call with the response message dict.
+        """
+        if 'request_id' not in message_dict:
+            message_dict['request_id'] = f"evennia-{int(time.time() * 1000)}"
+        request_id = message_dict['request_id']
+        if self.upsocket_factory:
+            self.upsocket_factory.pending_callbacks[request_id] = callback
+        self.send_message(message_dict)
 
 
 # Global client instance

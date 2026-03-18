@@ -23,15 +23,15 @@ class EvenniaCharacter: Entity(), Agent {
 
     @State
     @Mutable
-    var evenniaName: Int = 0
+    var evenniaName: String = ""
 
     @State
     @Mutable
-    var description: Int = 0
+    var description: String = ""
 
     @State
     @Mutable
-    var shortDescription: Int = 0
+    var shortDescription: String = ""
 
     @Property
     var connectionId: String = ""

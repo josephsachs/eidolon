@@ -4,7 +4,6 @@ WORKER_COUNT=${1:-1}
 shift  # Remove the first argument so getopts can process flags
 
 cd docker
-docker compose stop
 
 START_MINARE=false
 START_EVENNIA=false
@@ -38,6 +37,7 @@ build_minare() {
   docker compose build --no-cache haproxy app-coordinator infra worker mongodb redis kafka kafka-ui
 }
 start_minare() {
+  docker compose stop haproxy app-coordinator infra worker mongodb redis kafka kafka-ui
   if $BUILD; then
     build_minare
   fi
@@ -59,6 +59,7 @@ build_evennia() {
   docker compose build evennia
 }
 start_evennia() {
+  docker compose stop evennia
   if $BUILD; then
     build_evennia
   fi

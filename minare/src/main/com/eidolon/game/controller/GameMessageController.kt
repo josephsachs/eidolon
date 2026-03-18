@@ -1,5 +1,7 @@
 package com.eidolon.game.controller
 
+import com.eidolon.game.commands.AccountRegister
+import com.eidolon.game.commands.CharacterCreate
 import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -20,6 +22,8 @@ class GameMessageController @Inject constructor(
     private val vertx: Vertx,
     private val evenniaCommandHandler: EvenniaCommandHandler,
     private val channelController: GameChannelController,
+    private val accountRegister: AccountRegister,
+    private val characterCreate: CharacterCreate,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -47,6 +51,20 @@ class GameMessageController @Inject constructor(
                 )
 
                 dispatch(syncCommand)
+            }
+
+            message.getString("type") == "register_account" -> {
+                val requestId = message.getString("request_id")
+                val result = accountRegister.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "create_character" -> {
+                val requestId = message.getString("request_id")
+                val result = characterCreate.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
             }
 
             message.getString("type") == "command" -> {
