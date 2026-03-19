@@ -49,8 +49,12 @@ class CharacterCreate @Inject constructor(
         if (skillsJson != null) {
             character.skills = skillsJson.map { (name, value) ->
                 val arr = value as? io.vertx.core.json.JsonArray
-                name to Pair(arr?.getDouble(0) ?: 0.0, arr?.getDouble(1) ?: 0.0)
-            }.toMap()
+                com.eidolon.game.models.Skill(
+                    name = name,
+                    level = arr?.getDouble(0) ?: 0.0,
+                    status = arr?.getDouble(1) ?: 0.0
+                )
+            }
         }
         entityController.create(character)
 

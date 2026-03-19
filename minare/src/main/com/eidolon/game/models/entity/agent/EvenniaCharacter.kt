@@ -1,5 +1,6 @@
 package eidolon.game.models.entity.agent
 
+import com.eidolon.game.models.Skill
 import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.evennia.EvenniaShadow
 import com.eidolon.game.evennia.Viewable
@@ -39,12 +40,9 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Mutable
     var shortDescription: String = ""
 
-    /**
-     * Skills map: skill name → (current, potential).
-     */
     @State
     @Mutable
-    var skills: Map<String, Pair<Double, Double>> = emptyMap()
+    var skills: List<Skill> = emptyList()
 
     /**
      * The Room entity _id the character is currently in.
@@ -61,14 +59,6 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     // --- Viewable interface ---
 
-    private fun skillsToJson(): JsonObject {
-        val obj = JsonObject()
-        skills.forEach { (name, pair) ->
-            obj.put(name, JsonObject().put("current", pair.first).put("potential", pair.second))
-        }
-        return obj
-    }
-
     override fun project(viewName: String): JsonObject? = when (viewName) {
         "default" -> JsonObject()
             .put("evenniaName", evenniaName)
@@ -76,6 +66,14 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("skills", skillsToJson())
         "skills" -> skillsToJson()
         else -> null
+    }
+
+    private fun skillsToJson(): JsonObject {
+        val obj = JsonObject()
+        skills.forEach { skill ->
+            obj.put(skill.name, JsonObject().put("level", skill.level).put("status", skill.status))
+        }
+        return obj
     }
 
     // --- EvenniaShadow interface ---
