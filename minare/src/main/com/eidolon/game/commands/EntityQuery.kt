@@ -37,6 +37,8 @@ class EntityQuery @Inject constructor(
         val view = viewable.project(viewName)
             ?: return error("Unknown view '$viewName' for entity type ${entity.type}")
 
+        log.info("EntityQuery: entity={} view={} result={}", minareId, viewName, view)
+
         return JsonObject()
             .put("status", "success")
             .put("minare_id", minareId)
