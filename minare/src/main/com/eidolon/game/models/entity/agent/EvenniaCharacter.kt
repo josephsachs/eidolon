@@ -1,5 +1,6 @@
 package eidolon.game.models.entity.agent
 
+import com.eidolon.game.models.Skill
 import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.evennia.EvenniaShadow
 import com.eidolon.game.evennia.Viewable
@@ -44,7 +45,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
      */
     @State
     @Mutable
-    var skills: Map<String, Pair<Double, Double>> = emptyMap()
+    var skills: Map<String, Skill> = emptyMap()
 
     /**
      * The Room entity _id the character is currently in.
@@ -63,8 +64,8 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     private fun skillsToJson(): JsonObject {
         val obj = JsonObject()
-        skills.forEach { (name, pair) ->
-            obj.put(name, JsonObject().put("current", pair.first).put("potential", pair.second))
+        skills.forEach { (name, skill) ->
+            obj.put(name, JsonObject().put("current", skill.current).put("potential", skill.potential))
         }
         return obj
     }
