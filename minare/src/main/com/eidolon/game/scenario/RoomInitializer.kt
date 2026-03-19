@@ -92,7 +92,7 @@ class RoomInitializer @Inject constructor(
             val evenniaId = body.getString("evennia_id", "")
             if (scenarioId.isNotEmpty() && evenniaId.isNotEmpty()) {
                 scenarioIdToEvenniaId[scenarioId] = evenniaId
-                log.info("Room confirmed: scenarioId={}, evenniaId={}", scenarioId, evenniaId)
+                log.info("Room confirmed: scenarioId=$scenarioId, evenniaId=$evenniaId")
             }
             if (pendingCount.decrementAndGet() == 0) {
                 latch.complete(Unit)
