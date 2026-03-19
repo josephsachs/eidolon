@@ -60,7 +60,7 @@ class EvenniaCharacter: Entity(), Agent {
      * Stub — always returns true until item entities exist.
      */
     @Assert
-    fun canGet(stepContext: JsonObject?): Boolean {
+    fun canGet(): Boolean {
         return true
     }
 }

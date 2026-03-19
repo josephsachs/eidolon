@@ -83,7 +83,6 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
 
             # Check for pending callbacks by request_id
             request_id = msg.get('request_id')
-            logger.log_info(f"Minare UpSocket: Callback check: request_id={request_id}, pending={list(self.factory.pending_callbacks.keys())}")
             if request_id and request_id in self.factory.pending_callbacks:
                 callback = self.factory.pending_callbacks.pop(request_id)
                 try:

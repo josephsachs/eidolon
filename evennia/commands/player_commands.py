@@ -221,16 +221,13 @@ class CmdGet(Command):
             caller.msg("You can't do that right now.")
             return
 
-        def _on_ack(response):
-            if response.get("status") == "error":
-                caller.msg(response.get("error", "You can't get that."))
-
-        _get_client().send_with_callback({
+        # Fire-and-forget: results arrive via downsocket entity updates
+        _get_client().send_message({
             "type": "command_get",
             "character_id": char_id,
             "room_id": room_id,
             "target": target,
-        }, _on_ack)
+        })
 
 
 class CmdDrop(Command):
@@ -257,16 +254,13 @@ class CmdDrop(Command):
             caller.msg("You can't do that right now.")
             return
 
-        def _on_ack(response):
-            if response.get("status") == "error":
-                caller.msg(response.get("error", "You can't drop that."))
-
-        _get_client().send_with_callback({
+        # Fire-and-forget: results arrive via downsocket entity updates
+        _get_client().send_message({
             "type": "command_drop",
             "character_id": char_id,
             "room_id": room_id,
             "target": target,
-        }, _on_ack)
+        })
 
 
 class CmdGive(Command):
@@ -313,14 +307,11 @@ class CmdGive(Command):
             caller.msg("You can't do that right now.")
             return
 
-        def _on_ack(response):
-            if response.get("status") == "error":
-                caller.msg(response.get("error", "You can't give that."))
-
-        _get_client().send_with_callback({
+        # Fire-and-forget: results arrive via downsocket entity updates
+        _get_client().send_message({
             "type": "command_give",
             "character_id": char_id,
             "room_id": room_id,
             "target": self.item,
             "recipient": self.recipient,
-        }, _on_ack)
+        })
