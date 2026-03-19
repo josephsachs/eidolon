@@ -4,6 +4,7 @@ import com.eidolon.game.commands.AccountRegister
 import com.eidolon.game.commands.CharacterCreate
 import com.eidolon.game.commands.EntityQuery
 import com.eidolon.game.commands.PlayerDisconnect
+import com.eidolon.game.commands.RegisterEvenniaObject
 import com.eidolon.game.commands.RoomPose
 import com.eidolon.game.commands.RoomSay
 import com.eidolon.game.evennia.CrossLinkRegistry
@@ -34,6 +35,7 @@ class GameMessageController @Inject constructor(
     private val roomSay: RoomSay,
     private val roomPose: RoomPose,
     private val playerDisconnect: PlayerDisconnect,
+    private val registerEvenniaObject: RegisterEvenniaObject,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -106,6 +108,34 @@ class GameMessageController @Inject constructor(
                     log.warn("register_cross_link: missing fields — entity_type={}, minare_id={}, evennia_id={}",
                         entityType, minareId, evenniaId)
                 }
+            }
+
+            message.getString("type") == "register_evennia_object" -> {
+                val requestId = message.getString("request_id")
+                val result = registerEvenniaObject.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "room_created" -> {
+                val evenniaId = message.getString("evennia_id", "")
+                val scenarioId = message.getString("scenario_id", "")
+                val roomKey = message.getString("room_key", "")
+                log.info("Room created in Evennia: key={}, evenniaId={}, scenarioId={}",
+                    roomKey, evenniaId, scenarioId)
+                vertx.eventBus().publish("eidolon.room.created", message)
+            }
+
+            message.getString("type") == "system_agent_ready" -> {
+                val agentEvenniaId = message.getString("agent_evennia_id", "")
+                val agentKey = message.getString("agent_key", "")
+                log.info("System agent ready in Evennia: key={}, evenniaId={}", agentKey, agentEvenniaId)
+                vertx.eventBus().publish(
+                    GameConnectionController.ADDRESS_EVENNIA_READY,
+                    JsonObject()
+                        .put("agent_evennia_id", agentEvenniaId)
+                        .put("agent_key", agentKey)
+                )
             }
 
             message.getString("type") == "command" -> {

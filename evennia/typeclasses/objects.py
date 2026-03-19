@@ -22,6 +22,38 @@ class ObjectParent:
 
     """
 
+    def at_object_creation(self):
+        """Auto-register with Minare on first creation."""
+        super().at_object_creation()
+        self._register_with_minare()
+
+    def _register_with_minare(self):
+        """Send register_evennia_object to Minare, creating an EvenniaObject entity."""
+        try:
+            from server.conf.minare_client import get_minare_client
+            client = get_minare_client()
+            if not client.upsocket_factory or not client.upsocket_factory.active_protocol:
+                return  # Not connected yet
+
+            location_id = str(self.location.id) if self.location else ""
+            typeclass_path = f"{self.__class__.__module__}.{self.__class__.__name__}"
+
+            client.send_with_callback({
+                "type": "register_evennia_object",
+                "evennia_id": str(self.id),
+                "typeclass_path": typeclass_path,
+                "key": self.key,
+                "location_evennia_id": location_id,
+            }, self._on_eo_registered)
+        except Exception:
+            pass
+
+    def _on_eo_registered(self, response):
+        """Store the EvenniaObject's Minare ID on this object."""
+        minare_id = response.get("minare_id", "")
+        if minare_id:
+            self.db.minare_eo_id = minare_id
+
 
 class Object(ObjectParent, DefaultObject):
     """
