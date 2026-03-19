@@ -125,6 +125,8 @@ class CmdSkills(Command):
             return
 
         def on_skills(response):
+            from evennia.utils import logger
+            logger.log_info(f"CmdSkills callback: {response}")
             if response.get('status') != 'success':
                 self.caller.msg(
                     f"|rCould not retrieve skills: {response.get('error', 'unknown')}|n"
