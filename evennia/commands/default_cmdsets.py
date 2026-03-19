@@ -16,10 +16,9 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 from evennia import default_cmds, CmdSet
 from commands.player_commands import (
-    CmdSay, CmdPose, CmdInventory, CmdGet, CmdDrop, CmdGive,
+    CmdSay, CmdPose,
     CmdNoHome, CmdNoAccess,
 )
-from commands.admin_commands import CmdMCreate
 
 
 class PlayerCharacterCmdSet(CmdSet):
@@ -34,13 +33,8 @@ class PlayerCharacterCmdSet(CmdSet):
     def at_cmdset_creation(self):
         self.add(CmdSay())
         self.add(CmdPose())
-        self.add(CmdInventory())
-        self.add(CmdGet())
-        self.add(CmdDrop())
-        self.add(CmdGive())
         self.add(CmdNoHome())
         self.add(CmdNoAccess())
-        self.add(CmdMCreate())
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):

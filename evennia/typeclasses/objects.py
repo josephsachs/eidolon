@@ -215,12 +215,3 @@ class Object(ObjectParent, DefaultObject):
     """
 
     pass
-
-
-class Item(ObjectParent, DefaultObject):
-    """
-    An item that can be picked up, dropped, and carried.
-    Synced from Minare Item entities.
-    """
-
-    pass

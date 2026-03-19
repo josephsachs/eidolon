@@ -5,7 +5,6 @@ import com.minare.core.entity.annotations.Mutable
 import com.minare.core.entity.annotations.Parent
 import com.minare.core.entity.annotations.State
 import com.minare.core.entity.models.Entity
-import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
@@ -38,10 +37,4 @@ class Room : Entity(), Serializable {
     @Mutable
     var roomMemoryId: String = ""
 
-    /**
-     * Item entity IDs present in this room.
-     */
-    @State
-    @Mutable
-    var contents: JsonArray = JsonArray()
 }

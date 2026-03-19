@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.minare.controller.EntityController
 import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
-import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.CoroutineScope
 
@@ -36,13 +35,6 @@ class EvenniaCharacter: Entity(), Agent {
     var shortDescription: String = ""
 
     /**
-     * Item entity IDs held by this character.
-     */
-    @State
-    @Mutable
-    var inventory: JsonArray = JsonArray()
-
-    /**
      * The Room entity _id the character is currently in.
      */
     @State
@@ -55,12 +47,4 @@ class EvenniaCharacter: Entity(), Agent {
     @Property
     var lastActivity: Long = 0L
 
-    /**
-     * Assert: can this character pick up the target item?
-     * Stub — always returns true until item entities exist.
-     */
-    @Assert
-    fun canGet(): Boolean {
-        return true
-    }
 }
