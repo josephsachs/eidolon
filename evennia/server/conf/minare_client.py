@@ -68,6 +68,7 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
                 self.factory.pending_sync_entities.clear()
                 _sync_rooms(entities, self)
                 _sync_exits(entities, self)
+                _ensure_account_vault()
                 agent = _ensure_system_agent()
                 # Notify Minare that the system agent is ready
                 if agent:
@@ -432,6 +433,33 @@ def _dispatch_agent_command(command):
         agent = agents[0]
 
     agent.handle_agent_command(command)
+
+
+def _ensure_account_vault():
+    """Ensure the Account Vault room exists, connected to Limbo."""
+    from typeclasses.rooms import Room
+    from typeclasses.exits import Exit as EvenniaExit
+    from evennia import create_object
+    from evennia.objects.models import ObjectDB
+
+    # Check if vault already exists
+    for room in Room.objects.all():
+        if room.db.account_vault:
+            logger.log_info(f"Minare sync: Found existing Account Vault '{room.key}' (id={room.id})")
+            return room
+
+    limbo = ObjectDB.objects.get(id=2)
+    vault = create_object(Room, key="Account Vault")
+    vault.db.desc = "Account objects are stored here."
+    vault.db.account_vault = True
+
+    # Limbo -> Vault exit
+    create_object(EvenniaExit, key="account vault", location=limbo, destination=vault)
+    # Vault -> Limbo exit
+    create_object(EvenniaExit, key="dim gray door", location=vault, destination=limbo)
+
+    logger.log_info(f"Minare sync: Created Account Vault (id={vault.id}) connected to Limbo")
+    return vault
 
 
 def _ensure_system_agent():

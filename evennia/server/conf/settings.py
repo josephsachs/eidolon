@@ -34,6 +34,9 @@ from evennia.settings_default import *
 # This is the name of your game. Make it catchy!
 SERVERNAME = "evennia"
 
+# Disable auto-character creation — we handle it via the account EvMenu
+AUTO_CREATE_CHARACTER_WITH_ACCOUNT = False
+
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
