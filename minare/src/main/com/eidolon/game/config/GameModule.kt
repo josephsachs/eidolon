@@ -12,6 +12,7 @@ import eidolon.game.controller.GameChannelController
 import com.eidolon.game.controller.GameConnectionController
 import com.eidolon.game.controller.GameMessageController
 import com.eidolon.game.controller.GameOperationController
+import com.eidolon.clients.ModelAPI
 import com.google.inject.AbstractModule
 import org.slf4j.LoggerFactory
 
@@ -44,6 +45,9 @@ class GameModule : AbstractModule() {
 
         bind(MessageController::class.java)
             .to(GameMessageController::class.java)
+            .`in`(Singleton::class.java)
+
+        bind(ModelAPI::class.java)
             .`in`(Singleton::class.java)
 
         log.info("GameModule configured with custom EntityFactory and controllers")
