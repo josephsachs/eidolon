@@ -1,7 +1,7 @@
 package com.eidolon.game.commands
 
 import com.eidolon.game.evennia.CrossLinkRegistry
-import com.eidolon.game.evennia.EntityViewRegistry
+import com.eidolon.game.evennia.Viewable
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory
 class EntityQuery @Inject constructor(
     private val entityController: EntityController,
     private val crossLinkRegistry: CrossLinkRegistry,
-    private val viewRegistry: EntityViewRegistry
 ) : EvenniaCommand {
     private val log = LoggerFactory.getLogger(EntityQuery::class.java)
 
@@ -32,7 +31,10 @@ class EntityQuery @Inject constructor(
         val entity = entities[minareId]
             ?: return error("Entity not found: $minareId")
 
-        val view = viewRegistry.project(entity, viewName)
+        val viewable = entity as? Viewable
+            ?: return error("Entity type ${entity.type} does not support views")
+
+        val view = viewable.project(viewName)
             ?: return error("Unknown view '$viewName' for entity type ${entity.type}")
 
         return JsonObject()

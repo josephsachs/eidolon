@@ -1,5 +1,6 @@
 package com.eidolon.game.models.entity
 
+import com.eidolon.game.evennia.Viewable
 import com.minare.core.entity.annotations.EntityType
 import com.minare.core.entity.annotations.Mutable
 import com.minare.core.entity.annotations.Parent
@@ -9,7 +10,7 @@ import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
 @EntityType("Room")
-class Room : Entity(), Serializable {
+class Room : Entity(), Serializable, Viewable {
     init {
         type = "Room"
     }
@@ -37,4 +38,10 @@ class Room : Entity(), Serializable {
     @Mutable
     var roomMemoryId: String = ""
 
+    override fun project(viewName: String): JsonObject? = when (viewName) {
+        "default" -> JsonObject()
+            .put("description", description)
+            .put("shortDescription", shortDescription)
+        else -> null
+    }
 }

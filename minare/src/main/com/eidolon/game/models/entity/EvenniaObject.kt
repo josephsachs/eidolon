@@ -1,9 +1,11 @@
 package com.eidolon.game.models.entity
 
+import com.eidolon.game.evennia.Viewable
 import com.minare.core.entity.annotations.EntityType
 import com.minare.core.entity.annotations.Mutable
 import com.minare.core.entity.annotations.State
 import com.minare.core.entity.models.Entity
+import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
 /**
@@ -13,7 +15,7 @@ import java.io.Serializable
  * this decouples Evennia representation from game logic.
  */
 @EntityType("EvenniaObject")
-class EvenniaObject : Entity(), Serializable {
+class EvenniaObject : Entity(), Serializable, Viewable {
     init {
         type = "EvenniaObject"
     }
@@ -33,4 +35,12 @@ class EvenniaObject : Entity(), Serializable {
     @State
     @Mutable
     var locationEvenniaId: String = ""
+
+    override fun project(viewName: String): JsonObject? = when (viewName) {
+        "default" -> JsonObject()
+            .put("evenniaId", evenniaId)
+            .put("key", key)
+            .put("typeclassPath", typeclassPath)
+        else -> null
+    }
 }
