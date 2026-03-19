@@ -105,6 +105,55 @@ class CmdSay(Command):
             })
 
 
+class CmdSkills(Command):
+    """
+    View your skills.
+
+    Usage:
+      skills
+
+    Shows your current skill levels.
+    """
+    key = "skills"
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        char_id, _ = _minare_ids(self.caller)
+        if not char_id:
+            self.caller.msg("No character data available.")
+            return
+
+        def on_skills(response):
+            if response.get('status') != 'success':
+                self.caller.msg(
+                    f"|rCould not retrieve skills: {response.get('error', 'unknown')}|n"
+                )
+                return
+
+            skills = response.get('data', {})
+            if not skills:
+                self.caller.msg("You have no skills yet.")
+                return
+
+            lines = ["\n|c===== Skills =====|n"]
+            for name, info in skills.items():
+                current = info.get('current', 0.0)
+                potential = info.get('potential', 0.0)
+                lines.append(f"  |w{name:<12}|n  {current:.2f}  |x(potential {potential:.2f})|n")
+            lines.append("|c==================|n")
+            self.caller.msg("\n".join(lines))
+
+        _get_client().send_with_callback(
+            {
+                'type': 'entity_query',
+                'minare_id': char_id,
+                'view': 'skills',
+            },
+            on_skills,
+        )
+
+
 class CmdPose(Command):
     """
     Perform an emote.

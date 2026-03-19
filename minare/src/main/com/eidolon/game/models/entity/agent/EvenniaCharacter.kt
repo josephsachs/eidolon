@@ -39,6 +39,13 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow {
     var shortDescription: String = ""
 
     /**
+     * Skills map: skill name → (current, potential).
+     */
+    @State
+    @Mutable
+    var skills: Map<String, Pair<Double, Double>> = emptyMap()
+
+    /**
      * The Room entity _id the character is currently in.
      */
     @State

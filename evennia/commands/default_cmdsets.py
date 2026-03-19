@@ -16,7 +16,7 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 from evennia import default_cmds, CmdSet
 from commands.player_commands import (
-    CmdSay, CmdPose,
+    CmdSay, CmdPose, CmdSkills,
     CmdNoHome, CmdNoAccess,
 )
 
@@ -33,6 +33,7 @@ class PlayerCharacterCmdSet(CmdSet):
     def at_cmdset_creation(self):
         self.add(CmdSay())
         self.add(CmdPose())
+        self.add(CmdSkills())
         self.add(CmdNoHome())
         self.add(CmdNoAccess())
 

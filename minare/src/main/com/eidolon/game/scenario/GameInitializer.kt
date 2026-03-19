@@ -71,9 +71,23 @@ class GameInitializer @Inject constructor(
 
         viewRegistry.register("EvenniaCharacter", "default") { entity ->
             val char = entity as EvenniaCharacter
+            val skillsObj = JsonObject()
+            char.skills.forEach { (name, pair) ->
+                skillsObj.put(name, JsonObject().put("current", pair.first).put("potential", pair.second))
+            }
             JsonObject()
                 .put("evenniaName", char.evenniaName)
                 .put("currentRoomId", char.currentRoomId)
+                .put("skills", skillsObj)
+        }
+
+        viewRegistry.register("EvenniaCharacter", "skills") { entity ->
+            val char = entity as EvenniaCharacter
+            val skillsObj = JsonObject()
+            char.skills.forEach { (name, pair) ->
+                skillsObj.put(name, JsonObject().put("current", pair.first).put("potential", pair.second))
+            }
+            skillsObj
         }
 
         viewRegistry.register("EvenniaObject", "default") { entity ->
