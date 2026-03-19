@@ -31,25 +31,25 @@ class GameTurnHandler @Inject constructor(
     )
 
     private val actAction: suspend (StateFlowContext) -> Unit = { context ->
-        log.info("TURN_LOOP: ACT Phase Start")
+        //log.info("TURN_LOOP: ACT Phase Start")
         setGameProperties(TurnPhase.ACT, true)
         //characterTurnHandler.handleTurn(TurnPhase.ACT)
     }
 
     private val executeAction: suspend (StateFlowContext) -> Unit = { context ->
-        log.info("TURN_LOOP: EXECUTE Phase Start")
+        //log.info("TURN_LOOP: EXECUTE Phase Start")
         setGameProperties(TurnPhase.EXECUTE, true)
         //characterTurnHandler.handleTurn(TurnPhase.EXECUTE)
     }
 
     private val resolveAction: suspend (StateFlowContext) -> Unit = { context ->
-        log.info("TURN_LOOP: RESOLVE Phase Start")
+        //log.info("TURN_LOOP: RESOLVE Phase Start")
         setGameProperties(TurnPhase.RESOLVE, true)
         //characterTurnHandler.handleTurn(TurnPhase.RESOLVE)
     }
 
     private val turnEndAction: suspend (StateFlowContext) -> Unit = { _ ->
-        log.info("TURN_LOOP: Turn End Start (Cleanup)")
+        //log.info("TURN_LOOP: Turn End Start (Cleanup)")
 
         setGameProperties(null, false)
         incrementGameTurn()
@@ -99,7 +99,7 @@ class GameTurnHandler @Inject constructor(
         }
         finally {
             val gameTest = getGame()
-            log.info("TURN_LOOP: New turn ${gameTest.currentTurn}")
+            //log.info("TURN_LOOP: New turn ${gameTest.currentTurn}")
         }
     }
 

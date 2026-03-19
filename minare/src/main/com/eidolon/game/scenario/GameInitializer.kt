@@ -6,11 +6,11 @@ import eidolon.game.models.entity.Game
 import com.eidolon.game.GameEntityFactory
 import com.eidolon.game.evennia.EntityViewRegistry
 import com.eidolon.game.models.entity.Room
-import com.eidolon.game.models.entity.agent.EvenniaCharacter
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
 import com.minare.core.utils.vertx.VerticleLogger
+import eidolon.game.models.entity.agent.EvenniaCharacter
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 
