@@ -45,6 +45,13 @@ class CharacterCreate @Inject constructor(
         character.evenniaName = characterData.getString("name", "")
         character.description = characterData.getString("description", "")
         character.shortDescription = characterData.getString("name", "")
+        val skillsJson = characterData.getJsonObject("skills")
+        if (skillsJson != null) {
+            character.skills = skillsJson.map { (name, value) ->
+                val arr = value as? io.vertx.core.json.JsonArray
+                name to Pair(arr?.getDouble(0) ?: 0.0, arr?.getDouble(1) ?: 0.0)
+            }.toMap()
+        }
         entityController.create(character)
 
         // Update account

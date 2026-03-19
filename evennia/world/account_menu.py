@@ -59,9 +59,7 @@ def menunode_create_name(caller, raw_string, **kwargs):
         if not hasattr(caller.ndb, '_create_data') or caller.ndb._create_data is None:
             caller.ndb._create_data = {}
         caller.ndb._create_data['name'] = name
-        # Call confirm node directly — EvMenu node returns must be (text, options),
-        # not (nodename, kwargs). Returning a node name gets displayed as text.
-        return menunode_create_confirm(caller, raw_string, session=session)
+        return menunode_create_skill(caller, raw_string, session=session)
 
     if kwargs.get("got_input") and not name:
         caller.msg("|rName cannot be empty.|n", session=session)
@@ -74,14 +72,54 @@ def menunode_create_name(caller, raw_string, **kwargs):
     return text, options
 
 
+SKILL_CHOICES = ["Explore", "Hide", "Smalltalk"]
+SKILL_INITIAL = (5.0, 0.0)
+
+
+def menunode_create_skill(caller, raw_string, **kwargs):
+    """Choose a starting skill."""
+    session = kwargs.get("session")
+
+    text = "\n|wChoose a Starting Skill|n\n\n"
+    text += "  Your chosen skill begins at |c5.00|n.\n\n"
+
+    options = []
+    for skill_name in SKILL_CHOICES:
+        options.append({
+            "desc": f"|w{skill_name}|n",
+            "goto": ("menunode_create_skill_set", {"session": session, "skill": skill_name}),
+        })
+    options.append({
+        "desc": "|wBack|n - Re-enter name",
+        "goto": ("menunode_create_name", {"session": session}),
+    })
+    return text, options
+
+
+def menunode_create_skill_set(caller, raw_string, **kwargs):
+    """Store chosen skill and advance to confirm."""
+    session = kwargs.get("session")
+    skill = kwargs.get("skill", "")
+
+    if not hasattr(caller.ndb, '_create_data') or caller.ndb._create_data is None:
+        caller.ndb._create_data = {}
+    caller.ndb._create_data['skills'] = {skill: list(SKILL_INITIAL)}
+
+    return menunode_create_confirm(caller, raw_string, session=session)
+
+
 def menunode_create_confirm(caller, raw_string, **kwargs):
     """Show summary and confirm character creation."""
     session = kwargs.get("session")
     create_data = caller.ndb._create_data or {}
     name = create_data.get('name', '???')
 
+    skills = create_data.get('skills', {})
+    skill_name = next(iter(skills), '???')
+
     text = f"\n|wConfirm Character Creation|n\n\n"
-    text += f"  Name: |c{name}|n\n\n"
+    text += f"  Name:  |c{name}|n\n"
+    text += f"  Skill: |c{skill_name}|n |w5.00|n\n\n"
     text += "Create this character?"
 
     options = [
