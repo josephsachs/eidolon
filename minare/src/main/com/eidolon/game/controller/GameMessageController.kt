@@ -93,10 +93,8 @@ class GameMessageController @Inject constructor(
             }
 
             message.getString("type") in listOf("command_get", "command_drop", "command_give") -> {
-                val requestId = message.getString("request_id")
-                val result = itemCommand.execute(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
+                val operationCommand = OperationCommand(message)
+                dispatch(operationCommand)
             }
 
             message.getString("type") == "player_disconnect" -> {
