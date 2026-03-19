@@ -37,6 +37,19 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdNoAccess())
 
 
+class AgentCharacterCmdSet(CmdSet):
+    """
+    Commands available to AgentCharacter — privileged set for Minare-driven actions.
+    """
+
+    key = "AgentCharacterCmdSet"
+    priority = 1
+
+    def at_cmdset_creation(self):
+        self.add(CmdSay())
+        self.add(CmdPose())
+
+
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
     The `CharacterCmdSet` contains general in-game commands like `look`,

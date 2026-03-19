@@ -2,9 +2,11 @@ package com.eidolon.game.controller
 
 import com.eidolon.game.commands.AccountRegister
 import com.eidolon.game.commands.CharacterCreate
+import com.eidolon.game.commands.EntityQuery
 import com.eidolon.game.commands.PlayerDisconnect
 import com.eidolon.game.commands.RoomPose
 import com.eidolon.game.commands.RoomSay
+import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -25,6 +27,8 @@ class GameMessageController @Inject constructor(
     private val vertx: Vertx,
     private val evenniaCommandHandler: EvenniaCommandHandler,
     private val channelController: GameChannelController,
+    private val crossLinkRegistry: CrossLinkRegistry,
+    private val entityQuery: EntityQuery,
     private val accountRegister: AccountRegister,
     private val characterCreate: CharacterCreate,
     private val roomSay: RoomSay,
@@ -83,6 +87,25 @@ class GameMessageController @Inject constructor(
 
             message.getString("type") == "player_disconnect" -> {
                 playerDisconnect.execute(message)
+            }
+
+            message.getString("type") == "entity_query" -> {
+                val requestId = message.getString("request_id")
+                val result = entityQuery.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "register_cross_link" -> {
+                val entityType = message.getString("entity_type", "")
+                val minareId = message.getString("minare_id", "")
+                val evenniaId = message.getString("evennia_id", "")
+                if (entityType.isNotEmpty() && minareId.isNotEmpty() && evenniaId.isNotEmpty()) {
+                    crossLinkRegistry.link(entityType, minareId, evenniaId)
+                } else {
+                    log.warn("register_cross_link: missing fields — entity_type={}, minare_id={}, evennia_id={}",
+                        entityType, minareId, evenniaId)
+                }
             }
 
             message.getString("type") == "command" -> {

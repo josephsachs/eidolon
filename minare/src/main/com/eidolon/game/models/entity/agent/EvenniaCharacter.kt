@@ -1,5 +1,7 @@
 package eidolon.game.models.entity.agent
 
+import com.eidolon.game.evennia.EvenniaCommUtils
+import com.eidolon.game.evennia.EvenniaShadow
 import com.google.inject.Inject
 import com.minare.controller.EntityController
 import com.minare.core.entity.annotations.*
@@ -8,11 +10,13 @@ import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.CoroutineScope
 
 @EntityType("EvenniaCharacter")
-class EvenniaCharacter: Entity(), Agent {
+class EvenniaCharacter: Entity(), Agent, EvenniaShadow {
     @Inject
     private lateinit var coroutineScope: CoroutineScope
     @Inject
     private lateinit var entityController: EntityController
+    @Inject
+    private lateinit var evenniaCommUtils: EvenniaCommUtils
 
     init {
         type = "EvenniaCharacter"
@@ -47,4 +51,26 @@ class EvenniaCharacter: Entity(), Agent {
     @Property
     var lastActivity: Long = 0L
 
+    // --- EvenniaShadow interface ---
+
+    override fun shadowEvenniaId(): String = evenniaId
+
+    override fun updateView(): JsonObject {
+        return JsonObject()
+            .put("evenniaName", evenniaName)
+            .put("currentRoomId", currentRoomId)
+    }
+
+    // --- Agent interface ---
+
+    override val agentMinareId: String
+        get() = _id ?: ""
+
+    override suspend fun say(roomMinareId: String, text: String) {
+        evenniaCommUtils.sayInRoom(roomMinareId, _id!!, text)
+    }
+
+    override suspend fun emote(roomMinareId: String, text: String) {
+        evenniaCommUtils.emoteInRoom(roomMinareId, _id!!, text)
+    }
 }

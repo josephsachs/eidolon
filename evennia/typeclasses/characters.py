@@ -9,6 +9,7 @@ creation commands.
 """
 
 from evennia.objects.objects import DefaultCharacter
+from evennia.utils import logger
 
 from .objects import ObjectParent
 
@@ -64,7 +65,49 @@ class AgentCharacter(Character):
     operational domains or be sharded by region.
     """
 
-    pass
+    def at_object_creation(self):
+        super().at_object_creation()
+        from commands.default_cmdsets import AgentCharacterCmdSet
+        self.cmdset.add(AgentCharacterCmdSet, persistent=True)
+
+    def handle_agent_command(self, command):
+        """Dispatch a structured command from Minare."""
+        action = command.get('action', '')
+
+        if action == 'say':
+            self._execute_in_room(
+                command.get('room_evennia_id'),
+                f'say {command.get("text", "")}'
+            )
+        elif action == 'emote':
+            self._execute_in_room(
+                command.get('room_evennia_id'),
+                f'pose {command.get("text", "")}'
+            )
+        elif action == 'whisper':
+            # future
+            logger.log_info(f"AgentCharacter: whisper not yet implemented")
+        else:
+            logger.log_warn(f"AgentCharacter: Unknown action '{action}'")
+
+    def _execute_in_room(self, room_evennia_id, cmd_string):
+        """Temporarily move to a room, execute command, return to previous location."""
+        from typeclasses.rooms import Room
+
+        if not room_evennia_id:
+            logger.log_err("AgentCharacter._execute_in_room: missing room_evennia_id")
+            return
+
+        try:
+            room = Room.objects.get(id=int(room_evennia_id))
+        except (Room.DoesNotExist, ValueError):
+            logger.log_err(f"AgentCharacter: Room not found: {room_evennia_id}")
+            return
+
+        old_location = self.location
+        self.location = room
+        self.execute_cmd(cmd_string)
+        self.location = old_location
 
 
 class NonplayerCharacter(Character):

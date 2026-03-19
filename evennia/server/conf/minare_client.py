@@ -68,6 +68,7 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
                 self.factory.pending_sync_entities.clear()
                 _sync_rooms(entities, self)
                 _sync_exits(entities, self)
+                _ensure_system_agent()
 
             elif msg_type == 'heartbeat':
                 # Respond to heartbeat
@@ -165,6 +166,11 @@ class MinareDownSocketProtocol(WebSocketClientProtocol):
                 # Broadcast to all connected players
                 broadcast_msg = f"[Minare] Response: {original}"
                 evennia.SESSION_HANDLER.announce_all(broadcast_msg)
+
+            elif msg_type == 'agent_command':
+                command = msg.get('command', {})
+                logger.log_info(f"Minare DownSocket: Received agent_command: {command.get('action')}")
+                _dispatch_agent_command(command)
 
             elif msg_type == 'heartbeat':
                 # Respond to heartbeat
@@ -290,6 +296,19 @@ def _sync_rooms(minare_entities, protocol):
             room.db.minare_id = None
             room.db.minare_archived = True
 
+    # Register cross-links for all synced rooms
+    client = get_minare_client()
+    # Rebuild lookup to include newly created rooms
+    for room in EvenniaRoom.objects.all():
+        mid = room.db.minare_id
+        if mid and mid in minare_rooms:
+            client.send_message({
+                "type": "register_cross_link",
+                "entity_type": "Room",
+                "minare_id": mid,
+                "evennia_id": str(room.id),
+            })
+
 
 def _sync_exits(minare_entities, protocol):
     """
@@ -381,6 +400,62 @@ def _sync_exits(minare_entities, protocol):
             exit_obj.db.minare_id = None
             exit_obj.db.minare_archived = True
 
+    # Register cross-links for all synced exits
+    client = get_minare_client()
+    for exit_obj in EvenniaExit.objects.all():
+        mid = exit_obj.db.minare_id
+        if mid and mid in minare_exits:
+            client.send_message({
+                "type": "register_cross_link",
+                "entity_type": "Exit",
+                "minare_id": mid,
+                "evennia_id": str(exit_obj.id),
+            })
+
+
+def find_evennia_object_by_minare_id(typeclass, minare_id):
+    """Find an Evennia object by its minare_id attribute."""
+    for obj in typeclass.objects.all():
+        if obj.db.minare_id == minare_id:
+            return obj
+    return None
+
+
+def _dispatch_agent_command(command):
+    """Route an agent_command to the appropriate AgentCharacter."""
+    from typeclasses.characters import AgentCharacter
+
+    agent_evennia_id = command.get('agent_evennia_id')
+    if not agent_evennia_id:
+        logger.log_err("agent_command missing agent_evennia_id")
+        return
+
+    try:
+        agent = AgentCharacter.objects.get(id=int(agent_evennia_id))
+    except (AgentCharacter.DoesNotExist, ValueError):
+        logger.log_err(f"AgentCharacter not found: evennia_id={agent_evennia_id}")
+        return
+
+    agent.handle_agent_command(command)
+
+
+def _ensure_system_agent():
+    """Ensure at least one AgentCharacter exists for Minare to control."""
+    from typeclasses.characters import AgentCharacter
+    from evennia import create_object
+    from evennia.objects.models import ObjectDB
+
+    agents = AgentCharacter.objects.all()
+    if agents.count() > 0:
+        agent = agents[0]
+        logger.log_info(f"Minare sync: Found existing AgentCharacter '{agent.key}' (id={agent.id})")
+        return agent
+
+    limbo = ObjectDB.objects.get(id=2)
+    agent = create_object(AgentCharacter, key="SystemMinareAgent", location=limbo)
+    logger.log_info(f"Minare sync: Created AgentCharacter '{agent.key}' (id={agent.id}) in Limbo")
+    return agent
+
 
 class MinareClient:
     """
@@ -442,6 +517,21 @@ class MinareClient:
             self.upsocket_factory.active_protocol.send_message(message_dict)
         else:
             logger.log_warn("Minare Client: Not connected, cannot send message")
+
+    def query_entity(self, minare_id, view="default", callback=None):
+        """
+        Query a Minare entity's state via the entity_query mechanism.
+
+        Args:
+            minare_id: The Minare entity ID to query.
+            view: Named view projection (default: "default").
+            callback: Optional callback for the response.
+        """
+        msg = {"type": "entity_query", "minare_id": minare_id, "view": view}
+        if callback:
+            self.send_with_callback(msg, callback)
+        else:
+            self.send_message(msg)
 
     def send_with_callback(self, message_dict, callback):
         """
