@@ -138,9 +138,9 @@ class CmdSkills(Command):
 
             lines = ["\n|c===== Skills =====|n"]
             for name, info in skills.items():
-                current = info.get('current', 0.0)
-                potential = info.get('potential', 0.0)
-                lines.append(f"  |w{name:<12}|n  {current:.2f}  |x(potential {potential:.2f})|n")
+                level = info.get('level', 0.0)
+                status = info.get('status', 0.0)
+                lines.append(f"  |w{name:<12}|n  {level:.2f}  |x(status {status:.2f})|n")
             lines.append("|c==================|n")
             self.caller.msg("\n".join(lines))
 
