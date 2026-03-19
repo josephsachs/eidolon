@@ -193,12 +193,12 @@ def _puppet_character(caller, character_minare_id, character_name, session):
     Find or create the Evennia Character for the given Minare ID,
     then puppet it.
     """
-    from typeclasses.characters import Character as EvenniaCharacter
+    from typeclasses.characters import PlayerCharacter
     from evennia import create_object
 
     # Search for existing Evennia character with this minare_id
     character = None
-    for char in EvenniaCharacter.objects.all():
+    for char in PlayerCharacter.objects.all():
         if char.db.minare_id == character_minare_id:
             character = char
             break
@@ -217,7 +217,7 @@ def _puppet_character(caller, character_minare_id, character_name, session):
                 break
 
         character = create_object(
-            EvenniaCharacter,
+            PlayerCharacter,
             key=character_name,
             location=start_room,
             home=start_room,

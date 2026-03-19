@@ -2,8 +2,10 @@ package com.eidolon.game.models.entity
 
 import com.minare.core.entity.annotations.EntityType
 import com.minare.core.entity.annotations.Mutable
+import com.minare.core.entity.annotations.Parent
 import com.minare.core.entity.annotations.State
 import com.minare.core.entity.models.Entity
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
@@ -27,4 +29,19 @@ class Room : Entity(), Serializable {
     @State
     @Mutable
     var exits: JsonObject = JsonObject()
+
+    /**
+     * RoomMemory entity _id — child that stores echoes and room history.
+     */
+    @Parent
+    @State
+    @Mutable
+    var roomMemoryId: String = ""
+
+    /**
+     * Item entity IDs present in this room.
+     */
+    @State
+    @Mutable
+    var contents: JsonArray = JsonArray()
 }

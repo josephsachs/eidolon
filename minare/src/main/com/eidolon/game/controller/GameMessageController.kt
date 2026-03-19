@@ -2,6 +2,11 @@ package com.eidolon.game.controller
 
 import com.eidolon.game.commands.AccountRegister
 import com.eidolon.game.commands.CharacterCreate
+import com.eidolon.game.commands.InventoryQuery
+import com.eidolon.game.commands.ItemCommand
+import com.eidolon.game.commands.PlayerDisconnect
+import com.eidolon.game.commands.RoomPose
+import com.eidolon.game.commands.RoomSay
 import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -24,6 +29,11 @@ class GameMessageController @Inject constructor(
     private val channelController: GameChannelController,
     private val accountRegister: AccountRegister,
     private val characterCreate: CharacterCreate,
+    private val roomSay: RoomSay,
+    private val roomPose: RoomPose,
+    private val inventoryQuery: InventoryQuery,
+    private val itemCommand: ItemCommand,
+    private val playerDisconnect: PlayerDisconnect,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -65,6 +75,32 @@ class GameMessageController @Inject constructor(
                 val result = characterCreate.execute(message)
                 result.put("request_id", requestId)
                 sendToClient(connection, result)
+            }
+
+            message.getString("type") == "room_say" -> {
+                roomSay.execute(message)
+            }
+
+            message.getString("type") == "room_pose" -> {
+                roomPose.execute(message)
+            }
+
+            message.getString("type") == "inventory_query" -> {
+                val requestId = message.getString("request_id")
+                val result = inventoryQuery.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") in listOf("command_get", "command_drop", "command_give") -> {
+                val requestId = message.getString("request_id")
+                val result = itemCommand.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "player_disconnect" -> {
+                playerDisconnect.execute(message)
             }
 
             message.getString("type") == "command" -> {

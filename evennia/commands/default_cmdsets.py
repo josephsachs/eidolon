@@ -14,7 +14,31 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 """
 
-from evennia import default_cmds
+from evennia import default_cmds, CmdSet
+from commands.player_commands import (
+    CmdSay, CmdPose, CmdInventory, CmdGet, CmdDrop, CmdGive,
+    CmdNoHome, CmdNoAccess,
+)
+
+
+class PlayerCharacterCmdSet(CmdSet):
+    """
+    Commands specific to PlayerCharacter. Overrides defaults for
+    commands that need Minare integration or disabling.
+    """
+
+    key = "PlayerCharacterCmdSet"
+    priority = 1
+
+    def at_cmdset_creation(self):
+        self.add(CmdSay())
+        self.add(CmdPose())
+        self.add(CmdInventory())
+        self.add(CmdGet())
+        self.add(CmdDrop())
+        self.add(CmdGive())
+        self.add(CmdNoHome())
+        self.add(CmdNoAccess())
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):

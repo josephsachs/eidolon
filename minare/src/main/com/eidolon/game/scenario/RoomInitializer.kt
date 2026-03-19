@@ -3,6 +3,7 @@ package com.eidolon.game.scenario
 import eidolon.game.controller.GameChannelController
 import com.eidolon.game.models.entity.Exit
 import com.eidolon.game.models.entity.Room
+import com.eidolon.game.models.entity.RoomMemory
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
@@ -27,16 +28,25 @@ class RoomInitializer @Inject constructor(
             ?: throw IllegalStateException("Default channel must be created before RoomInitializer runs")
         val roomData = readRoomData()
 
-        // Pass 1: create Room entities, build lookup by JSON id
+        // Pass 1: create Room entities + RoomMemory children, build lookup by JSON id
         val roomById = mutableMapOf<String, Room>()
+        val allMemories = mutableListOf<RoomMemory>()
         for (json in roomData) {
             val id = json.getString("id")
             val room = entityFactory.createEntity(Room::class.java) as Room
             room.shortDescription = json.getString("shortDescription", "")
             room.description = json.getString("description", "")
             entityController.create(room)
+
+            // Create RoomMemory child and link
+            val memory = entityFactory.createEntity(RoomMemory::class.java) as RoomMemory
+            memory.roomId = room._id!!
+            entityController.create(memory)
+            entityController.saveState(room._id!!, JsonObject().put("roomMemoryId", memory._id))
+            allMemories.add(memory)
+
             roomById[id] = room
-            log.info("Created Room '${room.shortDescription}' (id=${room._id})")
+            log.info("Created Room '${room.shortDescription}' (id=${room._id}, memory=${memory._id})")
         }
 
         // Pass 2: create Exit entities and wire Room.exits
@@ -68,7 +78,8 @@ class RoomInitializer @Inject constructor(
 
         gameChannelController.addEntitiesToChannel(roomById.values.toList(), defaultChannelId)
         gameChannelController.addEntitiesToChannel(allExits, defaultChannelId)
-        log.info("RoomInitializer: created ${roomById.size} rooms and ${allExits.size} exits")
+        gameChannelController.addEntitiesToChannel(allMemories, defaultChannelId)
+        log.info("RoomInitializer: created ${roomById.size} rooms, ${allExits.size} exits, ${allMemories.size} room memories")
     }
 
     private suspend fun readRoomData(): List<JsonObject> {
