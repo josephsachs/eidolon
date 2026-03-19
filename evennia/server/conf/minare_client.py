@@ -68,7 +68,14 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
                 self.factory.pending_sync_entities.clear()
                 _sync_rooms(entities, self)
                 _sync_exits(entities, self)
-                _ensure_system_agent()
+                agent = _ensure_system_agent()
+                # Notify Minare that the system agent is ready
+                if agent:
+                    self.factory.active_protocol.send_message({
+                        "type": "system_agent_ready",
+                        "agent_evennia_id": str(agent.id),
+                        "agent_key": agent.key,
+                    })
 
             elif msg_type == 'heartbeat':
                 # Respond to heartbeat
@@ -248,18 +255,21 @@ class MinareDownSocketFactory(ReconnectingClientFactory, WebSocketClientFactory)
 def _sync_rooms(minare_entities, protocol):
     """
     Reconcile Evennia Room objects with Minare Room entities.
-    Minare is the source of truth: create Evennia Rooms for new Minare rooms,
-    update descriptions for changed rooms, and archive Evennia Rooms whose
-    Minare entity no longer exists.
+    Evennia is authoritative for room descriptions and object graph.
+    Minare Room entities are lightweight references — sync only establishes
+    cross-links, does NOT overwrite Evennia descriptions.
     """
     from typeclasses.rooms import Room as EvenniaRoom
-    from evennia import create_object
 
     minare_rooms = {
         e['_id']: e
         for e in minare_entities
         if e.get('type') == 'Room'
     }
+
+    if not minare_rooms:
+        logger.log_info("Minare sync: No Room entities in sync data (rooms created via agent commands)")
+        return
 
     # Build lookup: minare_id attribute -> Evennia Room
     evennia_rooms_by_minare_id = {}
@@ -268,33 +278,13 @@ def _sync_rooms(minare_entities, protocol):
         if mid:
             evennia_rooms_by_minare_id[mid] = room
 
-    # Create Evennia Rooms for Minare rooms we don't have yet
+    # Log cross-link status — do NOT create or modify Evennia rooms
     for minare_id, entity in minare_rooms.items():
-        if minare_id not in evennia_rooms_by_minare_id:
-            state = entity.get('state', {})
-            new_room = create_object(
-                EvenniaRoom,
-                key=state.get('shortDescription', f"Room {minare_id[:8]}"),
-            )
-            new_room.db.minare_id = minare_id
-            new_room.db.desc = state.get('description', '')
-            logger.log_info(f"Minare sync: Created Evennia Room '{new_room.key}' (minare_id={minare_id})")
-        else:
-            # Room exists — update description if it has changed
+        if minare_id in evennia_rooms_by_minare_id:
             room = evennia_rooms_by_minare_id[minare_id]
-            state = entity.get('state', {})
-            if room.db.desc != state.get('description', ''):
-                room.db.desc = state.get('description', '')
-                logger.log_info(f"Minare sync: Updated Room '{room.key}' description")
-
-    # Archive Evennia Rooms whose Minare entity no longer exists
-    for minare_id, room in evennia_rooms_by_minare_id.items():
-        if minare_id not in minare_rooms:
-            logger.log_info(
-                f"Minare sync: Archiving Room '{room.key}' (minare_id={minare_id} not found in Minare)"
-            )
-            room.db.minare_id = None
-            room.db.minare_archived = True
+            logger.log_info(f"Minare sync: Room '{room.key}' cross-linked to minare_id={minare_id}")
+        else:
+            logger.log_info(f"Minare sync: Room minare_id={minare_id} has no Evennia counterpart yet")
 
     # Register cross-links for all synced rooms
     client = get_minare_client()
@@ -422,19 +412,24 @@ def find_evennia_object_by_minare_id(typeclass, minare_id):
 
 
 def _dispatch_agent_command(command):
-    """Route an agent_command to the appropriate AgentCharacter."""
+    """Route an agent_command to the appropriate AgentCharacter.
+    If no agent_evennia_id is specified, defaults to the first available system agent."""
     from typeclasses.characters import AgentCharacter
 
     agent_evennia_id = command.get('agent_evennia_id')
-    if not agent_evennia_id:
-        logger.log_err("agent_command missing agent_evennia_id")
-        return
-
-    try:
-        agent = AgentCharacter.objects.get(id=int(agent_evennia_id))
-    except (AgentCharacter.DoesNotExist, ValueError):
-        logger.log_err(f"AgentCharacter not found: evennia_id={agent_evennia_id}")
-        return
+    if agent_evennia_id:
+        try:
+            agent = AgentCharacter.objects.get(id=int(agent_evennia_id))
+        except (AgentCharacter.DoesNotExist, ValueError):
+            logger.log_err(f"AgentCharacter not found: evennia_id={agent_evennia_id}")
+            return
+    else:
+        # Default to system agent
+        agents = AgentCharacter.objects.all()
+        if agents.count() == 0:
+            logger.log_err("agent_command: no AgentCharacter available")
+            return
+        agent = agents[0]
 
     agent.handle_agent_command(command)
 
@@ -448,6 +443,10 @@ def _ensure_system_agent():
     agents = AgentCharacter.objects.all()
     if agents.count() > 0:
         agent = agents[0]
+        # Ensure builder permissions on existing agents
+        if "Builder" not in agent.permissions.all():
+            agent.permissions.add("Builder")
+            logger.log_info(f"Minare sync: Granted Builder permission to '{agent.key}'")
         logger.log_info(f"Minare sync: Found existing AgentCharacter '{agent.key}' (id={agent.id})")
         return agent
 

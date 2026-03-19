@@ -3,6 +3,7 @@ package com.eidolon.game.evennia
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import eidolon.game.controller.GameChannelController
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
 
@@ -90,5 +91,60 @@ class EvenniaCommUtils @Inject constructor(
             return
         }
         whisper(targetEvenniaId, agentEvenniaId, text)
+    }
+
+    // --- Batch + building command helpers ---
+
+    /**
+     * Send a batch of commands to be executed sequentially by the agent.
+     */
+    suspend fun sendBatchCommands(commands: List<JsonObject>) {
+        sendAgentCommand(JsonObject()
+            .put("action", "batch")
+            .put("commands", JsonArray(commands)))
+    }
+
+    /**
+     * Build a dig command JsonObject (does not send it).
+     * Use with sendBatchCommands for bulk room creation.
+     */
+    fun buildDigCommand(
+        roomKey: String,
+        description: String,
+        scenarioId: String
+    ): JsonObject {
+        return JsonObject()
+            .put("action", "dig")
+            .put("room_key", roomKey)
+            .put("description", description)
+            .put("scenario_id", scenarioId)
+    }
+
+    /**
+     * Build a create_exit command JsonObject (does not send it).
+     */
+    fun buildCreateExitCommand(
+        exitName: String,
+        fromRoomEvenniaId: String,
+        toRoomEvenniaId: String
+    ): JsonObject {
+        return JsonObject()
+            .put("action", "create_exit")
+            .put("exit_name", exitName)
+            .put("from_room_evennia_id", fromRoomEvenniaId)
+            .put("to_room_evennia_id", toRoomEvenniaId)
+    }
+
+    /**
+     * Build a describe command JsonObject (does not send it).
+     */
+    fun buildDescribeCommand(
+        roomEvenniaId: String,
+        description: String
+    ): JsonObject {
+        return JsonObject()
+            .put("action", "describe")
+            .put("room_evennia_id", roomEvenniaId)
+            .put("description", description)
     }
 }

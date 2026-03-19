@@ -5,6 +5,7 @@ import eidolon.game.controller.GameChannelController
 import eidolon.game.models.entity.Game
 import com.eidolon.game.GameEntityFactory
 import com.eidolon.game.evennia.EntityViewRegistry
+import com.eidolon.game.models.entity.EvenniaObject
 import com.eidolon.game.models.entity.Room
 import com.eidolon.game.models.entity.agent.EvenniaCharacter
 import com.google.inject.Inject
@@ -73,6 +74,14 @@ class GameInitializer @Inject constructor(
             JsonObject()
                 .put("evenniaName", char.evenniaName)
                 .put("currentRoomId", char.currentRoomId)
+        }
+
+        viewRegistry.register("EvenniaObject", "default") { entity ->
+            val eo = entity as EvenniaObject
+            JsonObject()
+                .put("evenniaId", eo.evenniaId)
+                .put("key", eo.key)
+                .put("typeclassPath", eo.typeclassPath)
         }
 
         verticleLogger.logInfo("Registered entity views")

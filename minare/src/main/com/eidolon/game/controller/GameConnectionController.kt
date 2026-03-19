@@ -43,4 +43,8 @@ class GameConnectionController @Inject constructor(
             )
         }
     }
+
+    companion object {
+        const val ADDRESS_EVENNIA_READY = "eidolon.evennia.ready"
+    }
 }

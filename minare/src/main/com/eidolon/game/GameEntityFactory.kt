@@ -1,6 +1,7 @@
 package com.eidolon.game
 
 import com.eidolon.game.models.entity.Account
+import com.eidolon.game.models.entity.EvenniaObject
 import com.eidolon.game.models.entity.Exit
 import com.eidolon.game.models.entity.Room
 import com.eidolon.game.models.entity.RoomMemory
@@ -17,6 +18,7 @@ class GameEntityFactory : EntityFactory() {
         "RoomMemory" to RoomMemory::class.java,
         "Exit" to Exit::class.java,
         "EvenniaCharacter" to EvenniaCharacter::class.java,
+        "EvenniaObject" to EvenniaObject::class.java,
         "Account" to Account::class.java,
     )
 }
