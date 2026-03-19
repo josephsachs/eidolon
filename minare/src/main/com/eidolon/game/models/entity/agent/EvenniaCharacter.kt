@@ -2,6 +2,7 @@ package eidolon.game.models.entity.agent
 
 import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.evennia.EvenniaShadow
+import com.eidolon.game.evennia.Viewable
 import com.google.inject.Inject
 import com.minare.controller.EntityController
 import com.minare.core.entity.annotations.*
@@ -10,7 +11,7 @@ import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.CoroutineScope
 
 @EntityType("EvenniaCharacter")
-class EvenniaCharacter: Entity(), Agent, EvenniaShadow {
+class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Inject
     private lateinit var coroutineScope: CoroutineScope
     @Inject
@@ -57,6 +58,25 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow {
 
     @Property
     var lastActivity: Long = 0L
+
+    // --- Viewable interface ---
+
+    private fun skillsToJson(): JsonObject {
+        val obj = JsonObject()
+        skills.forEach { (name, pair) ->
+            obj.put(name, JsonObject().put("current", pair.first).put("potential", pair.second))
+        }
+        return obj
+    }
+
+    override fun project(viewName: String): JsonObject? = when (viewName) {
+        "default" -> JsonObject()
+            .put("evenniaName", evenniaName)
+            .put("currentRoomId", currentRoomId)
+            .put("skills", skillsToJson())
+        "skills" -> skillsToJson()
+        else -> null
+    }
 
     // --- EvenniaShadow interface ---
 
