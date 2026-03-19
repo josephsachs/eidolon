@@ -1,5 +1,7 @@
 .DS_Store
+.claude/
 .idea/
+out/
 docker/config/mongodb.key
 docker/data
 docker/app.jar
@@ -7,4 +9,5 @@ logs/
 logs2/
 target/
 client/node_modules
+node_modules/
 dbExec.sh

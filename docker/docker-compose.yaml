@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # HAProxy Load Balancer
   haproxy:
@@ -39,32 +37,9 @@ services:
       - INSTANCE_ROLE=COORDINATOR
       - LOG_PATH=/app/logs
 
-      # Cluster configuration
-      - VERTX_CLUSTER_HOST=app-coordinator
-      - HAZELCAST_CLUSTER_NAME=minare-cluster
-
-      # Database configuration
-      - RESET_STATE=true # Development only
-      - MONGO_URI=mongodb://mongodb-rs:27017/minare?replicaSet=rs0
-      - REDIS_URI=redis://redis:6379
-
       # JVM configuration
       - JAVA_OPTS=-Xmx512m -XX:+UseContainerSupport
       - NTP_URL=ntp.local
-
-      # Kafka configuration
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - KAFKA_TOPIC_PARTITIONS=3
-      - KAFKA_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_PRODUCER_ACKS=all
-      - KAFKA_PRODUCER_COMPRESSION=gzip
-      - KAFKA_PRODUCER_RETRIES=3
-
-      # Kafka consumer configuration
-      - KAFKA_CONSUMER_GROUP=minare-coordinator
-      - KAFKA_SESSION_TIMEOUT_MS=30000
-      - KAFKA_MAX_POLL_RECORDS=100
-      - KAFKA_AUTO_OFFSET_RESET=earliest
 
       # Debug configuration (conditional)
       - JAVA_DEBUG=${JAVA_DEBUG:-false}
@@ -109,7 +84,7 @@ services:
       app-coordinator:
         condition: service_healthy
     volumes:
-      - ./scripts/infra:/scripts:ro
+      - ./scripts:/scripts:ro
     environment:
       # Coordinator connection
       - COORDINATOR_HOST=app-coordinator
@@ -123,7 +98,7 @@ services:
       - STARTUP_DELAY=0
       - RETRY_INTERVAL=2
       - MAX_RETRIES=100
-    entrypoint: ["/scripts/infra-entrypoint-dynamic.sh"]
+    entrypoint: ["/scripts/infra-entrypoint.sh"]
 
   # Minare Application - Worker Service (scalable)
   worker:
@@ -139,32 +114,9 @@ services:
       - INSTANCE_ROLE=WORKER
       - LOG_PATH=/app/logs
 
-      # Cluster configuration - use HOSTNAME for unique cluster identity
-      - VERTX_CLUSTER_HOST=${HOSTNAME}
-      - VERTX_CLUSTERED=true
-      - HAZELCAST_CLUSTER_NAME=minare-cluster
-
-      # Database configuration
-      - MONGO_URI=mongodb://mongodb-rs:27017/minare?replicaSet=rs0
-      - REDIS_URI=redis://redis:6379
-
       # JVM configuration
       - JAVA_OPTS=-Xmx512m -XX:+UseContainerSupport
       - NTP_URL=ntp.local
-
-      # Kafka configuration
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - KAFKA_TOPIC_PARTITIONS=3
-      - KAFKA_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_PRODUCER_ACKS=all
-      - KAFKA_PRODUCER_COMPRESSION=gzip
-      - KAFKA_PRODUCER_RETRIES=3
-
-      # Kafka consumer configuration
-      - KAFKA_CONSUMER_GROUP=minare-worker
-      - KAFKA_SESSION_TIMEOUT_MS=30000
-      - KAFKA_MAX_POLL_RECORDS=100
-      - KAFKA_AUTO_OFFSET_RESET=earliest
 
       # Debug configuration (conditional)
       - JAVA_DEBUG=${JAVA_DEBUG:-false}
@@ -234,7 +186,7 @@ services:
       retries: 3
       start_period: 10s
 
-  # Kafka (KRaft mode - no Zookeeper needed)
+  # Kafka (KRaft)
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
@@ -295,6 +247,9 @@ services:
       EVENNIA_SUPERUSER_USERNAME: 'admin'
       EVENNIA_SUPERUSER_PASSWORD: 'admin'
       EVENNIA_SUPERUSER_EMAIL: 'admin@example.com'
+      MINARE_HOST: haproxy
+      MINARE_UPSOCKET_PORT: '4225'
+      MINARE_DOWNSOCKET_PORT: '4226'
     networks:
       - minare_net
     stdin_open: true

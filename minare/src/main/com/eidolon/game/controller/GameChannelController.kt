@@ -1,11 +1,10 @@
-package com.eidolon.game.controller
+package eidolon.game.controller
 
+import com.google.inject.Inject
 import com.google.inject.Provider
+import com.google.inject.Singleton
 import com.minare.application.interfaces.AppState
 import com.minare.controller.ChannelController
-import org.slf4j.LoggerFactory
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Game-specific extension of the framework's ChannelController.
@@ -14,9 +13,7 @@ import javax.inject.Singleton
 @Singleton
 class GameChannelController @Inject constructor(
     private val appStateProvider: Provider<AppState>
-) : ChannelController() {
-    private val log = LoggerFactory.getLogger(GameChannelController::class.java)
-
+): ChannelController() {
     companion object {
         private const val DEFAULT_CHANNEL_KEY = "Game.defaultChannel"
         private const val SYSTEM_MESSAGE_CHANNEL_KEY = "Game.systemChannel"
@@ -26,7 +23,6 @@ class GameChannelController @Inject constructor(
      * Set the default channel ID for this application
      */
     suspend fun setDefaultChannel(channelId: String) {
-        log.info("Setting default channel to: {}", channelId)
         appStateProvider.get().set(DEFAULT_CHANNEL_KEY, channelId)
     }
 
@@ -41,7 +37,6 @@ class GameChannelController @Inject constructor(
      * Set the system channel ID for this application
      */
     suspend fun setSystemMessagesChannel(channelId: String) {
-        log.info("Setting system messages channel to: {}", channelId)
         return appStateProvider.get().set(SYSTEM_MESSAGE_CHANNEL_KEY, channelId)
     }
 

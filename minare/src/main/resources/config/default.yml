@@ -1,0 +1,83 @@
+# config/default.yaml
+sockets:
+  up:
+    host: "0.0.0.0"
+    port: 4225
+    base_path: "/command"
+    handshake_timeout: 3000
+    heartbeat_interval: 15000
+    ack: true
+    threads: 3
+  down:
+    host: "0.0.0.0"
+    port: 4226
+    cache_ttl: 1000
+    heartbeat_interval: 15000
+    threads: 3
+  connection:
+    connection_expiry: 180000
+    cleanup_interval: 60000
+    reconnect_timeout: 60000
+    aggressive_cleanup: true
+
+
+entity:
+  factory: com.eidolon.game.GameEntityFactory
+  update:
+    collect_changes: true
+    interval: 3000
+  graphing:
+    store: mongo
+
+
+frames:
+  threads: 10
+  frame_duration: 800
+  lookahead: 25
+  session:
+    auto_session: frames_per_session
+    frames_per_session: 1500
+  timeline:
+    detach:
+      flush_on_detach: true
+      buffer_when_detached: true
+      buffer_on_resume: false
+      assign_on_resume: false
+    replay:
+      buffer_while_replay: true
+  snapshot:
+    store: mongo
+
+
+tasks:
+  tick_interval: 2300
+
+
+filesystem:
+  storage_path: /var/log
+
+
+mongo:
+  host: mongodb-rs
+  port: 27017
+  database: eidolon
+
+
+redis:
+  host: redis
+  port: 6379
+
+
+kafka:
+  host: kafka
+  port: 29092
+  group_id: minare-coordinator
+
+
+hazelcast:
+  cluster_name: eidolon-minare
+
+
+development:
+  reset_data: true
+

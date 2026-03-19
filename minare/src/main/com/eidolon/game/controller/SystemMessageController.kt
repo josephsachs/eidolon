@@ -1,6 +1,5 @@
 package eidolon.game.controller
 
-import com.eidolon.game.controller.GameChannelController
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import io.vertx.core.json.JsonObject

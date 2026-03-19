@@ -1,25 +1,12 @@
-# Dockerfile in top level/evennia/
-FROM evennia/evennia:latest
+# Game image — built on top of the pre-built base.
+# Build base first (only when deps change):
+#   docker build -f Dockerfile.base -t eidolon-evennia-base .
+FROM eidolon-evennia-base:latest
 
-# Set environment variables for non-interactive shell
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Download the obligatory Linux build tools
-RUN apk add build-base
-
-RUN chmod 775 /usr/src/game/init /usr/src/game/init/*.sh
-RUN bash /usr/src/game/init/install_python3.sh
-RUN bash /usr/src/game/init/install_pip.sh
-RUN bash /usr/src/game/init/install_openssl.sh
-RUN bash /usr/src/game/init/install_evennia.sh
-
-
-# Upgrade Evennia and its core dependency, Twisted, to the latest versions
-# This is the best defense against known, low-level timing/protocol bugs.
-# RUN pip install --upgrade evennia twisted
-
-# Execute the database migration
-# RUN evennia migrate
-
-# Default entry point (assuming evennia start -l is still desired)
-# RUN evennia start
+ENTRYPOINT ["/bin/bash", "-c", "\
+  rm -f /usr/src/game/server/*.pid && \
+  rm -f /usr/src/game/server/logs/*.log && \
+  chmod -R 777 /usr/src/game/server/logs 2>/dev/null; \
+  evennia makemigrations && \
+  evennia migrate && \
+  evennia start -l"]

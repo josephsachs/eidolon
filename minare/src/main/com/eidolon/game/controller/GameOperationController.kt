@@ -1,9 +1,12 @@
 package com.eidolon.game.controller
 
+import com.eidolon.game.models.entity.Room
 import com.minare.controller.OperationController
-import com.minare.core.operation.interfaces.MessageQueue
+import com.minare.core.entity.factories.EntityFactory
+import com.minare.core.entity.models.Entity
 import com.minare.core.operation.models.Operation
 import com.minare.core.operation.models.OperationType
+import eidolon.game.controller.GameChannelController
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
@@ -14,7 +17,10 @@ import javax.inject.Singleton
  * Handles conversion of client commands to Operations for Kafka.
  */
 @Singleton
-class GameOperationController @Inject constructor()
+class GameOperationController @Inject constructor(
+    private val entityFactory: EntityFactory,
+    private val channelController: GameChannelController,
+)
     : OperationController() {
 
     private val log = LoggerFactory.getLogger(GameOperationController::class.java)
@@ -30,15 +36,41 @@ class GameOperationController @Inject constructor()
         val connectionId = message.getString("connectionId")
 
         return when (command) {
-            "mutate" -> {
-                // Convert mutate command to Operation
+            "create" -> {
+                val entityId = message.getString("_id")
                 val entityObject = message.getJsonObject("entity")
+
+                if (entityObject == null) {
+                    log.warn("Invalid create command: missing entity object")
+                    return null
+                }
+
+                if (entityObject.getString("type") == null) {
+                    log.warn("Invalid create command: missing entity type")
+                    return null
+                }
+
+                val entityType = entityFactory.getNew(entityObject.getString("type"))
+
+                val operation = Operation()
+                    .entityType(entityType::class.java)
+                    .action(OperationType.CREATE)
+                    .delta(entityObject.getJsonObject("state") ?: JsonObject())
+                    .meta(JsonObject().put("connectionId", connectionId).encode())
+
+                log.debug("Created CREATE operation for new {} from connection {}", entityType, connectionId)
+                operation
+            }
+
+            "mutate" -> {
+                val entityId = message.getString("_id")
+                val entityObject = message.getJsonObject("entity")
+
                 if (entityObject == null) {
                     log.warn("Invalid mutate command: missing entity object")
                     return null
                 }
 
-                val entityId = entityObject.getString("_id")
                 if (entityId == null) {
                     log.warn("Invalid mutate command: missing entity ID")
                     return null
@@ -49,27 +81,60 @@ class GameOperationController @Inject constructor()
                     .action(OperationType.MUTATE)
                     .delta(entityObject.getJsonObject("state") ?: JsonObject())
 
-                // Add version if present
                 entityObject.getLong("version")?.let {
                     operation.version(it)
                 }
 
-                // Add connection context as metadata
                 operation.value("connectionId", connectionId)
                 operation.value("entityType", entityObject.getString("type"))
 
                 log.debug("Created MUTATE operation for entity {} from connection {}", entityId, connectionId)
             }
 
-            // Add other command types here as needed
-            // "create" -> { ... }
-            // "delete" -> { ... }
+            "delete" -> {
+                val entityId = message.getString("_id")
+                val entityObject = message.getJsonObject("entity")
+
+                if (entityObject == null) {
+                    log.warn("Invalid create command: missing entity object")
+                    return null
+                }
+
+                if (entityObject.getString("type") == null) {
+                    log.warn("Invalid create command: missing entity type")
+                    return null
+                }
+
+                val entityType = entityFactory.getNew(entityObject.getString("type"))
+
+                val operation = Operation()
+                    .entityType(entityType::class.java)
+                    .action(OperationType.DELETE)
+                    .delta(JsonObject())  // Empty delta for delete
+                    .meta(JsonObject().put("connectionId", connectionId).encode())
+
+                log.debug("Created DELETE operation for entity {} from connection {}", entityId, connectionId)
+                operation
+            }
 
             else -> {
-                // Unknown command - log and skip
                 log.warn("Unknown command received: {} from connection: {}", command, connectionId)
                 null
             }
+        }
+    }
+
+    /**
+     * After a CREATE operation completes, add the new entity to the default channel
+     * so it broadcasts to subscribed clients (including Evennia).
+     */
+    override suspend fun afterCreateOperation(operation: JsonObject, entity: Entity) {
+        val defaultChannelId = channelController.getDefaultChannel()
+        if (defaultChannelId != null) {
+            channelController.addEntity(entity, defaultChannelId)
+            log.info("Added entity {} ({}) to default channel {}", entity._id, entity.type, defaultChannelId)
+        } else {
+            log.warn("Cannot add entity {} to channel: no default channel set", entity._id)
         }
     }
 }

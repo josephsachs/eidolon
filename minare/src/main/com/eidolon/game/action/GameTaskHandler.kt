@@ -3,7 +3,6 @@ package eidolon.game.action
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.core.utils.vertx.EventBusUtils
-import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
 
 @Singleton

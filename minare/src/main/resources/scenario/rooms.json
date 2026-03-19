@@ -1,561 +1,162 @@
 [
   {
-    "x": 0,
-    "y": 0,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 1,
-    "y": 0,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 2,
-    "y": 0,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 3,
-    "y": 0,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 4,
-    "y": 0,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 5,
-    "y": 0,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 6,
-    "y": 0,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 7,
-    "y": 0,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 8,
-    "y": 0,
-    "terrainType": "woodland"
-  },
-  {
-    "x": 9,
-    "y": 0,
-    "terrainType": "woodland"
-  },
-  {
-    "x": 10,
-    "y": 0,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 11,
-    "y": 0,
-    "terrainType": "grassland"
-  },
-
-
-
-  {
-    "x": 0,
-    "y": 1,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 1,
-    "y": 1,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 2,
-    "y": 1,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 3,
-    "y": 1,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 4,
-    "y": 1,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 5,
-    "y": 1,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 6,
-    "y": 1,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 7,
-    "y": 1,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 8,
-    "y": 1,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 9,
-    "y": 1,
-    "terrainType": "woodland"
-  },
-  {
-    "x": 10,
-    "y": 1,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 11,
-    "y": 1,
-    "terrainType": "grassland"
-  },
-
-
-
-  {
-    "x": 0,
-    "y": 2,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 1,
-    "y": 2,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 2,
-    "y": 2,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 3,
-    "y": 2,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 4,
-    "y": 2,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 5,
-    "y": 2,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 6,
-    "y": 2,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 7,
-    "y": 2,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 8,
-    "y": 2,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 9,
-    "y": 2,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 10,
-    "y": 2,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 11,
-    "y": 2,
-    "terrainType": "grassland"
-  },
-
-
-  {
-    "x": 0,
-    "y": 3,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 1,
-    "y": 3,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 2,
-    "y": 3,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 3,
-    "y": 3,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 4,
-    "y": 3,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 5,
-    "y": 3,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 6,
-    "y": 3,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 7,
-    "y": 3,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 8,
-    "y": 3,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 9,
-    "y": 3,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 10,
-    "y": 3,
-    "terrainType": "dryland"
-  },
-  {
-    "x": 11,
-    "y": 3,
-    "terrainType": "dryland"
-  },
-
-
-  {
-    "x": 0,
-    "y": 4,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 1,
-    "y": 4,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 2,
-    "y": 4,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 3,
-    "y": 4,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 4,
-    "y": 4,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 5,
-    "y": 4,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 6,
-    "y": 4,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 7,
-    "y": 4,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 8,
-    "y": 4,
-    "terrainType": "dryland"
-  },
-  {
-    "x": 9,
-    "y": 4,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 10,
-    "y": 4,
-    "terrainType": "dryland"
-  },
-  {
-    "x": 11,
-    "y": 4,
-    "terrainType": "dryland"
-  },
-
-
-
-  {
-    "x": 0,
-    "y": 5,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 1,
-    "y": 5,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 2,
-    "y": 5,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 3,
-    "y": 5,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 4,
-    "y": 5,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 5,
-    "y": 5,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 6,
-    "y": 5,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 7,
-    "y": 5,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 8,
-    "y": 5,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 9,
-    "y": 5,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 10,
-    "y": 5,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 11,
-    "y": 5,
-    "terrainType": "dryland"
-  },
-
-
-  {
-    "x": 0,
-    "y": 6,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 1,
-    "y": 6,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 2,
-    "y": 6,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 3,
-    "y": 6,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 4,
-    "y": 6,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 5,
-    "y": 6,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 6,
-    "y": 6,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 7,
-    "y": 6,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 8,
-    "y": 6,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 9,
-    "y": 6,
-    "terrainType": "dryland"
-  },
-  {
-    "x": 10,
-    "y": 6,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 11,
-    "y": 6,
-    "terrainType": "dryland"
-  },
-
-
-  {
-    "x": 0,
-    "y": 7,
-    "terrainType": "rockland"
-  },
-  {
-    "x": 1,
-    "y": 7,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 2,
-    "y": 7,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 3,
-    "y": 7,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 4,
-    "y": 7,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 5,
-    "y": 7,
-    "terrainType": "scrub"
-  },
-  {
-    "x": 6,
-    "y": 7,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 7,
-    "y": 7,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 8,
-    "y": 7,
-    "terrainType": "marsh"
-  },
-  {
-    "x": 9,
-    "y": 7,
-    "terrainType": "woodland"
-  },
-  {
-    "x": 10,
-    "y": 7,
-    "terrainType": "dryland"
-  },
-  {
-    "x": 11,
-    "y": 7,
-    "terrainType": "dryland"
-  },
-
-
-  {
-    "x": 0,
-    "y": 8,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 1,
-    "y": 8,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 2,
-    "y": 8,
-    "terrainType": "dryland"
-  },
-  {
-    "x": 3,
-    "y": 8,
-    "terrainType": "dryland"
-  },
-  {
-    "x": 4,
-    "y": 8,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 5,
-    "y": 8,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 6,
-    "y": 8,
-    "terrainType": "meadow"
-  },
-  {
-    "x": 7,
-    "y": 8,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 8,
-    "y": 8,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 9,
-    "y": 8,
-    "terrainType": "grassland"
-  },
-  {
-    "x": 10,
-    "y": 8,
-    "terrainType": "woodland"
-  },
-  {
-    "x": 11,
-    "y": 8,
-    "terrainType": "dryland"
+    "id": "valero-station",
+    "shortDescription": "Outside a Valero Station",
+    "description": "You stand in a cracked asphalt lot outside a dusty Valero gas station. The neon sign flickers weakly in the relentless desert heat.",
+    "exits": [
+      {"direction": "east", "destination": "desert-road", "description": "A sun-bleached road stretches east into the flat desert."},
+      {"direction": "south", "destination": "cracked-lot", "description": "A cracked asphalt lot extends to the south."}
+    ]
+  },
+  {
+    "id": "desert-road",
+    "shortDescription": "A Desert Road",
+    "description": "A long, sun-bleached road stretches in both directions through the flat desert. Heat shimmers rise from the asphalt in lazy waves.",
+    "exits": [
+      {"direction": "west", "destination": "valero-station", "description": "The flickering neon of a Valero station is visible to the west."},
+      {"direction": "east", "destination": "dusty-crossroads", "description": "A weathered crossroads lies to the east."},
+      {"direction": "south", "destination": "parched-field", "description": "A parched field of hard-packed earth opens to the south."}
+    ]
+  },
+  {
+    "id": "dusty-crossroads",
+    "shortDescription": "A Dusty Crossroads",
+    "description": "A weathered stop sign marks this crossing of two crumbling roads. Tire tracks in the dust suggest it was busier once.",
+    "exits": [
+      {"direction": "west", "destination": "desert-road", "description": "The desert road continues west."},
+      {"direction": "east", "destination": "rusted-guardrail", "description": "A rusted guardrail lines the road to the east."},
+      {"direction": "south", "destination": "dry-creek-bed", "description": "A dry creek bed is visible to the south."}
+    ]
+  },
+  {
+    "id": "rusted-guardrail",
+    "shortDescription": "A Rusted Guardrail",
+    "description": "A rusted guardrail lines the road's edge here, bent and flaking. Beyond it, the desert drops away into a shallow arroyo.",
+    "exits": [
+      {"direction": "west", "destination": "dusty-crossroads", "description": "The crossroads lies back to the west."},
+      {"direction": "south", "destination": "dark-brush", "description": "Dense dark brush crowds the path to the south."}
+    ]
+  },
+  {
+    "id": "cracked-lot",
+    "shortDescription": "A Cracked Asphalt Lot",
+    "description": "An old parking lot, its surface cracked and heaved by decades of summer heat. Scraggly weeds push up through every fissure.",
+    "exits": [
+      {"direction": "north", "destination": "valero-station", "description": "The Valero station stands to the north."},
+      {"direction": "east", "destination": "parched-field", "description": "A parched field stretches to the east."},
+      {"direction": "south", "destination": "abandoned-gas-station", "description": "The ruins of another gas station lie to the south."}
+    ]
+  },
+  {
+    "id": "parched-field",
+    "shortDescription": "A Parched Field",
+    "description": "Dry, hard-packed earth stretches in all directions. A few brittle stalks of grass rattle in the hot wind.",
+    "exits": [
+      {"direction": "north", "destination": "desert-road", "description": "A desert road runs to the north."},
+      {"direction": "west", "destination": "cracked-lot", "description": "A cracked lot lies to the west."},
+      {"direction": "east", "destination": "dry-creek-bed", "description": "A dry creek bed winds to the east."},
+      {"direction": "south", "destination": "desert-moose-hill", "description": "A rocky hill rises to the south."}
+    ]
+  },
+  {
+    "id": "dry-creek-bed",
+    "shortDescription": "A Dry Creek Bed",
+    "description": "A shallow creek bed winds through the desert here, bone dry and choked with pale gravel. It hasn't seen water in years.",
+    "exits": [
+      {"direction": "north", "destination": "dusty-crossroads", "description": "The crossroads is to the north."},
+      {"direction": "west", "destination": "parched-field", "description": "A parched field lies to the west."},
+      {"direction": "east", "destination": "dark-brush", "description": "Dark brush thickens to the east."},
+      {"direction": "south", "destination": "mesquite-grove", "description": "A mesquite grove stands to the south."}
+    ]
+  },
+  {
+    "id": "dark-brush",
+    "shortDescription": "A Patch of Dark Brush",
+    "description": "A dense thicket of dark scrub brush crowds the path. Thorns catch at your clothes, and something unseen rustles in the shadows.",
+    "exits": [
+      {"direction": "north", "destination": "rusted-guardrail", "description": "The guardrail is visible to the north."},
+      {"direction": "west", "destination": "dry-creek-bed", "description": "A dry creek bed lies to the west."},
+      {"direction": "south", "destination": "rocky-outcropping", "description": "Sandstone boulders jut from the ground to the south."}
+    ]
+  },
+  {
+    "id": "abandoned-gas-station",
+    "shortDescription": "An Abandoned Gas Station",
+    "description": "The skeletal remains of an old gas station lean in the heat. The pumps are long gone; only their concrete islands remain, stained and crumbling.",
+    "exits": [
+      {"direction": "north", "destination": "cracked-lot", "description": "The cracked lot stretches to the north."},
+      {"direction": "east", "destination": "desert-moose-hill", "description": "A low hill rises to the east."},
+      {"direction": "south", "destination": "sun-baked-clay", "description": "A flat expanse of pale clay lies to the south."}
+    ]
+  },
+  {
+    "id": "desert-moose-hill",
+    "shortDescription": "A Hill with a Desert Moose",
+    "description": "A low rocky hill rises here, and at its crest stands a large moose, utterly unbothered by the desert surroundings, chewing something dry.",
+    "exits": [
+      {"direction": "north", "destination": "parched-field", "description": "A parched field opens to the north."},
+      {"direction": "west", "destination": "abandoned-gas-station", "description": "An abandoned gas station lies to the west."},
+      {"direction": "east", "destination": "mesquite-grove", "description": "A mesquite grove stands to the east."},
+      {"direction": "south", "destination": "mirage-shimmer", "description": "The air shimmers with a persistent mirage to the south."}
+    ]
+  },
+  {
+    "id": "mesquite-grove",
+    "shortDescription": "A Sparse Mesquite Grove",
+    "description": "Gnarled mesquite trees cast thin, inadequate shade. Their roots snake across the surface of the ground, searching for any hidden moisture.",
+    "exits": [
+      {"direction": "north", "destination": "dry-creek-bed", "description": "A dry creek bed lies to the north."},
+      {"direction": "west", "destination": "desert-moose-hill", "description": "A hill with a moose is to the west."},
+      {"direction": "east", "destination": "rocky-outcropping", "description": "Rocky outcroppings rise to the east."},
+      {"direction": "south", "destination": "lone-saguaro", "description": "A towering saguaro stands to the south."}
+    ]
+  },
+  {
+    "id": "rocky-outcropping",
+    "shortDescription": "A Rocky Outcropping",
+    "description": "Large sandstone boulders jut from the desert floor here, warm to the touch and worn smooth by wind-driven sand over countless years.",
+    "exits": [
+      {"direction": "north", "destination": "dark-brush", "description": "Dark brush thickens to the north."},
+      {"direction": "west", "destination": "mesquite-grove", "description": "A mesquite grove lies to the west."},
+      {"direction": "south", "destination": "distant-mountain-view", "description": "A rise with a mountain view lies to the south."}
+    ]
+  },
+  {
+    "id": "sun-baked-clay",
+    "shortDescription": "A Sun-Baked Clay Flat",
+    "description": "An expanse of pale, cracked clay stretches to the south, its surface patterned like the scales of some enormous sleeping beast.",
+    "exits": [
+      {"direction": "north", "destination": "abandoned-gas-station", "description": "The abandoned gas station is to the north."},
+      {"direction": "east", "destination": "mirage-shimmer", "description": "Shimmering air dances to the east."}
+    ]
+  },
+  {
+    "id": "mirage-shimmer",
+    "shortDescription": "A Mirage Shimmer",
+    "description": "The air here shimmers with a persistent mirage — a glittering lake that retreats endlessly as you approach. The horizon seems to breathe.",
+    "exits": [
+      {"direction": "north", "destination": "desert-moose-hill", "description": "A hill rises to the north."},
+      {"direction": "west", "destination": "sun-baked-clay", "description": "Pale cracked clay stretches to the west."},
+      {"direction": "east", "destination": "lone-saguaro", "description": "A lone saguaro stands to the east."}
+    ]
+  },
+  {
+    "id": "lone-saguaro",
+    "shortDescription": "A Lone Saguaro",
+    "description": "A single enormous saguaro cactus stands here, its arms raised to the burning sky. Decades of growth captured in weathered green flesh.",
+    "exits": [
+      {"direction": "north", "destination": "mesquite-grove", "description": "A mesquite grove lies to the north."},
+      {"direction": "west", "destination": "mirage-shimmer", "description": "Shimmering mirage air dances to the west."},
+      {"direction": "east", "destination": "distant-mountain-view", "description": "A rise with distant mountains is to the east."}
+    ]
+  },
+  {
+    "id": "distant-mountain-view",
+    "shortDescription": "A Distant Mountain View",
+    "description": "From this slight rise, the jagged silhouette of distant mountains cuts the horizon. They look close but the desert between is merciless.",
+    "exits": [
+      {"direction": "north", "destination": "rocky-outcropping", "description": "Rocky outcroppings lie to the north."},
+      {"direction": "west", "destination": "lone-saguaro", "description": "A lone saguaro stands to the west."}
+    ]
   }
 ]

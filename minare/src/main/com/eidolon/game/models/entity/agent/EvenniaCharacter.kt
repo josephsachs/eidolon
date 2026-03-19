@@ -1,22 +1,22 @@
 package eidolon.game.models.entity.agent
 
+import com.eidolon.game.evennia.EvenniaCommUtils
+import com.eidolon.game.evennia.EvenniaShadow
 import com.google.inject.Inject
 import com.minare.controller.EntityController
 import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
-import eidolon.game.action.GameTaskHandler
-import eidolon.game.action.cache.SharedGameState
-import eidolon.game.models.data.PlayerControllable
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 @EntityType("EvenniaCharacter")
-class EvenniaCharacter: Entity(), Agent, PlayerControllable {
+class EvenniaCharacter: Entity(), Agent, EvenniaShadow {
     @Inject
     private lateinit var coroutineScope: CoroutineScope
     @Inject
     private lateinit var entityController: EntityController
+    @Inject
+    private lateinit var evenniaCommUtils: EvenniaCommUtils
 
     init {
         type = "EvenniaCharacter"
@@ -28,23 +28,49 @@ class EvenniaCharacter: Entity(), Agent, PlayerControllable {
 
     @State
     @Mutable
-    var evenniaName: Int = 0
+    var evenniaName: String = ""
+
+    @State
+    @Mutable
+    var description: String = ""
+
+    @State
+    @Mutable
+    var shortDescription: String = ""
+
+    /**
+     * The Room entity _id the character is currently in.
+     */
+    @State
+    @Mutable
+    var currentRoomId: String = ""
 
     @Property
     var connectionId: String = ""
 
-    override fun getConnection(): String {
-        return connectionId
+    @Property
+    var lastActivity: Long = 0L
+
+    // --- EvenniaShadow interface ---
+
+    override fun shadowEvenniaId(): String = evenniaId
+
+    override fun updateView(): JsonObject {
+        return JsonObject()
+            .put("evenniaName", evenniaName)
+            .put("currentRoomId", currentRoomId)
     }
 
-    override fun setConnection(id: String) {
-        connectionId = id
+    // --- Agent interface ---
 
-        coroutineScope.launch {
-            entityController.saveProperties(
-                _id!!,
-                JsonObject().put("connectionId", id)
-            )
-        }
+    override val agentMinareId: String
+        get() = _id ?: ""
+
+    override suspend fun say(roomMinareId: String, text: String) {
+        evenniaCommUtils.sayInRoom(roomMinareId, _id!!, text)
+    }
+
+    override suspend fun emote(roomMinareId: String, text: String) {
+        evenniaCommUtils.emoteInRoom(roomMinareId, _id!!, text)
     }
 }
