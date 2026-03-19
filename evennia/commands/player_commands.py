@@ -28,6 +28,24 @@ def _minare_ids(caller):
     return char_id, room_id
 
 
+def _resolve_item(caller, item_name, search_location=None):
+    """
+    Resolve an item name to its Evennia object and minare_id.
+    Returns (obj, minare_id) or (None, None) if not found.
+    """
+    location = search_location or caller.location
+    obj = caller.search(item_name, location=location, quiet=True)
+    if not obj:
+        # Also check caller's inventory
+        obj = caller.search(item_name, location=caller, quiet=True)
+    if obj:
+        if isinstance(obj, list):
+            obj = obj[0]
+        minare_id = getattr(obj.db, 'minare_id', None) or ""
+        return obj, minare_id
+    return None, None
+
+
 # ---------------------------------------------------------------------------
 # Disabled commands
 # ---------------------------------------------------------------------------
@@ -221,12 +239,21 @@ class CmdGet(Command):
             caller.msg("You can't do that right now.")
             return
 
+        # Resolve item name to Evennia object and minare_id
+        obj, item_id = _resolve_item(caller, target)
+        if not obj:
+            caller.msg(f"You don't see '{target}' here.")
+            return
+        if not item_id:
+            caller.msg(f"{obj.key} is not a Minare-synced item.")
+            return
+
         # Fire-and-forget: results arrive via downsocket entity updates
         _get_client().send_message({
             "type": "command_get",
             "character_id": char_id,
             "room_id": room_id,
-            "target": target,
+            "item_id": item_id,
         })
 
 
@@ -254,12 +281,21 @@ class CmdDrop(Command):
             caller.msg("You can't do that right now.")
             return
 
+        # Resolve item from caller's inventory
+        obj, item_id = _resolve_item(caller, target, search_location=caller)
+        if not obj:
+            caller.msg(f"You aren't carrying '{target}'.")
+            return
+        if not item_id:
+            caller.msg(f"{obj.key} is not a Minare-synced item.")
+            return
+
         # Fire-and-forget: results arrive via downsocket entity updates
         _get_client().send_message({
             "type": "command_drop",
             "character_id": char_id,
             "room_id": room_id,
-            "target": target,
+            "item_id": item_id,
         })
 
 
@@ -307,11 +343,33 @@ class CmdGive(Command):
             caller.msg("You can't do that right now.")
             return
 
+        # Resolve item from caller's inventory
+        obj, item_id = _resolve_item(caller, self.item, search_location=caller)
+        if not obj:
+            caller.msg(f"You aren't carrying '{self.item}'.")
+            return
+        if not item_id:
+            caller.msg(f"{obj.key} is not a Minare-synced item.")
+            return
+
+        # Resolve recipient character in the room
+        recipient_obj = caller.search(self.recipient, location=caller.location, quiet=True)
+        if recipient_obj:
+            if isinstance(recipient_obj, list):
+                recipient_obj = recipient_obj[0]
+        if not recipient_obj:
+            caller.msg(f"You don't see '{self.recipient}' here.")
+            return
+        recipient_id = getattr(recipient_obj.db, 'minare_id', None) or ""
+        if not recipient_id:
+            caller.msg(f"{recipient_obj.key} can't receive items.")
+            return
+
         # Fire-and-forget: results arrive via downsocket entity updates
         _get_client().send_message({
             "type": "command_give",
             "character_id": char_id,
             "room_id": room_id,
-            "target": self.item,
-            "recipient": self.recipient,
+            "item_id": item_id,
+            "recipient_id": recipient_id,
         })

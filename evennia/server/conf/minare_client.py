@@ -516,7 +516,8 @@ def _handle_entity_updates(msg):
 
         if entity_type == 'Item':
             _handle_item_update(entity_id, delta, operation)
-        # Other entity types can be added here
+        elif entity_type in ('EvenniaCharacter', 'Room'):
+            _handle_inventory_update(entity_id, entity_type, delta)
 
 
 def _handle_item_update(entity_id, delta, operation):
@@ -562,6 +563,66 @@ def _handle_item_update(entity_id, delta, operation):
             f"Minare sync: Created Item '{item_name}' in "
             f"'{location.key if location else 'nowhere'}' from channel update"
         )
+
+
+def _handle_inventory_update(entity_id, entity_type, delta):
+    """
+    Handle inventory/contents changes on EvenniaCharacter or Room entities.
+    Moves Evennia Item objects to match the new state.
+    """
+    from typeclasses.objects import Item as EvenniaItem
+    from typeclasses.rooms import Room as EvenniaRoom
+
+    if entity_type == 'EvenniaCharacter' and 'inventory' in delta:
+        # Find the Evennia character by minare_id
+        from typeclasses.characters import Character
+        character = None
+        for ch in Character.objects.all():
+            if ch.db.minare_id == entity_id:
+                character = ch
+                break
+        if not character:
+            logger.log_info(f"Minare sync: Character {entity_id} not found for inventory update")
+            return
+
+        # Move items listed in inventory to the character
+        item_ids = delta['inventory']
+        for item_id in item_ids:
+            for item in EvenniaItem.objects.all():
+                if item.db.minare_id == item_id and item.location != character:
+                    logger.log_info(f"Minare sync: Moving '{item.key}' to {character.key}")
+                    item.move_to(character, quiet=True, move_type="get")
+                    character.msg(f"You pick up {item.key}.")
+                    if character.location:
+                        character.location.msg_contents(
+                            f"{character.key} picks up {item.key}.",
+                            exclude=[character]
+                        )
+
+    elif entity_type == 'Room' and 'contents' in delta:
+        # Find the Evennia room by minare_id
+        room = None
+        for r in EvenniaRoom.objects.all():
+            if r.db.minare_id == entity_id:
+                room = r
+                break
+        if not room:
+            logger.log_info(f"Minare sync: Room {entity_id} not found for contents update")
+            return
+
+        # Move items listed in contents to the room
+        item_ids = delta['contents']
+        for item_id in item_ids:
+            for item in EvenniaItem.objects.all():
+                if item.db.minare_id == item_id and item.location != room:
+                    old_location = item.location
+                    logger.log_info(f"Minare sync: Moving '{item.key}' to room {room.key}")
+                    item.move_to(room, quiet=True, move_type="drop")
+                    if old_location and hasattr(old_location, 'msg'):
+                        old_location.msg(f"You drop {item.key}.")
+                    room.msg_contents(
+                        f"{item.key} is dropped here.",
+                    )
 
 
 class MinareClient:
