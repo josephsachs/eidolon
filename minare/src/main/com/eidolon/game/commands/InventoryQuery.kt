@@ -1,5 +1,6 @@
 package com.eidolon.game.commands
 
+import com.eidolon.game.models.entity.Item
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
@@ -44,9 +45,10 @@ class InventoryQuery @Inject constructor(
             for (id in ids) {
                 val item = itemEntities[id]
                 if (item != null) {
+                    val itemName = if (item is Item) item.name else item.type
                     items.add(JsonObject()
                         .put("_id", item._id)
-                        .put("name", item.type))  // Use proper name field when Item entity exists
+                        .put("name", itemName))
                 }
             }
         }

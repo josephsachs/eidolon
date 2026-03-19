@@ -173,8 +173,8 @@ class GameOperationController @Inject constructor(
             .delta(JsonObject()
                 .put("name", name)
                 .put("description", description)
-                .put("shortDescription", name)
-                .put("locationRoomId", roomId))
+                .put("shortDescription", name))
+            .meta(JsonObject().put("roomId", roomId).encode())
     }
 
     /**

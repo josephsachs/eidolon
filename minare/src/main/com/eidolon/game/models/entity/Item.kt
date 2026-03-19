@@ -23,18 +23,4 @@ class Item : Entity(), Serializable {
     @State
     @Mutable
     var shortDescription: String = ""
-
-    /**
-     * Room entity _id where item is located. Empty if carried by a character.
-     */
-    @State
-    @Mutable
-    var locationRoomId: String = ""
-
-    /**
-     * Character entity _id holding this item. Empty if in a room.
-     */
-    @State
-    @Mutable
-    var heldByCharacterId: String = ""
 }

@@ -49,6 +49,10 @@ class CmdMCreate(Command):
             self.caller.msg("You must be in a Minare-synced room.")
             return
 
+        # Register pending create so DownSocket handler knows where to place it
+        from server.conf.minare_client import register_pending_create
+        register_pending_create(name, self.caller.location)
+
         _get_client().send_message({
             "type": "command_create_item",
             "name": name,

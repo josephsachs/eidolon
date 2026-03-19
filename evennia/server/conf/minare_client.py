@@ -387,14 +387,25 @@ def _sync_exits(minare_entities, protocol):
             exit_obj.db.minare_archived = True
 
 
+# Pending item creates: name -> Evennia room object.
+# Populated by @mcreate, consumed by _handle_item_update when the
+# DownSocket broadcast arrives with the newly created Item entity.
+_pending_item_creates = {}
+
+
+def register_pending_create(item_name, location):
+    """Register a pending item create so the DownSocket handler knows where to place it."""
+    _pending_item_creates[item_name] = location
+    logger.log_info(f"Minare sync: Registered pending create for '{item_name}'")
+
+
 def _sync_items(minare_entities, protocol):
     """
     Reconcile Evennia Item objects with Minare Item entities.
-    Creates Evennia Items for new Minare items, updates existing ones,
-    and archives Items whose Minare entity no longer exists.
+    During initial sync, Items don't carry location — Evennia determines
+    placement from Room.contents or pending creates.
     """
     from typeclasses.objects import Item as EvenniaItem
-    from typeclasses.rooms import Room as EvenniaRoom
     from evennia import create_object
 
     minare_items = {
@@ -407,13 +418,6 @@ def _sync_items(minare_entities, protocol):
         logger.log_info("Minare sync: No Item entities to sync")
         return
 
-    # Build lookup: minare_id -> Evennia Room
-    evennia_rooms_by_minare_id = {}
-    for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_id
-        if mid:
-            evennia_rooms_by_minare_id[mid] = room
-
     # Build lookup: minare_id -> Evennia Item
     evennia_items_by_minare_id = {}
     for item in EvenniaItem.objects.all():
@@ -421,11 +425,21 @@ def _sync_items(minare_entities, protocol):
         if mid:
             evennia_items_by_minare_id[mid] = item
 
-    # Create or update items
+    # Determine item locations from Room.contents in the sync data
+    item_to_room = _build_item_room_map(minare_entities)
+
+    # Resolve Evennia rooms by minare_id
+    from typeclasses.rooms import Room as EvenniaRoom
+    evennia_rooms_by_minare_id = {}
+    for room in EvenniaRoom.objects.all():
+        mid = room.db.minare_id
+        if mid:
+            evennia_rooms_by_minare_id[mid] = room
+
     for minare_id, entity in minare_items.items():
         state = entity.get('state', {})
-        location_room_id = state.get('locationRoomId', '')
-        location = evennia_rooms_by_minare_id.get(location_room_id)
+        room_minare_id = item_to_room.get(minare_id)
+        location = evennia_rooms_by_minare_id.get(room_minare_id) if room_minare_id else None
 
         if minare_id not in evennia_items_by_minare_id:
             item_name = state.get('name', f"Item {minare_id[:8]}")
@@ -441,8 +455,6 @@ def _sync_items(minare_entities, protocol):
             item = evennia_items_by_minare_id[minare_id]
             item.key = state.get('name', item.key)
             item.db.desc = state.get('description', '')
-            if location and item.location != location:
-                item.move_to(location, quiet=True)
             logger.log_info(f"Minare sync: Updated Item '{item.key}'")
 
     # Archive items whose Minare entity no longer exists
@@ -454,6 +466,18 @@ def _sync_items(minare_entities, protocol):
             )
             item.db.minare_id = None
             item.db.minare_archived = True
+
+
+def _build_item_room_map(minare_entities):
+    """Build a map of item_id -> room_id from Room.contents arrays."""
+    item_to_room = {}
+    for entity in minare_entities:
+        if entity.get('type') == 'Room':
+            room_id = entity['_id']
+            contents = entity.get('state', {}).get('contents', [])
+            for item_id in contents:
+                item_to_room[item_id] = room_id
+    return item_to_room
 
 
 def _handle_entity_updates(msg):
@@ -478,10 +502,6 @@ def _handle_entity_updates(msg):
         }
     }
     """
-    from typeclasses.objects import Item as EvenniaItem
-    from typeclasses.rooms import Room as EvenniaRoom
-    from evennia import create_object
-
     updates = msg.get('updates', {})
 
     for entity_id, entity_update in updates.items():
@@ -502,7 +522,6 @@ def _handle_entity_updates(msg):
 def _handle_item_update(entity_id, delta, operation):
     """Handle a single Item entity update from Minare."""
     from typeclasses.objects import Item as EvenniaItem
-    from typeclasses.rooms import Room as EvenniaRoom
     from evennia import create_object
 
     # Check if we already have this item
@@ -518,15 +537,6 @@ def _handle_item_update(entity_id, delta, operation):
             existing.delete()
         return
 
-    # Resolve location room
-    location_room_id = delta.get('locationRoomId', '')
-    location = None
-    if location_room_id:
-        for room in EvenniaRoom.objects.all():
-            if room.db.minare_id == location_room_id:
-                location = room
-                break
-
     if existing:
         # Update existing item
         name = delta.get('name')
@@ -535,12 +545,12 @@ def _handle_item_update(entity_id, delta, operation):
         desc = delta.get('description')
         if desc is not None:
             existing.db.desc = desc
-        if location and existing.location != location:
-            existing.move_to(location, quiet=True)
         logger.log_info(f"Minare sync: Updated Item '{existing.key}'")
     else:
-        # Create new item
+        # New item — check pending creates for location
         item_name = delta.get('name', f"Item {entity_id[:8]}")
+        location = _pending_item_creates.pop(item_name, None)
+
         new_item = create_object(
             EvenniaItem,
             key=item_name,
@@ -548,7 +558,10 @@ def _handle_item_update(entity_id, delta, operation):
         )
         new_item.db.minare_id = entity_id
         new_item.db.desc = delta.get('description', '')
-        logger.log_info(f"Minare sync: Created Item '{item_name}' from channel update")
+        logger.log_info(
+            f"Minare sync: Created Item '{item_name}' in "
+            f"'{location.key if location else 'nowhere'}' from channel update"
+        )
 
 
 class MinareClient:
