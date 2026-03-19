@@ -1,14 +1,17 @@
 package com.eidolon.game.controller
 
+import com.eidolon.game.models.entity.Item
 import com.eidolon.game.models.entity.Room
 import com.minare.controller.OperationController
 import com.minare.core.entity.factories.EntityFactory
+import com.minare.core.entity.models.Entity
 import com.minare.core.operation.interfaces.MessageQueue
 import com.minare.core.operation.models.Assert
 import com.minare.core.operation.models.FailurePolicy
 import com.minare.core.operation.models.Operation
 import com.minare.core.operation.models.OperationSet
 import com.minare.core.operation.models.OperationType
+import eidolon.game.controller.GameChannelController
 import eidolon.game.models.entity.agent.EvenniaCharacter
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
@@ -22,6 +25,7 @@ import javax.inject.Singleton
 @Singleton
 class GameOperationController @Inject constructor(
     private val entityFactory: EntityFactory,
+    private val channelController: GameChannelController,
 )
     : OperationController() {
 
@@ -42,6 +46,10 @@ class GameOperationController @Inject constructor(
         // Handle player commands routed through the operation pipeline
         if (messageType in listOf("command_get", "command_drop", "command_give")) {
             return buildItemOperationSet(message, messageType!!)
+        }
+
+        if (messageType == "command_create_item") {
+            return buildCreateItemOperation(message)
         }
 
         return when (command) {
@@ -131,6 +139,42 @@ class GameOperationController @Inject constructor(
                 null
             }
         }
+    }
+
+    /**
+     * After a CREATE operation completes, add the new entity to the default channel
+     * so it broadcasts to subscribed clients (including Evennia).
+     */
+    override suspend fun afterCreateOperation(operation: JsonObject, entity: Entity) {
+        val defaultChannelId = channelController.getDefaultChannel()
+        if (defaultChannelId != null) {
+            channelController.addEntity(entity, defaultChannelId)
+            log.info("Added entity {} ({}) to default channel {}", entity._id, entity.type, defaultChannelId)
+        } else {
+            log.warn("Cannot add entity {} to channel: no default channel set", entity._id)
+        }
+    }
+
+    /**
+     * Build a CREATE operation for a new Item entity.
+     */
+    private fun buildCreateItemOperation(message: JsonObject): Operation {
+        val name = message.getString("name", "")
+        val description = message.getString("description", "")
+        val roomId = message.getString("room_id", "")
+
+        log.info("Building CREATE operation for Item: name='{}' room={}", name, roomId)
+
+        val entityType = entityFactory.getNew("Item")
+
+        return Operation()
+            .entityType(entityType::class.java)
+            .action(OperationType.CREATE)
+            .delta(JsonObject()
+                .put("name", name)
+                .put("description", description)
+                .put("shortDescription", name)
+                .put("locationRoomId", roomId))
     }
 
     /**

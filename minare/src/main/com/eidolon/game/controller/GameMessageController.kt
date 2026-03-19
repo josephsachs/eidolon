@@ -92,6 +92,11 @@ class GameMessageController @Inject constructor(
                 sendToClient(connection, result)
             }
 
+            message.getString("type") == "command_create_item" -> {
+                val operationCommand = OperationCommand(message)
+                dispatch(operationCommand)
+            }
+
             message.getString("type") in listOf("command_get", "command_drop", "command_give") -> {
                 val operationCommand = OperationCommand(message)
                 dispatch(operationCommand)

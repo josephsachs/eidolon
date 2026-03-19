@@ -19,6 +19,7 @@ from commands.player_commands import (
     CmdSay, CmdPose, CmdInventory, CmdGet, CmdDrop, CmdGive,
     CmdNoHome, CmdNoAccess,
 )
+from commands.admin_commands import CmdMCreate
 
 
 class PlayerCharacterCmdSet(CmdSet):
@@ -39,6 +40,7 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdGive())
         self.add(CmdNoHome())
         self.add(CmdNoAccess())
+        self.add(CmdMCreate())
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
