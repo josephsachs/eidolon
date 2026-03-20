@@ -42,6 +42,14 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @State
     @Mutable
+    var isNpc: Boolean = false
+
+    @State
+    @Mutable
+    var brainType: String = ""
+
+    @State
+    @Mutable
     var skills: List<Skill> = emptyList()
 
     /**
@@ -95,10 +103,18 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
         get() = _id ?: ""
 
     override suspend fun say(roomMinareId: String, text: String) {
-        evenniaCommUtils.sayInRoom(roomMinareId, _id!!, text)
+        if (isNpc) {
+            evenniaCommUtils.npcSayInRoom(roomMinareId, _id!!, text)
+        } else {
+            evenniaCommUtils.sayInRoom(roomMinareId, _id!!, text)
+        }
     }
 
     override suspend fun emote(roomMinareId: String, text: String) {
-        evenniaCommUtils.emoteInRoom(roomMinareId, _id!!, text)
+        if (isNpc) {
+            evenniaCommUtils.npcEmoteInRoom(roomMinareId, _id!!, text)
+        } else {
+            evenniaCommUtils.emoteInRoom(roomMinareId, _id!!, text)
+        }
     }
 }

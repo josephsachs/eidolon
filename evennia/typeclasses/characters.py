@@ -95,6 +95,7 @@ class AgentCharacter(Character):
 
     ACTION_HANDLERS = {
         'create_exit': '_handle_create_exit',
+        'create_npc': '_handle_create_npc',
         'batch': '_handle_batch',
     }
 
@@ -178,6 +179,33 @@ class AgentCharacter(Character):
         except (Room.DoesNotExist, ValueError) as e:
             logger.log_err(f"AgentCharacter._handle_create_exit: {e}")
 
+    def _handle_create_npc(self, command):
+        """Create a NonplayerCharacter in a specific room."""
+        from evennia import create_object
+        from typeclasses.rooms import Room
+
+        npc_name = command.get('npc_name', '')
+        room_evennia_id = command.get('room_evennia_id')
+
+        if not npc_name or not room_evennia_id:
+            logger.log_err(
+                f"AgentCharacter._handle_create_npc: missing fields "
+                f"(npc_name={npc_name}, room={room_evennia_id})"
+            )
+            return
+
+        try:
+            room = Room.objects.get(id=int(room_evennia_id))
+            npc = create_object(
+                NonplayerCharacter, key=npc_name, location=room
+            )
+            logger.log_info(
+                f"AgentCharacter: Created NPC '{npc_name}' "
+                f"in '{room.key}' (id={npc.id})"
+            )
+        except (Room.DoesNotExist, ValueError) as e:
+            logger.log_err(f"AgentCharacter._handle_create_npc: {e}")
+
     def _handle_batch(self, command):
         """Execute a list of sub-commands sequentially."""
         commands = command.get('commands', [])
@@ -193,4 +221,19 @@ class NonplayerCharacter(Character):
     pipeline.
     """
 
-    pass
+    def at_object_creation(self):
+        super().at_object_creation()
+        from commands.default_cmdsets import NpcCmdSet
+        self.cmdset.add(NpcCmdSet, persistent=True)
+
+    def handle_agent_command(self, command):
+        """Dispatch a structured command from Minare, same as AgentCharacter."""
+        action = command.get('action', '')
+        text = command.get('text', '')
+
+        if action == 'say':
+            self.location.msg_contents(f'{self.key} says, "{text}"')
+        elif action in ('emote', 'pose'):
+            self.location.msg_contents(f'{self.key} {text}')
+        else:
+            logger.log_warn(f"NonplayerCharacter: unknown action '{action}'")

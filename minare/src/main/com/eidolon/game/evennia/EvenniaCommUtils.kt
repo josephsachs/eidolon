@@ -53,6 +53,42 @@ class EvenniaCommUtils @Inject constructor(
             .put("text", text))
     }
 
+    suspend fun npcSay(roomEvenniaId: String, npcEvenniaId: String, text: String) {
+        sendAgentCommand(JsonObject()
+            .put("action", "say")
+            .put("room_evennia_id", roomEvenniaId)
+            .put("npc_evennia_id", npcEvenniaId)
+            .put("text", text))
+    }
+
+    suspend fun npcEmote(roomEvenniaId: String, npcEvenniaId: String, text: String) {
+        sendAgentCommand(JsonObject()
+            .put("action", "emote")
+            .put("room_evennia_id", roomEvenniaId)
+            .put("npc_evennia_id", npcEvenniaId)
+            .put("text", text))
+    }
+
+    suspend fun npcSayInRoom(roomMinareId: String, npcMinareId: String, text: String) {
+        val roomEvenniaId = crossLinkRegistry.getEvenniaId("Room", roomMinareId)
+        val npcEvenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", npcMinareId)
+        if (roomEvenniaId == null || npcEvenniaId == null) {
+            log.warn("npcSayInRoom: missing cross-link — room={}, npc={}", roomMinareId, npcMinareId)
+            return
+        }
+        npcSay(roomEvenniaId, npcEvenniaId, text)
+    }
+
+    suspend fun npcEmoteInRoom(roomMinareId: String, npcMinareId: String, text: String) {
+        val roomEvenniaId = crossLinkRegistry.getEvenniaId("Room", roomMinareId)
+        val npcEvenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", npcMinareId)
+        if (roomEvenniaId == null || npcEvenniaId == null) {
+            log.warn("npcEmoteInRoom: missing cross-link — room={}, npc={}", roomMinareId, npcMinareId)
+            return
+        }
+        npcEmote(roomEvenniaId, npcEvenniaId, text)
+    }
+
     suspend fun whisper(targetEvenniaId: String, agentEvenniaId: String, text: String) {
         sendAgentCommand(JsonObject()
             .put("action", "whisper")

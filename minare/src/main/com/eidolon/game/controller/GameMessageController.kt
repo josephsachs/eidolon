@@ -4,6 +4,7 @@ import com.eidolon.game.commands.AccountRegister
 import com.eidolon.game.commands.CharacterCreate
 import com.eidolon.game.commands.EntityQuery
 import com.eidolon.game.commands.LinkDomainEntity
+import com.eidolon.game.commands.NpcInteraction
 import com.eidolon.game.commands.PlayerDisconnect
 import com.eidolon.game.commands.RegisterEvenniaObject
 import com.eidolon.game.commands.RoomPose
@@ -40,6 +41,7 @@ class GameMessageController @Inject constructor(
     private val registerEvenniaObject: RegisterEvenniaObject,
     private val skillEvent: SkillEvent,
     private val linkDomainEntity: LinkDomainEntity,
+    private val npcInteraction: NpcInteraction,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -109,6 +111,13 @@ class GameMessageController @Inject constructor(
                 sendToClient(connection, result)
             }
 
+            message.getString("type") == "npc_interact" -> {
+                val requestId = message.getString("request_id")
+                val result = npcInteraction.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
             message.getString("type") == "link_domain_entity" -> {
                 linkDomainEntity.execute(message)
             }
@@ -130,6 +139,7 @@ class GameMessageController @Inject constructor(
                 val result = registerEvenniaObject.execute(message)
                 result.put("request_id", requestId)
                 result.put("key", message.getString("key", ""))
+                result.put("typeclass_path", message.getString("typeclass_path", ""))
                 sendToClient(connection, result)
 
                 // Publish to event bus so RoomInitializer (and others) can react

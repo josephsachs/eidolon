@@ -64,6 +64,20 @@ class AgentCharacterCmdSet(CmdSet):
         self.add(CmdDestroy())
 
 
+class NpcCmdSet(CmdSet):
+    """
+    Commands available when a player is in the same room as an NPC.
+    Adds interaction verbs like 'talk'.
+    """
+
+    key = "NpcCmdSet"
+    priority = 1
+
+    def at_cmdset_creation(self):
+        from commands.npc_commands import CmdTalk
+        self.add(CmdTalk())
+
+
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
     The `CharacterCmdSet` contains general in-game commands like `look`,

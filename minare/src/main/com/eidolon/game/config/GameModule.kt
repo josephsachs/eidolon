@@ -14,6 +14,11 @@ import com.eidolon.game.controller.GameMessageController
 import com.eidolon.game.controller.GameOperationController
 import com.eidolon.clients.ModelAPI
 import com.google.inject.AbstractModule
+import com.google.inject.Provides
+import com.minare.controller.EntityController
+import eidolon.game.models.entity.agent.BrainRegistry
+import eidolon.game.models.entity.agent.IdleBrain
+import eidolon.game.models.entity.agent.KibitzBrain
 import org.slf4j.LoggerFactory
 
 /**
@@ -51,5 +56,14 @@ class GameModule : AbstractModule() {
             .`in`(Singleton::class.java)
 
         log.info("GameModule configured with custom EntityFactory and controllers")
+    }
+
+    @Provides
+    @Singleton
+    fun provideBrainRegistry(entityController: EntityController): BrainRegistry {
+        val registry = BrainRegistry()
+        registry.register(IdleBrain())
+        registry.register(KibitzBrain(entityController))
+        return registry
     }
 }

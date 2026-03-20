@@ -262,8 +262,11 @@ class MinareDownSocketFactory(ReconnectingClientFactory, WebSocketClientFactory)
 
 # Entity types that should sync state to their Evennia counterpart
 _SYNC_TYPE_MAP = {
-    "Room": "typeclasses.rooms.Room",
-    "EvenniaCharacter": "typeclasses.characters.PlayerCharacter",
+    "Room": ["typeclasses.rooms.Room"],
+    "EvenniaCharacter": [
+        "typeclasses.characters.PlayerCharacter",
+        "typeclasses.characters.NonplayerCharacter",
+    ],
 }
 
 
@@ -285,8 +288,12 @@ def _handle_entity_updates(updates):
             logger.log_info(f"Minare sync: empty delta for {entity_id}, skipping")
             continue
 
-        module_path = _SYNC_TYPE_MAP[entity_type]
-        evennia_obj = find_evennia_object_by_minare_id_cached(module_path, entity_id)
+        module_paths = _SYNC_TYPE_MAP[entity_type]
+        evennia_obj = None
+        for module_path in module_paths:
+            evennia_obj = find_evennia_object_by_minare_id_cached(module_path, entity_id)
+            if evennia_obj:
+                break
         if not evennia_obj:
             logger.log_info(f"Minare sync: no Evennia object found for minare_id={entity_id}")
             continue
@@ -492,9 +499,20 @@ def find_evennia_object_by_minare_id(typeclass, minare_id):
 
 
 def _dispatch_agent_command(command):
-    """Route an agent_command to the appropriate AgentCharacter.
-    If no agent_evennia_id is specified, defaults to the first available system agent."""
-    from typeclasses.characters import AgentCharacter
+    """Route an agent_command to the appropriate AgentCharacter or NonplayerCharacter.
+    If npc_evennia_id is present, routes to that NPC.
+    Otherwise routes to AgentCharacter by agent_evennia_id or the default system agent."""
+    from typeclasses.characters import AgentCharacter, NonplayerCharacter
+
+    npc_evennia_id = command.get('npc_evennia_id')
+    if npc_evennia_id:
+        try:
+            npc = NonplayerCharacter.objects.get(id=int(npc_evennia_id))
+            npc.handle_agent_command(command)
+            return
+        except (NonplayerCharacter.DoesNotExist, ValueError):
+            logger.log_err(f"NonplayerCharacter not found: evennia_id={npc_evennia_id}")
+            return
 
     agent_evennia_id = command.get('agent_evennia_id')
     if agent_evennia_id:

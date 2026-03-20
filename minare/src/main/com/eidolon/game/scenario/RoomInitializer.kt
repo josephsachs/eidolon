@@ -84,6 +84,12 @@ class RoomInitializer @Inject constructor(
         createMinareEntities(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId, defaultChannelId)
 
         log.info("RoomInitializer: initialized ${roomData.size} rooms via agent commands")
+
+        vertx.eventBus().publish(ADDRESS_ROOMS_INITIALIZED, JsonObject())
+    }
+
+    companion object {
+        const val ADDRESS_ROOMS_INITIALIZED = "eidolon.rooms.initialized"
     }
 
     /**

@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonObject
 @Singleton
 class GameInitializer @Inject constructor(
     private val mapInitializer: RoomInitializer,
+    private val npcInitializer: NpcInitializer,
     private val entityController: EntityController,
     private val entityFactory: GameEntityFactory,
     private val channelController: GameChannelController,
@@ -48,6 +49,7 @@ class GameInitializer @Inject constructor(
         verticleLogger.logInfo("Initial settings: $startupOptions")
 
         mapInitializer.initialize()
+        npcInitializer.initialize()
 
         vertx.eventBus().publish(ADDRESS_INITIALIZE_GAME_COMPLETE, JsonObject())
 
