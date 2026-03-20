@@ -3,6 +3,7 @@ package com.eidolon.game.controller
 import com.eidolon.game.commands.AccountRegister
 import com.eidolon.game.commands.CharacterCreate
 import com.eidolon.game.commands.EntityQuery
+import com.eidolon.game.commands.LinkDomainEntity
 import com.eidolon.game.commands.PlayerDisconnect
 import com.eidolon.game.commands.RegisterEvenniaObject
 import com.eidolon.game.commands.RoomPose
@@ -38,6 +39,7 @@ class GameMessageController @Inject constructor(
     private val playerDisconnect: PlayerDisconnect,
     private val registerEvenniaObject: RegisterEvenniaObject,
     private val skillEvent: SkillEvent,
+    private val linkDomainEntity: LinkDomainEntity,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -105,6 +107,10 @@ class GameMessageController @Inject constructor(
                 val result = entityQuery.execute(message)
                 result.put("request_id", requestId)
                 sendToClient(connection, result)
+            }
+
+            message.getString("type") == "link_domain_entity" -> {
+                linkDomainEntity.execute(message)
             }
 
             message.getString("type") == "register_cross_link" -> {

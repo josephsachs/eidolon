@@ -260,8 +260,7 @@ def _puppet_character(caller, character_minare_id, character_name, session):
             location=start_room,
             home=start_room,
         )
-        character.db.minare_domain_id = character_minare_id
-        character.db.minare_domain_type = "EvenniaCharacter"
+        character.link_domain_entity(character_minare_id, "EvenniaCharacter")
         logger.log_info(
             f"Account menu: Created Evennia Character '{character_name}' "
             f"in room '{start_room}' for domain_id={character_minare_id}"

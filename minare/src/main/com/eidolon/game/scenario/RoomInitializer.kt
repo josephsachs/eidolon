@@ -1,5 +1,6 @@
 package com.eidolon.game.scenario
 
+import com.eidolon.game.commands.LinkDomainEntity
 import com.eidolon.game.controller.GameConnectionController
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommUtils
@@ -29,6 +30,7 @@ class RoomInitializer @Inject constructor(
     private val entityController: EntityController,
     private val evenniaCommUtils: EvenniaCommUtils,
     private val crossLinkRegistry: CrossLinkRegistry,
+    private val linkDomainEntity: LinkDomainEntity,
     private val coroutineScope: CoroutineScope,
     private val vertx: Vertx
 ) {
@@ -231,17 +233,13 @@ class RoomInitializer @Inject constructor(
             entityController.create(memory)
             entityController.saveState(room._id!!, JsonObject().put("roomMemoryId", memory._id))
 
-            // Register cross-link: Room entity <-> Evennia room
-            crossLinkRegistry.link("Room", room._id!!, evenniaId)
-
-            // Back-link the EvenniaObject stub to this domain entity
-            val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId)
-            if (eoMinareId != null) {
-                entityController.saveState(eoMinareId, JsonObject()
-                    .put("domainEntityId", room._id)
-                    .put("domainEntityType", "Room"))
-                log.info("Back-linked EvenniaObject $eoMinareId -> Room ${room._id}")
-            }
+            // Link EvenniaObject stub <-> Room domain entity
+            val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId) ?: ""
+            linkDomainEntity.execute(JsonObject()
+                .put("evennia_id", evenniaId)
+                .put("eo_minare_id", eoMinareId)
+                .put("domain_entity_id", room._id)
+                .put("domain_entity_type", "Room"))
 
             rooms.add(room)
             memories.add(memory)
