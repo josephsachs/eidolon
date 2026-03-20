@@ -234,6 +234,15 @@ class RoomInitializer @Inject constructor(
             // Register cross-link: Room entity <-> Evennia room
             crossLinkRegistry.link("Room", room._id!!, evenniaId)
 
+            // Back-link the EvenniaObject stub to this domain entity
+            val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId)
+            if (eoMinareId != null) {
+                entityController.saveState(eoMinareId, JsonObject()
+                    .put("domainEntityId", room._id)
+                    .put("domainEntityType", "Room"))
+                log.info("Back-linked EvenniaObject $eoMinareId -> Room ${room._id}")
+            }
+
             rooms.add(room)
             memories.add(memory)
             log.info("Created Minare Room '${room.shortDescription}' (id=${room._id}, evenniaId=$evenniaId)")
@@ -241,6 +250,19 @@ class RoomInitializer @Inject constructor(
 
         gameChannelController.addEntitiesToChannel(rooms, defaultChannelId)
         gameChannelController.addEntitiesToChannel(memories, defaultChannelId)
+
+        // Notify Evennia of domain entity links so it can match incoming updates
+        for (json in roomData) {
+            val roomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
+            val evenniaId = roomKeyToEvenniaId[roomKey] ?: continue
+            val room = rooms.find { it.shortDescription == roomKey } ?: continue
+            gameChannelController.broadcast(defaultChannelId, JsonObject()
+                .put("type", "set_domain_link")
+                .put("evennia_id", evenniaId)
+                .put("domain_entity_id", room._id)
+                .put("domain_entity_type", "Room"))
+        }
+
         log.info("RoomInitializer: created ${rooms.size} Room entities and ${memories.size} RoomMemory entities")
     }
 

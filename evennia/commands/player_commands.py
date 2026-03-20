@@ -88,10 +88,10 @@ def _get_client():
 
 def _minare_ids(caller):
     """Return (character_id, room_id) for the caller."""
-    char_id = caller.db.minare_id or ""
+    char_id = caller.db.minare_domain_id or ""
     room_id = ""
     if caller.location and hasattr(caller.location, 'db'):
-        room_id = caller.location.db.minare_id or ""
+        room_id = caller.location.db.minare_domain_id or ""
     return char_id, room_id
 
 
@@ -240,7 +240,7 @@ class CmdHide(Command):
             return
 
         room = caller.location
-        concealment = room.db.concealment or 0
+        concealment = room.concealment
 
         def on_skills(response):
             if response.get('status') != 'success':

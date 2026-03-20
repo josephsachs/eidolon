@@ -234,10 +234,10 @@ def _puppet_character(caller, character_minare_id, character_name, session):
     from typeclasses.characters import PlayerCharacter
     from evennia import create_object
 
-    # Search for existing Evennia character with this minare_id
+    # Search for existing Evennia character with this domain entity ID
     character = None
     for char in PlayerCharacter.objects.all():
-        if char.db.minare_id == character_minare_id:
+        if char.db.minare_domain_id == character_minare_id:
             character = char
             break
 
@@ -250,7 +250,7 @@ def _puppet_character(caller, character_minare_id, character_name, session):
         from typeclasses.rooms import Room
         start_room = None
         for room in Room.objects.all():
-            if room.db.minare_id:
+            if room.db.minare_eo_id:
                 start_room = room
                 break
 
@@ -260,10 +260,11 @@ def _puppet_character(caller, character_minare_id, character_name, session):
             location=start_room,
             home=start_room,
         )
-        character.db.minare_id = character_minare_id
+        character.db.minare_domain_id = character_minare_id
+        character.db.minare_domain_type = "EvenniaCharacter"
         logger.log_info(
             f"Account menu: Created Evennia Character '{character_name}' "
-            f"in room '{start_room}' for minare_id={character_minare_id}"
+            f"in room '{start_room}' for domain_id={character_minare_id}"
         )
 
     # Ensure puppet permissions: set lock and register as playable

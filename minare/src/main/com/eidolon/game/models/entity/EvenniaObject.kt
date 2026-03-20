@@ -36,6 +36,14 @@ class EvenniaObject : Entity(), Serializable, Viewable {
     @Mutable
     var locationEvenniaId: String = ""
 
+    @State
+    @Mutable
+    var domainEntityId: String = ""
+
+    @State
+    @Mutable
+    var domainEntityType: String = ""
+
     override fun project(viewName: String): JsonObject? = when (viewName) {
         "default" -> JsonObject()
             .put("evenniaId", evenniaId)

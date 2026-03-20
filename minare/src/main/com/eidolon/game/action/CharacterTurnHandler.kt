@@ -22,7 +22,6 @@ class CharacterTurnHandler @Inject constructor(
         val evenniaCharacters = entityController.findByIds(
             stateStore.findAllKeysForType("EvenniaCharacter")
         )
-        log.info("TURN_LOOP: Got here 3 clans $evenniaCharacters")
         var dataResponse = JsonObject()
 
         for ((key, character) in evenniaCharacters) {

@@ -2,6 +2,7 @@ package com.eidolon.game.commands
 
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.Viewable
+import com.eidolon.game.models.entity.EvenniaObject
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
@@ -29,13 +30,25 @@ class EntityQuery @Inject constructor(
 
         val viewName = message.getString("view", "default")
 
+        var resolvedId = minareId
         val entities = entityController.findByIds(listOf(minareId))
-        val entity = entities[minareId]
+        var entity = entities[minareId]
             ?: return error("Entity not found: $minareId")
 
+        // If this is an EvenniaObject with a domain entity back-link, resolve to the domain entity
+        if (entity is EvenniaObject && entity.domainEntityId.isNotEmpty()) {
+            val domainEntities = entityController.findByIds(listOf(entity.domainEntityId))
+            val domainEntity = domainEntities[entity.domainEntityId]
+            if (domainEntity != null) {
+                log.info("EntityQuery: resolved EvenniaObject {} -> {} {}", minareId, entity.domainEntityType, entity.domainEntityId)
+                resolvedId = entity.domainEntityId
+                entity = domainEntity
+            }
+        }
+
         // Re-hydrate inline (workaround: framework hydrator doesn't await)
-        val entityJsons = stateStore.findJson(listOf(minareId))
-        val entityJson = entityJsons[minareId]
+        val entityJsons = stateStore.findJson(listOf(resolvedId))
+        val entityJson = entityJsons[resolvedId]
         if (entityJson != null) {
             stateStore.setEntityState(entity, entity.type, entityJson.getJsonObject("state", JsonObject()))
             stateStore.setEntityProperties(entity, entity.type, entityJson.getJsonObject("properties", JsonObject()))

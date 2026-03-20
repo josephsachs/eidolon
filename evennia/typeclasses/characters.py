@@ -54,10 +54,10 @@ class PlayerCharacter(Character):
             client = get_minare_client()
             room_id = None
             if self.location and hasattr(self.location, 'db'):
-                room_id = self.location.db.minare_id
+                room_id = self.location.db.minare_domain_id
             client.send_message({
                 "type": "player_disconnect",
-                "character_id": self.db.minare_id or "",
+                "character_id": self.db.minare_domain_id or "",
                 "room_id": room_id or "",
                 "account_id": str(account.id) if account else "",
             })

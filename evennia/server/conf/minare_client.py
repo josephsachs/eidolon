@@ -153,6 +153,7 @@ class MinareDownSocketProtocol(WebSocketClientProtocol):
                 logger.log_info("Minare DownSocket: Subscription confirmed")
 
             elif msg_type == 'update':
+                logger.log_info(f"Minare DownSocket: Received entity update: {msg}")
                 _handle_entity_updates(msg.get('updates', {}))
 
             elif msg_type == 'sync':
@@ -177,6 +178,9 @@ class MinareDownSocketProtocol(WebSocketClientProtocol):
                 # Broadcast to all connected players
                 broadcast_msg = f"[Minare] Response: {original}"
                 evennia.SESSION_HANDLER.announce_all(broadcast_msg)
+
+            elif msg_type == 'set_domain_link':
+                _handle_set_domain_link(msg)
 
             elif msg_type == 'agent_command':
                 command = msg.get('command', {})
@@ -270,21 +274,50 @@ def _handle_entity_updates(updates):
     """
     for entity_id, update in updates.items():
         entity_type = update.get('type')
+        logger.log_info(f"Minare sync: entity_id={entity_id}, type={entity_type}")
         if entity_type not in _SYNC_TYPE_MAP:
+            logger.log_info(f"Minare sync: type '{entity_type}' not in _SYNC_TYPE_MAP, skipping")
             continue
 
         delta = update.get('delta', {})
         if not delta:
+            logger.log_info(f"Minare sync: empty delta for {entity_id}, skipping")
             continue
 
         module_path = _SYNC_TYPE_MAP[entity_type]
         evennia_obj = find_evennia_object_by_minare_id_cached(module_path, entity_id)
         if not evennia_obj:
+            logger.log_info(f"Minare sync: no Evennia object found for minare_id={entity_id}")
             continue
 
         sim_state = evennia_obj.db.sim_state or {}
         sim_state.update(delta)
         evennia_obj.db.sim_state = sim_state
+        logger.log_info(f"Minare sync: updated sim_state for {evennia_obj.key}: {sim_state}")
+
+
+def _handle_set_domain_link(msg):
+    """
+    Store a domain entity's Minare ID on the corresponding Evennia object.
+    This lets _handle_entity_updates match incoming domain entity updates
+    to the correct Evennia object.
+    """
+    evennia_id = msg.get('evennia_id')
+    domain_entity_id = msg.get('domain_entity_id')
+    domain_entity_type = msg.get('domain_entity_type')
+    if not evennia_id or not domain_entity_id:
+        return
+    try:
+        from evennia.objects.models import ObjectDB
+        obj = ObjectDB.objects.get(id=int(evennia_id))
+        obj.db.minare_domain_id = domain_entity_id
+        obj.db.minare_domain_type = domain_entity_type
+        logger.log_info(
+            f"Minare sync: Set domain link on '{obj.key}' "
+            f"(evennia_id={evennia_id}): {domain_entity_type}={domain_entity_id}"
+        )
+    except Exception as e:
+        logger.log_err(f"Minare sync: Failed to set domain link: {e}")
 
 
 def find_evennia_object_by_minare_id_cached(typeclass_path, minare_id):
@@ -320,7 +353,7 @@ def _sync_rooms(minare_entities, protocol):
     # Build lookup: minare_id attribute -> Evennia Room
     evennia_rooms_by_minare_id = {}
     for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_id
+        mid = room.db.minare_eo_id
         if mid:
             evennia_rooms_by_minare_id[mid] = room
 
@@ -336,7 +369,7 @@ def _sync_rooms(minare_entities, protocol):
     client = get_minare_client()
     # Rebuild lookup to include newly created rooms
     for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_id
+        mid = room.db.minare_eo_id
         if mid and mid in minare_rooms:
             client.send_message({
                 "type": "register_cross_link",
@@ -371,14 +404,14 @@ def _sync_exits(minare_entities, protocol):
     # Map minare_id -> Evennia Room
     evennia_rooms_by_minare_id = {}
     for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_id
+        mid = room.db.minare_eo_id
         if mid:
             evennia_rooms_by_minare_id[mid] = room
 
     # Map minare_id -> Evennia Exit (existing)
     evennia_exits_by_minare_id = {}
     for exit_obj in EvenniaExit.objects.all():
-        mid = exit_obj.db.minare_id
+        mid = exit_obj.db.minare_eo_id
         if mid:
             evennia_exits_by_minare_id[mid] = exit_obj
 
@@ -412,7 +445,7 @@ def _sync_exits(minare_entities, protocol):
                     location=source_evennia_room,
                     destination=dest_evennia_room,
                 )
-                new_exit.db.minare_id = exit_minare_id
+                new_exit.db.minare_eo_id = exit_minare_id
                 new_exit.db.desc = exit_state.get('description', '')
                 logger.log_info(
                     f"Minare sync: Created Exit '{direction}' in '{source_evennia_room.key}' "
@@ -433,13 +466,13 @@ def _sync_exits(minare_entities, protocol):
                 f"Minare sync: Archiving Exit '{exit_obj.key}' "
                 f"(minare_id={minare_id} not found in Minare)"
             )
-            exit_obj.db.minare_id = None
+            exit_obj.db.minare_eo_id = None
             exit_obj.db.minare_archived = True
 
     # Register cross-links for all synced exits
     client = get_minare_client()
     for exit_obj in EvenniaExit.objects.all():
-        mid = exit_obj.db.minare_id
+        mid = exit_obj.db.minare_eo_id
         if mid and mid in minare_exits:
             client.send_message({
                 "type": "register_cross_link",
@@ -450,9 +483,9 @@ def _sync_exits(minare_entities, protocol):
 
 
 def find_evennia_object_by_minare_id(typeclass, minare_id):
-    """Find an Evennia object by its minare_id attribute."""
+    """Find an Evennia object by minare_domain_id (domain entity) or minare_eo_id (EvenniaObject)."""
     for obj in typeclass.objects.all():
-        if obj.db.minare_id == minare_id:
+        if obj.db.minare_domain_id == minare_id or obj.db.minare_eo_id == minare_id:
             return obj
     return None
 
