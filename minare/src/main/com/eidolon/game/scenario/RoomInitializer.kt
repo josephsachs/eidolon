@@ -104,7 +104,7 @@ class RoomInitializer @Inject constructor(
             val evenniaId = body.getString("evennia_id", "")
             if (key in expectedRoomKeys && evenniaId.isNotEmpty()) {
                 roomKeyToEvenniaId[key] = evenniaId
-                log.info("Room registered: key={}, evenniaId={}", key, evenniaId)
+                log.info("Room registered: key=$key, evenniaId=$evenniaId")
                 if (pendingCount.decrementAndGet() == 0) {
                     latch.complete(Unit)
                 }
