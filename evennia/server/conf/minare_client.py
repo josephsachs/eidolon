@@ -263,6 +263,7 @@ class MinareDownSocketFactory(ReconnectingClientFactory, WebSocketClientFactory)
 # Entity types that should sync state to their Evennia counterpart
 _SYNC_TYPE_MAP = {
     "Room": "typeclasses.rooms.Room",
+    "EvenniaCharacter": "typeclasses.characters.PlayerCharacter",
 }
 
 
