@@ -5,6 +5,7 @@ import com.eidolon.game.evennia.Viewable
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
+import com.minare.core.storage.interfaces.StateStore
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
 
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory
 @Singleton
 class EntityQuery @Inject constructor(
     private val entityController: EntityController,
+    private val stateStore: StateStore,
     private val crossLinkRegistry: CrossLinkRegistry,
 ) : EvenniaCommand {
     private val log = LoggerFactory.getLogger(EntityQuery::class.java)
@@ -30,6 +32,14 @@ class EntityQuery @Inject constructor(
         val entities = entityController.findByIds(listOf(minareId))
         val entity = entities[minareId]
             ?: return error("Entity not found: $minareId")
+
+        // Re-hydrate inline (workaround: framework hydrator doesn't await)
+        val entityJsons = stateStore.findJson(listOf(minareId))
+        val entityJson = entityJsons[minareId]
+        if (entityJson != null) {
+            stateStore.setEntityState(entity, entity.type, entityJson.getJsonObject("state", JsonObject()))
+            stateStore.setEntityProperties(entity, entity.type, entityJson.getJsonObject("properties", JsonObject()))
+        }
 
         val viewable = entity as? Viewable
             ?: return error("Entity type ${entity.type} does not support views")
