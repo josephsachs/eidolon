@@ -64,48 +64,58 @@ class RoomInitializer @Inject constructor(
             return
         }
 
-        // Phase 1: Send dig commands to Evennia, wait for confirmations
-        val scenarioIdToEvenniaId = digRooms(roomData)
+        // Build lookup: scenarioId -> roomKey (shortDescription)
+        val scenarioIdToRoomKey = roomData.associate {
+            it.getString("id") to it.getString("shortDescription", "")
+        }
 
-        // Phase 2: Create exits between rooms
-        createExits(roomData, scenarioIdToEvenniaId)
+        // Phase 1: Send dig commands to Evennia, wait for ObjectParent registrations
+        val roomKeyToEvenniaId = digRooms(roomData, scenarioIdToRoomKey.values.toSet())
 
-        // Phase 3: Create lightweight Room entities + RoomMemory in Minare
-        createMinareEntities(roomData, scenarioIdToEvenniaId, defaultChannelId)
+        // Phase 2: Send describe commands to set room descriptions
+        describeRooms(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId)
+
+        // Phase 3: Create exits between rooms
+        createExits(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId)
+
+        // Phase 4: Create lightweight Room entities + RoomMemory in Minare
+        createMinareEntities(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId, defaultChannelId)
 
         log.info("RoomInitializer: initialized ${roomData.size} rooms via agent commands")
     }
 
     /**
-     * Phase 1: Send batch dig commands to Evennia and wait for room_created confirmations.
-     * Returns a map of scenarioId -> evenniaId.
+     * Phase 1: Send batch dig commands to Evennia and wait for ObjectParent registrations.
+     * CmdDig creates rooms; ObjectParent.at_object_creation fires register_evennia_object.
+     * Returns a map of roomKey -> evenniaId.
      */
-    private suspend fun digRooms(roomData: List<JsonObject>): Map<String, String> {
-        val scenarioIdToEvenniaId = mutableMapOf<String, String>()
+    private suspend fun digRooms(
+        roomData: List<JsonObject>,
+        expectedRoomKeys: Set<String>
+    ): Map<String, String> {
+        val roomKeyToEvenniaId = mutableMapOf<String, String>()
         val pendingCount = AtomicInteger(roomData.size)
         val latch = CompletableDeferred<Unit>()
 
-        // Listen for room_created events on the Vert.x event bus
-        val consumer = vertx.eventBus().consumer<JsonObject>("eidolon.room.created") { msg ->
+        // Listen for register_evennia_object events on the Vert.x event bus
+        val consumer = vertx.eventBus().consumer<JsonObject>("eidolon.evennia_object.registered") { msg ->
             val body = msg.body()
-            val scenarioId = body.getString("scenario_id", "")
+            val key = body.getString("key", "")
             val evenniaId = body.getString("evennia_id", "")
-            if (scenarioId.isNotEmpty() && evenniaId.isNotEmpty()) {
-                scenarioIdToEvenniaId[scenarioId] = evenniaId
-                log.info("Room confirmed: scenarioId=$scenarioId, evenniaId=$evenniaId")
-            }
-            if (pendingCount.decrementAndGet() == 0) {
-                latch.complete(Unit)
+            if (key in expectedRoomKeys && evenniaId.isNotEmpty()) {
+                roomKeyToEvenniaId[key] = evenniaId
+                log.info("Room registered: key={}, evenniaId={}", key, evenniaId)
+                if (pendingCount.decrementAndGet() == 0) {
+                    latch.complete(Unit)
+                }
             }
         }
 
-        // Build and send batch dig commands
+        // Build and send batch dig commands via generic dispatcher
         val digCommands = roomData.map { json ->
-            evenniaCommUtils.buildDigCommand(
-                roomKey = json.getString("shortDescription", "New Room"),
-                description = json.getString("description", ""),
-                scenarioId = json.getString("id")
-            )
+            JsonObject()
+                .put("action", "dig")
+                .put("text", json.getString("shortDescription", "New Room"))
         }
         log.info("RoomInitializer: Sending batch dig for ${digCommands.size} rooms")
         evenniaCommUtils.sendBatchCommands(digCommands)
@@ -114,31 +124,63 @@ class RoomInitializer @Inject constructor(
         try {
             withTimeout(30_000) { latch.await() }
         } catch (e: Exception) {
-            log.error("RoomInitializer: Timed out waiting for room confirmations. " +
-                "Received ${scenarioIdToEvenniaId.size}/${roomData.size}")
+            log.error("RoomInitializer: Timed out waiting for room registrations. " +
+                "Received ${roomKeyToEvenniaId.size}/${roomData.size}")
         } finally {
             consumer.unregister()
         }
 
-        return scenarioIdToEvenniaId
+        return roomKeyToEvenniaId
     }
 
     /**
-     * Phase 2: Create one-way exits between rooms using the evenniaId map.
+     * Phase 2: Send describe commands to set room descriptions.
+     * CmdDig creates rooms but doesn't set descriptions.
+     */
+    private suspend fun describeRooms(
+        roomData: List<JsonObject>,
+        scenarioIdToRoomKey: Map<String, String>,
+        roomKeyToEvenniaId: Map<String, String>
+    ) {
+        val describeCommands = mutableListOf<JsonObject>()
+
+        for (json in roomData) {
+            val roomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
+            val evenniaId = roomKeyToEvenniaId[roomKey] ?: continue
+            val description = json.getString("description", "")
+            if (description.isNotEmpty()) {
+                describeCommands.add(JsonObject()
+                    .put("action", "describe")
+                    .put("room_evennia_id", evenniaId)
+                    .put("text", description))
+            }
+        }
+
+        if (describeCommands.isNotEmpty()) {
+            log.info("RoomInitializer: Sending batch describe for ${describeCommands.size} rooms")
+            evenniaCommUtils.sendBatchCommands(describeCommands)
+        }
+    }
+
+    /**
+     * Phase 3: Create one-way exits between rooms using the roomKey map.
      */
     private suspend fun createExits(
         roomData: List<JsonObject>,
-        scenarioIdToEvenniaId: Map<String, String>
+        scenarioIdToRoomKey: Map<String, String>,
+        roomKeyToEvenniaId: Map<String, String>
     ) {
         val exitCommands = mutableListOf<JsonObject>()
 
         for (json in roomData) {
-            val sourceEvenniaId = scenarioIdToEvenniaId[json.getString("id")] ?: continue
+            val sourceRoomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
+            val sourceEvenniaId = roomKeyToEvenniaId[sourceRoomKey] ?: continue
 
             for (exitObj in json.getJsonArray("exits", JsonArray()).map { it as JsonObject }) {
                 val direction = exitObj.getString("direction")
                 val destScenarioId = exitObj.getString("destination")
-                val destEvenniaId = scenarioIdToEvenniaId[destScenarioId]
+                val destRoomKey = scenarioIdToRoomKey[destScenarioId]
+                val destEvenniaId = if (destRoomKey != null) roomKeyToEvenniaId[destRoomKey] else null
                 if (destEvenniaId == null) {
                     log.warn("RoomInitializer: Exit '$direction' destination '$destScenarioId' not found, skipping")
                     continue
@@ -159,20 +201,21 @@ class RoomInitializer @Inject constructor(
     }
 
     /**
-     * Phase 3: Create lightweight Room entities and RoomMemory entities in Minare.
+     * Phase 4: Create lightweight Room entities and RoomMemory entities in Minare.
      * Room entities store shortDescription and roomMemoryId — full description lives in Evennia.
      */
     private suspend fun createMinareEntities(
         roomData: List<JsonObject>,
-        scenarioIdToEvenniaId: Map<String, String>,
+        scenarioIdToRoomKey: Map<String, String>,
+        roomKeyToEvenniaId: Map<String, String>,
         defaultChannelId: String
     ) {
         val rooms = mutableListOf<Room>()
         val memories = mutableListOf<RoomMemory>()
 
         for (json in roomData) {
-            val scenarioId = json.getString("id")
-            val evenniaId = scenarioIdToEvenniaId[scenarioId] ?: continue
+            val roomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
+            val evenniaId = roomKeyToEvenniaId[roomKey] ?: continue
 
             // Create Room entity (lightweight — description lives in Evennia)
             val room = entityFactory.createEntity(Room::class.java) as Room

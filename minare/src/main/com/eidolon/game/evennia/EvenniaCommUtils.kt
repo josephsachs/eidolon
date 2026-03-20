@@ -105,22 +105,6 @@ class EvenniaCommUtils @Inject constructor(
     }
 
     /**
-     * Build a dig command JsonObject (does not send it).
-     * Use with sendBatchCommands for bulk room creation.
-     */
-    fun buildDigCommand(
-        roomKey: String,
-        description: String,
-        scenarioId: String
-    ): JsonObject {
-        return JsonObject()
-            .put("action", "dig")
-            .put("room_key", roomKey)
-            .put("description", description)
-            .put("scenario_id", scenarioId)
-    }
-
-    /**
      * Build a create_exit command JsonObject (does not send it).
      */
     fun buildCreateExitCommand(

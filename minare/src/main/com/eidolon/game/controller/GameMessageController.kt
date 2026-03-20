@@ -114,16 +114,11 @@ class GameMessageController @Inject constructor(
                 val requestId = message.getString("request_id")
                 val result = registerEvenniaObject.execute(message)
                 result.put("request_id", requestId)
+                result.put("key", message.getString("key", ""))
                 sendToClient(connection, result)
-            }
 
-            message.getString("type") == "room_created" -> {
-                val evenniaId = message.getString("evennia_id", "")
-                val scenarioId = message.getString("scenario_id", "")
-                val roomKey = message.getString("room_key", "")
-                log.info("Room created in Evennia: key={}, evenniaId={}, scenarioId={}",
-                    roomKey, evenniaId, scenarioId)
-                vertx.eventBus().publish("eidolon.room.created", message)
+                // Publish to event bus so RoomInitializer (and others) can react
+                vertx.eventBus().publish("eidolon.evennia_object.registered", result)
             }
 
             message.getString("type") == "system_agent_ready" -> {

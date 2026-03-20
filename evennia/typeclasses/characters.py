@@ -75,6 +75,7 @@ class AgentCharacter(Character):
 
     ACTION_ALIASES = {
         'emote': 'pose',
+        'dig': '@dig',
     }
 
     ACTION_ASSIGNS = {
@@ -82,7 +83,6 @@ class AgentCharacter(Character):
     }
 
     ACTION_HANDLERS = {
-        'dig': '_handle_dig',
         'create_exit': '_handle_create_exit',
         'batch': '_handle_batch',
     }
@@ -137,27 +137,6 @@ class AgentCharacter(Character):
         self.execute_cmd(cmd_string)
         self.location = old_location
 
-    def _handle_dig(self, command):
-        """Create a new room in Evennia. Sends room_created confirmation back to Minare."""
-        from typeclasses.rooms import Room
-        from evennia import create_object
-
-        room_key = command.get('room_key', 'New Room')
-        description = command.get('description', '')
-        scenario_id = command.get('scenario_id', '')
-
-        new_room = create_object(Room, key=room_key)
-        new_room.db.desc = description
-        if scenario_id:
-            new_room.db.scenario_id = scenario_id
-
-        logger.log_info(
-            f"AgentCharacter: Dug room '{room_key}' (id={new_room.id}, scenario_id={scenario_id})"
-        )
-
-        # Send confirmation back to Minare
-        self._send_dig_confirmation(new_room, scenario_id)
-
     def _handle_create_exit(self, command):
         """Create a one-way exit between two existing rooms."""
         from typeclasses.rooms import Room
@@ -194,21 +173,6 @@ class AgentCharacter(Character):
         logger.log_info(f"AgentCharacter: Executing batch of {len(commands)} commands")
         for sub_command in commands:
             self.handle_agent_command(sub_command)
-
-    def _send_dig_confirmation(self, room, scenario_id):
-        """Notify Minare that a room was created."""
-        from server.conf.minare_client import get_minare_client
-        try:
-            client = get_minare_client()
-            client.send_message({
-                "type": "room_created",
-                "evennia_id": str(room.id),
-                "room_key": room.key,
-                "scenario_id": scenario_id,
-            })
-        except Exception as e:
-            logger.log_err(f"AgentCharacter._send_dig_confirmation: {e}")
-
 
 class NonplayerCharacter(Character):
     """
