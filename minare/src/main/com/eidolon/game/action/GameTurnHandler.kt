@@ -21,6 +21,7 @@ class GameTurnHandler @Inject constructor(
     private val scope: CoroutineScope,
     private val eventBusUtils: EventBusUtils,
     private val characterTurnHandler: CharacterTurnHandler,
+    private val ingameTimeController: IngameTimeController,
     private val vertx: Vertx
 ) {
     private var log = LoggerFactory.getLogger(GameTurnHandler::class.java)
@@ -57,6 +58,9 @@ class GameTurnHandler @Inject constructor(
 
         setGameProperties(null, false)
         incrementGameTurn()
+
+        val game = getGame()
+        ingameTimeController.onTurn(game.currentTurn)
 
         eventBusUtils.sendWithTracing(ADDRESS_TURN_COMPLETE, JsonObject())
 

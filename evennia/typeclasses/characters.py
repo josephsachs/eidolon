@@ -90,7 +90,7 @@ class AgentCharacter(Character):
     }
 
     ACTION_ASSIGNS = {
-        'describe': 'desc',
+        'describe': 'desc here',
     }
 
     ACTION_HANDLERS = {

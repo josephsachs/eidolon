@@ -152,6 +152,9 @@ class MinareDownSocketProtocol(WebSocketClientProtocol):
             if msg_type == 'down_socket_confirm':
                 logger.log_info("Minare DownSocket: Subscription confirmed")
 
+            elif msg_type == 'update':
+                _handle_entity_updates(msg.get('updates', {}))
+
             elif msg_type == 'sync':
                 # Initial sync data
                 logger.log_info("Minare DownSocket: Received sync data")
@@ -251,6 +254,48 @@ class MinareDownSocketFactory(ReconnectingClientFactory, WebSocketClientFactory)
     def clientConnectionLost(self, connector, reason):
         logger.log_warn(f"Minare DownSocket: Connection lost - {reason.getErrorMessage()}")
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+
+
+# Entity types that should sync state to their Evennia counterpart
+_SYNC_TYPE_MAP = {
+    "Room": "typeclasses.rooms.Room",
+}
+
+
+def _handle_entity_updates(updates):
+    """
+    Handle entity update messages from Minare DownSocket.
+    For entity types in _SYNC_TYPE_MAP, looks up the Evennia object
+    by minare_id and writes the delta into db.sim_state.
+    """
+    for entity_id, update in updates.items():
+        entity_type = update.get('type')
+        if entity_type not in _SYNC_TYPE_MAP:
+            continue
+
+        delta = update.get('delta', {})
+        if not delta:
+            continue
+
+        module_path = _SYNC_TYPE_MAP[entity_type]
+        evennia_obj = find_evennia_object_by_minare_id_cached(module_path, entity_id)
+        if not evennia_obj:
+            continue
+
+        sim_state = evennia_obj.db.sim_state or {}
+        sim_state.update(delta)
+        evennia_obj.db.sim_state = sim_state
+
+
+def find_evennia_object_by_minare_id_cached(typeclass_path, minare_id):
+    """Find an Evennia object by minare_id, importing the typeclass by path."""
+    from django.utils.module_loading import import_string
+    try:
+        typeclass = import_string(typeclass_path)
+    except ImportError:
+        logger.log_err(f"Minare sync: Could not import {typeclass_path}")
+        return None
+    return find_evennia_object_by_minare_id(typeclass, minare_id)
 
 
 def _sync_rooms(minare_entities, protocol):

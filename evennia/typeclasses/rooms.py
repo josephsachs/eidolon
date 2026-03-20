@@ -23,4 +23,18 @@ class Room(ObjectParent, DefaultRoom):
 
     def at_object_creation(self):
         super().at_object_creation()
-        self.db.concealment = 0
+        self.db.sim_state = {}
+
+    @property
+    def concealment(self):
+        """Room concealment from Minare sim state."""
+        sim_state = self.db.sim_state or {}
+        return sim_state.get("concealment", 0)
+
+    def get_display_desc(self, looker, **kwargs):
+        """Use sim-synced description if available, otherwise fall back to default."""
+        sim_state = self.db.sim_state or {}
+        sim_desc = sim_state.get("description")
+        if sim_desc:
+            return sim_desc
+        return super().get_display_desc(looker, **kwargs) or ""

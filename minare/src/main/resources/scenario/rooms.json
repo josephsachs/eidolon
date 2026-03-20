@@ -3,6 +3,8 @@
     "id": "valero-station",
     "shortDescription": "Outside a Valero Station",
     "description": "You stand in a cracked asphalt lot outside a dusty Valero gas station. The neon sign flickers weakly in the relentless desert heat.",
+    "dayDesc": "You stand in a cracked asphalt lot outside a dusty Valero gas station. The neon sign is barely visible against the blazing midday sun.",
+    "nightDesc": "You stand in a cracked asphalt lot outside a dusty Valero gas station. The neon sign casts a pale glow across the dark pavement, buzzing softly.",
     "exits": [
       {"direction": "east", "destination": "desert-road", "description": "A sun-bleached road stretches east into the flat desert."},
       {"direction": "south", "destination": "cracked-lot", "description": "A cracked asphalt lot extends to the south."}
@@ -12,6 +14,8 @@
     "id": "desert-road",
     "shortDescription": "A Desert Road",
     "description": "A long, sun-bleached road stretches in both directions through the flat desert. Heat shimmers rise from the asphalt in lazy waves.",
+    "dayDesc": "A long, sun-bleached road stretches in both directions through the flat desert. Heat shimmers rise from the asphalt in lazy waves.",
+    "nightDesc": "A long road stretches in both directions through the dark desert. Stars blaze overhead and the cooling asphalt ticks quietly.",
     "exits": [
       {"direction": "west", "destination": "valero-station", "description": "The flickering neon of a Valero station is visible to the west."},
       {"direction": "east", "destination": "dusty-crossroads", "description": "A weathered crossroads lies to the east."},

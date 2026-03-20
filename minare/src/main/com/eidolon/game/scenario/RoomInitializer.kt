@@ -221,6 +221,8 @@ class RoomInitializer @Inject constructor(
             val room = entityFactory.createEntity(Room::class.java) as Room
             room.shortDescription = json.getString("shortDescription", "")
             room.description = "" // Evennia is authoritative for descriptions
+            room.dayDesc = json.getString("dayDesc", "")
+            room.nightDesc = json.getString("nightDesc", "")
             entityController.create(room)
 
             // Create RoomMemory child
