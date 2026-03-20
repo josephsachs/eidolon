@@ -280,7 +280,7 @@ class CmdHide(Command):
                     'skill_name': 'Hiding',
                     'outcome': outcome,
                 },
-                on_skill_event,
+                on_skill_event
             )
 
         _get_client().send_with_callback(
@@ -350,13 +350,7 @@ class CmdSearch(Command):
                 roll = random.randint(0, 99)
 
                 if roll < chance:
-                    target.unhide()
-                    caller.msg(f"|gYou spot |w{target.key}|g lurking in the shadows!|n")
-                    room.msg_contents(
-                        f"|w{caller.key}|n reveals |w{target.key}|n!",
-                        exclude=[caller, target],
-                    )
-                    target.msg(f"|r{caller.key} has found you!|n")
+                    caller.msg(f"|gYou sense |w{target.key}|g hiding nearby.|n")
                     found_any = True
 
             if not found_any:
@@ -383,6 +377,32 @@ class CmdSearch(Command):
         _get_client().send_with_callback(
             {'type': 'entity_query', 'minare_id': char_id, 'view': 'skills'},
             on_skills,
+        )
+
+
+class CmdReveal(Command):
+    """
+    Step out of hiding.
+
+    Usage:
+      reveal
+
+    Removes your hidden status, making you visible again.
+    """
+    key = "reveal"
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        caller = self.caller
+        if caller.db.hidden_mod is None:
+            caller.msg("You aren't hidden.")
+            return
+        caller.unhide()
+        caller.msg("|yYou step out of the shadows.|n")
+        caller.location.msg_contents(
+            f"|w{caller.key}|n emerges from hiding.",
+            exclude=[caller],
         )
 
 

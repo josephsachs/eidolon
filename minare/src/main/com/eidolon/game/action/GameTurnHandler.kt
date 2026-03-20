@@ -1,5 +1,6 @@
 package eidolon.game.action
 
+import chieftain.game.action.CharacterTurnHandler
 import eidolon.game.models.entity.Game
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -19,9 +20,12 @@ class GameTurnHandler @Inject constructor(
     private val stateStore: StateStore,
     private val scope: CoroutineScope,
     private val eventBusUtils: EventBusUtils,
+    private val characterTurnHandler: CharacterTurnHandler,
     private val vertx: Vertx
 ) {
     private var log = LoggerFactory.getLogger(GameTurnHandler::class.java)
+
+    // TODO: Elegant way of doing "turn phase advance every n frames" instead of "every frame"
 
     private val turnStateMachine: EventStateFlow = EventStateFlow(
         eventKey = "GAME_TURN_LOOP",
@@ -32,20 +36,20 @@ class GameTurnHandler @Inject constructor(
 
     private val actAction: suspend (StateFlowContext) -> Unit = { context ->
         //log.info("TURN_LOOP: ACT Phase Start")
-        setGameProperties(TurnPhase.ACT, true)
-        //characterTurnHandler.handleTurn(TurnPhase.ACT)
+        setGameProperties(TurnPhase.BEFORE, true)
+        characterTurnHandler.handleTurn(TurnPhase.BEFORE)
     }
 
     private val executeAction: suspend (StateFlowContext) -> Unit = { context ->
         //log.info("TURN_LOOP: EXECUTE Phase Start")
-        setGameProperties(TurnPhase.EXECUTE, true)
-        //characterTurnHandler.handleTurn(TurnPhase.EXECUTE)
+        setGameProperties(TurnPhase.DURING, true)
+        characterTurnHandler.handleTurn(TurnPhase.DURING)
     }
 
     private val resolveAction: suspend (StateFlowContext) -> Unit = { context ->
         //log.info("TURN_LOOP: RESOLVE Phase Start")
-        setGameProperties(TurnPhase.RESOLVE, true)
-        //characterTurnHandler.handleTurn(TurnPhase.RESOLVE)
+        setGameProperties(TurnPhase.AFTER, true)
+        characterTurnHandler.handleTurn(TurnPhase.AFTER)
     }
 
     private val turnEndAction: suspend (StateFlowContext) -> Unit = { _ ->
@@ -112,6 +116,6 @@ class GameTurnHandler @Inject constructor(
     companion object {
         const val ADDRESS_TURN_COMPLETE = "turn.handler.turn.complete"
 
-        enum class TurnPhase { ACT, EXECUTE, RESOLVE }
+        enum class TurnPhase { BEFORE, DURING, AFTER }
     }
 }
