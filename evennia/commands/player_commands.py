@@ -10,6 +10,74 @@ communication pattern with Minare:
 import time
 from commands.command import Command
 
+# Skills that always appear in the display, even at zero.
+DEFAULT_SKILLS = [
+    "Block", "Climbing", "Dancing", "Dodge", "Escape",
+    "First Aid", "Gossip", "Haggling", "Hand-to-Hand", "Hiding",
+    "Investigation", "Meditating", "Menace", "Pathfinding", "Search", "Swimming",
+]
+
+_STATUS_COLORS = {
+    "clear":         "|g",
+    "learning":      "|G",
+    "thinking":      "|y",
+    "concentrating": "|Y",
+    "muddled":       "|m",
+    "murky":         "|r",
+    "blocked":       "|R",
+}
+
+_STATUS_THRESHOLDS = [
+    (20,  "clear"),
+    (40,  "learning"),
+    (60,  "thinking"),
+    (75,  "concentrating"),
+    (90,  "muddled"),
+    (100, "murky"),
+]
+
+
+def _status_str(status):
+    """Convert a status value (float percentage or string) to a canonical label."""
+    if isinstance(status, str):
+        return status
+    for threshold, label in _STATUS_THRESHOLDS:
+        if status < threshold:
+            return label
+    return "blocked"
+
+
+def _skill_col(name, info):
+    """Format one skill entry as a 35-visible-char string for one table column."""
+    level = info.get("level", 0.0)
+    status = _status_str(info.get("status", 0.0))
+    color = _STATUS_COLORS.get(status, "|n")
+    # name: 13 visible | space | level: 5 visible | space | (status): 15 visible = 35
+    return f"|w{name:<13}|n {level:5.2f} {color}({status:<13})|n"
+
+
+def _render_skills(skills_data):
+    """Render skills as a two-column terminal-width table."""
+    merged = {name: {"level": 0.0, "status": "clear"} for name in DEFAULT_SKILLS}
+    for name, info in skills_data.items():
+        merged[name] = info
+
+    sorted_skills = sorted(merged.items())
+
+    title = "  Skills  "
+    border_fill = "=" * 76
+    title_fill_l = "=" * 33
+    title_fill_r = "=" * 33
+
+    lines = [f"|c+{title_fill_l}{title}{title_fill_r}+|n"]
+    for i in range(0, len(sorted_skills), 2):
+        left = _skill_col(*sorted_skills[i])
+        right = _skill_col(*sorted_skills[i + 1]) if i + 1 < len(sorted_skills) else " " * 35
+        lines.append(f"|c||n {left} |c||n {right} |c||n")
+    lines.append(f"|c+{border_fill}+|n")
+
+    return "\n".join(lines)
+
 
 def _get_client():
     """Get the Minare client singleton."""
@@ -134,17 +202,7 @@ class CmdSkills(Command):
                 return
 
             skills = response.get('data', {})
-            if not skills:
-                self.caller.msg("You have no skills yet.")
-                return
-
-            lines = ["\n|c===== Skills =====|n"]
-            for name, info in skills.items():
-                level = info.get('level', 0.0)
-                status = info.get('status', 0.0)
-                lines.append(f"  |w{name:<12}|n  {level:.2f}  |x(status {status:.2f})|n")
-            lines.append("|c==================|n")
-            self.caller.msg("\n".join(lines))
+            self.caller.msg("\n" + _render_skills(skills))
 
         _get_client().send_with_callback(
             {

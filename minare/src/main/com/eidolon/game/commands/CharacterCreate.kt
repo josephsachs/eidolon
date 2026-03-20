@@ -40,21 +40,27 @@ class CharacterCreate @Inject constructor(
             entityController.delete(oldId)
         }
 
+        val startingSkills: List<String> = listOf("Swimming", "Climbing", "Pathfinding", "Haggling",
+            "Gossip", "Menace", "Investigation", "First Aid", "Dancing", "Meditating", "Hand-to--Hand",
+            "Dodge", "Block", "Escape")
+
         // Create new character
         val character = entityFactory.createEntity(EvenniaCharacter::class.java) as EvenniaCharacter
         character.evenniaName = characterData.getString("name", "")
         character.description = characterData.getString("description", "")
         character.shortDescription = characterData.getString("name", "")
         val skillsJson = characterData.getJsonObject("skills")
+
         if (skillsJson != null) {
             character.skills = skillsJson.map { (name, value) ->
-                val arr = value as? io.vertx.core.json.JsonArray
+                var arr = value as? io.vertx.core.json.JsonArray
                 com.eidolon.game.models.Skill(
                     name = name,
                     level = arr?.getDouble(0) ?: 0.0,
                     status = arr?.getDouble(1) ?: 0.0
                 )
             }
+
         }
         entityController.create(character)
 
