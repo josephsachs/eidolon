@@ -63,7 +63,29 @@ class AgentCharacter(Character):
 
     Potentially plural at runtime — different agents can own different
     operational domains or be sharded by region.
+
+    Command dispatch:
+      - ACTION_HANDLERS: custom methods for commands needing post-execution
+        side effects (dig confirmation, object creation, batch iteration).
+      - ACTION_ALIASES: action names that differ from the Evennia command name.
+      - ACTION_ASSIGNS: commands using "cmd = text" syntax instead of "cmd text".
+      - Default: build command string from action + text, execute via cmdset.
+        If room_evennia_id is present, execute in that room's context.
     """
+
+    ACTION_ALIASES = {
+        'emote': 'pose',
+    }
+
+    ACTION_ASSIGNS = {
+        'describe': 'desc',
+    }
+
+    ACTION_HANDLERS = {
+        'dig': '_handle_dig',
+        'create_exit': '_handle_create_exit',
+        'batch': '_handle_batch',
+    }
 
     def at_object_creation(self):
         super().at_object_creation()
@@ -75,28 +97,26 @@ class AgentCharacter(Character):
         """Dispatch a structured command from Minare."""
         action = command.get('action', '')
 
-        if action == 'say':
-            self._execute_in_room(
-                command.get('room_evennia_id'),
-                f'say {command.get("text", "")}'
-            )
-        elif action == 'emote':
-            self._execute_in_room(
-                command.get('room_evennia_id'),
-                f'pose {command.get("text", "")}'
-            )
-        elif action == 'whisper':
-            logger.log_info(f"AgentCharacter: whisper not yet implemented")
-        elif action == 'dig':
-            self._handle_dig(command)
-        elif action == 'describe':
-            self._handle_describe(command)
-        elif action == 'create_exit':
-            self._handle_create_exit(command)
-        elif action == 'batch':
-            self._handle_batch(command)
+        # Custom handler for commands needing side effects
+        handler_name = self.ACTION_HANDLERS.get(action)
+        if handler_name:
+            getattr(self, handler_name)(command)
+            return
+
+        # Build command string
+        assign_cmd = self.ACTION_ASSIGNS.get(action)
+        if assign_cmd:
+            cmd_string = f'{assign_cmd} = {command.get("text", "")}'
         else:
-            logger.log_warn(f"AgentCharacter: Unknown action '{action}'")
+            cmd_name = self.ACTION_ALIASES.get(action, action)
+            cmd_string = f'{cmd_name} {command.get("text", "")}'
+
+        # Execute with room context if provided, otherwise direct
+        room_id = command.get('room_evennia_id')
+        if room_id:
+            self._execute_in_room(room_id, cmd_string)
+        else:
+            self.execute_cmd(cmd_string)
 
     def _execute_in_room(self, room_evennia_id, cmd_string):
         """Temporarily move to a room, execute command, return to previous location."""
@@ -137,24 +157,6 @@ class AgentCharacter(Character):
 
         # Send confirmation back to Minare
         self._send_dig_confirmation(new_room, scenario_id)
-
-    def _handle_describe(self, command):
-        """Set description on an existing room."""
-        from typeclasses.rooms import Room
-
-        room_evennia_id = command.get('room_evennia_id')
-        description = command.get('description', '')
-
-        if not room_evennia_id:
-            logger.log_err("AgentCharacter._handle_describe: missing room_evennia_id")
-            return
-
-        try:
-            room = Room.objects.get(id=int(room_evennia_id))
-            room.db.desc = description
-            logger.log_info(f"AgentCharacter: Described room '{room.key}' (id={room.id})")
-        except (Room.DoesNotExist, ValueError):
-            logger.log_err(f"AgentCharacter._handle_describe: room not found: {room_evennia_id}")
 
     def _handle_create_exit(self, command):
         """Create a one-way exit between two existing rooms."""

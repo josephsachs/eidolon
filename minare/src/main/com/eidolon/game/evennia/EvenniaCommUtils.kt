@@ -145,6 +145,6 @@ class EvenniaCommUtils @Inject constructor(
         return JsonObject()
             .put("action", "describe")
             .put("room_evennia_id", roomEvenniaId)
-            .put("description", description)
+            .put("text", description)
     }
 }
