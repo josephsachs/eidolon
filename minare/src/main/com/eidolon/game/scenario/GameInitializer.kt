@@ -40,7 +40,7 @@ class GameInitializer @Inject constructor(
         verticleLogger.logInfo("Created default channel: $defaultChannelId")
 
         var startupOptions = JsonObject()
-            .put("turnPhase", TurnPhase.ACT)
+            .put("turnPhase", TurnPhase.BEFORE)
             .put("turnProcessing", false)
 
         entityController.saveProperties(gameEntity._id!!,startupOptions)
