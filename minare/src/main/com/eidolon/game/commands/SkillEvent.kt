@@ -52,7 +52,7 @@ class SkillEvent @Inject constructor(
             }
             "failure" -> {
                 // No level gain, small status gain
-                newStatus = (newStatus + 2.0).coerceAtMost(100.0)
+                newStatus = (newStatus + 7.0).coerceAtMost(100.0)
             }
         }
 
