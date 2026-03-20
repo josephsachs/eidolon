@@ -71,7 +71,10 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     private fun skillsToJson(): JsonObject {
         val obj = JsonObject()
         skills.forEach { skill ->
-            obj.put(skill.name, JsonObject().put("level", skill.level).put("status", skill.status))
+            obj.put(skill.name, JsonObject()
+                .put("level", skill.level)
+                .put("status", skill.status)
+                .put("lastUsed", skill.lastUsed))
         }
         return obj
     }

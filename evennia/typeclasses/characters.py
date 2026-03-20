@@ -35,6 +35,17 @@ class PlayerCharacter(Character):
         from commands.default_cmdsets import PlayerCharacterCmdSet
         self.cmdset.add(PlayerCharacterCmdSet, persistent=True)
 
+    def hide(self, degree):
+        """Apply hiding: restrict visibility and store hidden strength."""
+        self.db.hidden_mod = degree
+        self.locks.add("view:perm(Builder)")
+
+    def unhide(self):
+        """Remove hiding: restore visibility."""
+        if self.db.hidden_mod is not None:
+            del self.db.hidden_mod
+        self.locks.add("view:all()")
+
     def at_post_unpuppet(self, account, session=None, **kwargs):
         """Inform Minare when player disconnects."""
         super().at_post_unpuppet(account, session=session, **kwargs)

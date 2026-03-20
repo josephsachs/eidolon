@@ -40,10 +40,6 @@ class CharacterCreate @Inject constructor(
             entityController.delete(oldId)
         }
 
-        val startingSkills: List<String> = listOf("Swimming", "Climbing", "Pathfinding", "Haggling",
-            "Gossip", "Menace", "Investigation", "First Aid", "Dancing", "Meditating", "Hand-to--Hand",
-            "Dodge", "Block", "Escape")
-
         // Create new character
         val character = entityFactory.createEntity(EvenniaCharacter::class.java) as EvenniaCharacter
         character.evenniaName = characterData.getString("name", "")

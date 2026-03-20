@@ -7,6 +7,7 @@ import com.eidolon.game.commands.PlayerDisconnect
 import com.eidolon.game.commands.RegisterEvenniaObject
 import com.eidolon.game.commands.RoomPose
 import com.eidolon.game.commands.RoomSay
+import com.eidolon.game.commands.SkillEvent
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.google.inject.Inject
@@ -36,6 +37,7 @@ class GameMessageController @Inject constructor(
     private val roomPose: RoomPose,
     private val playerDisconnect: PlayerDisconnect,
     private val registerEvenniaObject: RegisterEvenniaObject,
+    private val skillEvent: SkillEvent,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -89,6 +91,13 @@ class GameMessageController @Inject constructor(
 
             message.getString("type") == "player_disconnect" -> {
                 playerDisconnect.execute(message)
+            }
+
+            message.getString("type") == "skill_event" -> {
+                val requestId = message.getString("request_id")
+                val result = skillEvent.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
             }
 
             message.getString("type") == "entity_query" -> {

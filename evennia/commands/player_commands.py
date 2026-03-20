@@ -7,6 +7,7 @@ communication pattern with Minare:
 - Fire-and-forget: local display + send to Minare, no callback
 """
 
+import random
 import time
 from commands.command import Command
 
@@ -210,6 +211,177 @@ class CmdSkills(Command):
                 'minare_id': char_id,
                 'view': 'skills',
             },
+            on_skills,
+        )
+
+
+class CmdHide(Command):
+    """
+    Attempt to hide in the current room.
+
+    Usage:
+      hide
+
+    Your success depends on your Hiding skill and the room's concealment.
+    """
+    key = "hide"
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        caller = self.caller
+        if caller.db.hidden_mod is not None:
+            caller.msg("You are already hidden.")
+            return
+
+        char_id, _ = _minare_ids(caller)
+        if not char_id:
+            caller.msg("No character data available.")
+            return
+
+        room = caller.location
+        concealment = room.db.concealment or 0
+
+        def on_skills(response):
+            if response.get('status') != 'success':
+                caller.msg("|rCouldn't check your skills.|n")
+                return
+
+            skills = response.get('data', {})
+            hiding_info = skills.get('Hiding', {})
+            hiding_skill = hiding_info.get('level', 0.0)
+
+            threshold = (hiding_skill + concealment) / 2
+            roll = random.randint(0, 99)
+
+            if roll < threshold:
+                degree = threshold - roll
+                caller.hide(degree)
+                caller.msg("|gYou slip into the shadows.|n")
+                caller.location.msg_contents(
+                    f"|w{caller.key}|n vanishes from sight.",
+                    exclude=[caller],
+                )
+                outcome = "success"
+            else:
+                caller.msg("|yYou try to hide but can't find good cover.|n")
+                outcome = "failure"
+
+            def on_skill_event(event_response):
+                if event_response.get('level_up'):
+                    caller.msg(
+                        f"|gYou have learned something new about Hiding.|n"
+                    )
+
+            _get_client().send_with_callback(
+                {
+                    'type': 'skill_event',
+                    'character_id': char_id,
+                    'skill_name': 'Hiding',
+                    'outcome': outcome,
+                },
+                on_skill_event,
+            )
+
+        _get_client().send_with_callback(
+            {'type': 'entity_query', 'minare_id': char_id, 'view': 'skills'},
+            on_skills,
+        )
+
+
+class CmdSearch(Command):
+    """
+    Search the room for hidden characters.
+
+    Usage:
+      search
+
+    Your success depends on your Search skill versus how well targets are hidden.
+    """
+    key = "search"
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        caller = self.caller
+        char_id, _ = _minare_ids(caller)
+        if not char_id:
+            caller.msg("No character data available.")
+            return
+
+        room = caller.location
+        hidden_targets = [
+            obj for obj in room.contents
+            if obj != caller
+            and hasattr(obj, 'db')
+            and obj.db.hidden_mod is not None
+        ]
+
+        if not hidden_targets:
+            caller.msg("You search the area but find no one hiding.")
+            # Still send the skill event for status gain
+            _get_client().send_with_callback(
+                {
+                    'type': 'skill_event',
+                    'character_id': char_id,
+                    'skill_name': 'Search',
+                    'outcome': 'failure',
+                },
+                lambda resp: (
+                    caller.msg("|gYou have learned something new about Search.|n")
+                    if resp.get('level_up') else None
+                ),
+            )
+            return
+
+        def on_skills(response):
+            if response.get('status') != 'success':
+                caller.msg("|rCouldn't check your skills.|n")
+                return
+
+            skills = response.get('data', {})
+            search_info = skills.get('Search', {})
+            search_skill = search_info.get('level', 0.0)
+
+            found_any = False
+            for target in hidden_targets:
+                hidden_mod = target.db.hidden_mod or 0
+                chance = search_skill - hidden_mod
+                roll = random.randint(0, 99)
+
+                if roll < chance:
+                    target.unhide()
+                    caller.msg(f"|gYou spot |w{target.key}|g lurking in the shadows!|n")
+                    room.msg_contents(
+                        f"|w{caller.key}|n reveals |w{target.key}|n!",
+                        exclude=[caller, target],
+                    )
+                    target.msg(f"|r{caller.key} has found you!|n")
+                    found_any = True
+
+            if not found_any:
+                caller.msg("You search carefully but don't find anyone.")
+
+            outcome = "success" if found_any else "failure"
+
+            def on_skill_event(event_response):
+                if event_response.get('level_up'):
+                    caller.msg(
+                        f"|gYou have learned something new about Search.|n"
+                    )
+
+            _get_client().send_with_callback(
+                {
+                    'type': 'skill_event',
+                    'character_id': char_id,
+                    'skill_name': 'Search',
+                    'outcome': outcome,
+                },
+                on_skill_event,
+            )
+
+        _get_client().send_with_callback(
+            {'type': 'entity_query', 'minare_id': char_id, 'view': 'skills'},
             on_skills,
         )
 
