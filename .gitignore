@@ -11,4 +11,5 @@ target/
 client/node_modules
 node_modules/
 dbExec.sh
+CLAUDE.MD
 minare/src/main/resources/models.cfg
