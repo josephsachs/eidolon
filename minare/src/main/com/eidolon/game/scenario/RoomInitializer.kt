@@ -4,8 +4,8 @@ import com.eidolon.game.commands.LinkDomainEntity
 import com.eidolon.game.controller.GameConnectionController
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommUtils
+import com.eidolon.game.models.entity.ExplorableExit
 import com.eidolon.game.models.entity.Room
-import com.eidolon.game.models.entity.RoomMemory
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
@@ -80,7 +80,7 @@ class RoomInitializer @Inject constructor(
         // Phase 3: Create exits between rooms
         createExits(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId)
 
-        // Phase 4: Create lightweight Room entities + RoomMemory in Minare
+        // Phase 4: Create lightweight Room entities in Minare
         createMinareEntities(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId, defaultChannelId)
 
         log.info("RoomInitializer: initialized ${roomData.size} rooms via agent commands")
@@ -194,11 +194,16 @@ class RoomInitializer @Inject constructor(
                     continue
                 }
 
-                exitCommands.add(evenniaCommUtils.buildCreateExitCommand(
+                val cmd = evenniaCommUtils.buildCreateExitCommand(
                     exitName = direction,
                     fromRoomEvenniaId = sourceEvenniaId,
                     toRoomEvenniaId = destEvenniaId
-                ))
+                )
+                if (exitObj.getBoolean("explorable", false)) {
+                    cmd.put("locked", true)
+                    cmd.put("block_message", exitObj.getString("blockMessage", "The path is blocked and impassable."))
+                }
+                exitCommands.add(cmd)
             }
         }
 
@@ -209,8 +214,8 @@ class RoomInitializer @Inject constructor(
     }
 
     /**
-     * Phase 4: Create lightweight Room entities and RoomMemory entities in Minare.
-     * Room entities store shortDescription and roomMemoryId — full description lives in Evennia.
+     * Phase 4: Create lightweight Room entities in Minare.
+     * Room entities store shortDescription — full description lives in Evennia.
      */
     private suspend fun createMinareEntities(
         roomData: List<JsonObject>,
@@ -219,7 +224,6 @@ class RoomInitializer @Inject constructor(
         defaultChannelId: String
     ) {
         val rooms = mutableListOf<Room>()
-        val memories = mutableListOf<RoomMemory>()
 
         for (json in roomData) {
             val roomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
@@ -233,12 +237,6 @@ class RoomInitializer @Inject constructor(
             room.nightDesc = json.getString("nightDesc", "")
             entityController.create(room)
 
-            // Create RoomMemory child
-            val memory = entityFactory.createEntity(RoomMemory::class.java) as RoomMemory
-            memory.roomId = room._id!!
-            entityController.create(memory)
-            entityController.saveState(room._id!!, JsonObject().put("roomMemoryId", memory._id))
-
             // Link EvenniaObject stub <-> Room domain entity
             val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId) ?: ""
             linkDomainEntity.execute(JsonObject()
@@ -248,12 +246,10 @@ class RoomInitializer @Inject constructor(
                 .put("domain_entity_type", "Room"))
 
             rooms.add(room)
-            memories.add(memory)
             log.info("Created Minare Room '${room.shortDescription}' (id=${room._id}, evenniaId=$evenniaId)")
         }
 
         gameChannelController.addEntitiesToChannel(rooms, defaultChannelId)
-        gameChannelController.addEntitiesToChannel(memories, defaultChannelId)
 
         // Notify Evennia of domain entity links so it can match incoming updates
         for (json in roomData) {
@@ -267,7 +263,44 @@ class RoomInitializer @Inject constructor(
                 .put("domain_entity_type", "Room"))
         }
 
-        log.info("RoomInitializer: created ${rooms.size} Room entities and ${memories.size} RoomMemory entities")
+        // Create ExplorableExit entities for exits marked explorable
+        val explorableExits = mutableListOf<ExplorableExit>()
+        for (json in roomData) {
+            val roomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
+            val sourceRoom = rooms.find { it.shortDescription == roomKey } ?: continue
+
+            for (exitObj in json.getJsonArray("exits", JsonArray()).map { it as JsonObject }) {
+                if (!exitObj.getBoolean("explorable", false)) continue
+
+                val direction = exitObj.getString("direction")
+                val destScenarioId = exitObj.getString("destination")
+                val destRoomKey = scenarioIdToRoomKey[destScenarioId] ?: continue
+                val destRoom = rooms.find { it.shortDescription == destRoomKey } ?: continue
+
+                val explorableExit = entityFactory.createEntity(ExplorableExit::class.java) as ExplorableExit
+                entityController.create(explorableExit)
+                entityController.saveState(explorableExit._id!!, JsonObject()
+                    .put("direction", direction)
+                    .put("destination", destRoom._id)
+                    .put("description", exitObj.getString("description", ""))
+                    .put("sourceRoomId", sourceRoom._id)
+                    .put("blockMessage", exitObj.getString("blockMessage", "The path is blocked and impassable."))
+                    .put("threshold", exitObj.getInteger("threshold", 10)))
+
+                // Add to room's exits map
+                val updatedExits = sourceRoom.exits.copy().put(direction, explorableExit._id)
+                entityController.saveState(sourceRoom._id!!, JsonObject().put("exits", updatedExits))
+
+                explorableExits.add(explorableExit)
+                log.info("Created ExplorableExit '${direction}' in '${sourceRoom.shortDescription}' (id=${explorableExit._id})")
+            }
+        }
+
+        if (explorableExits.isNotEmpty()) {
+            gameChannelController.addEntitiesToChannel(explorableExits, defaultChannelId)
+        }
+
+        log.info("RoomInitializer: created ${rooms.size} Room entities, ${explorableExits.size} ExplorableExit entities")
     }
 
     private suspend fun readRoomData(): List<JsonObject> {

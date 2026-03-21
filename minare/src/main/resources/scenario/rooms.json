@@ -122,7 +122,16 @@
     "exits": [
       {"direction": "north", "destination": "dark-brush", "description": "Dark brush thickens to the north."},
       {"direction": "west", "destination": "mesquite-grove", "description": "A mesquite grove lies to the west."},
-      {"direction": "south", "destination": "distant-mountain-view", "description": "A rise with a mountain view lies to the south."}
+      {"direction": "south", "destination": "distant-mountain-view", "description": "A rise with a mountain view lies to the south."},
+      {"direction": "east", "destination": "hidden-canyon", "description": "A narrow crack in the rock face, barely visible.", "explorable": true, "blockMessage": "The crack in the rock is too narrow to pass through. It might widen with enough effort."}
+    ]
+  },
+  {
+    "id": "hidden-canyon",
+    "shortDescription": "A Hidden Canyon",
+    "description": "A narrow slot canyon cuts deep into the rock. The walls tower overhead, their layered sandstone striped in reds and golds. It is cool and quiet here.",
+    "exits": [
+      {"direction": "west", "destination": "rocky-outcropping", "description": "The rocky outcropping lies to the west."}
     ]
   },
   {

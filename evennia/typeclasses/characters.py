@@ -97,6 +97,7 @@ class AgentCharacter(Character):
         'create_exit': '_handle_create_exit',
         'create_npc': '_handle_create_npc',
         'batch': '_handle_batch',
+        'unlock_exit': '_handle_unlock_exit',
     }
 
     def at_object_creation(self):
@@ -172,9 +173,14 @@ class AgentCharacter(Character):
             new_exit = create_object(
                 EvenniaExit, key=exit_name, location=from_room, destination=to_room
             )
+            if command.get('locked'):
+                new_exit.locks.add("traverse:perm(Admin)")
+                block_message = command.get('block_message', 'The path is blocked and impassable.')
+                new_exit.db.err_traverse = block_message
             logger.log_info(
                 f"AgentCharacter: Created exit '{exit_name}' "
                 f"from '{from_room.key}' -> '{to_room.key}'"
+                f"{' (locked)' if command.get('locked') else ''}"
             )
         except (Room.DoesNotExist, ValueError) as e:
             logger.log_err(f"AgentCharacter._handle_create_exit: {e}")
@@ -205,6 +211,28 @@ class AgentCharacter(Character):
             )
         except (Room.DoesNotExist, ValueError) as e:
             logger.log_err(f"AgentCharacter._handle_create_npc: {e}")
+
+    def _handle_unlock_exit(self, command):
+        """Unlock a previously locked exit."""
+        from typeclasses.exits import Exit as EvenniaExit
+
+        exit_evennia_id = command.get('exit_evennia_id')
+        if not exit_evennia_id:
+            logger.log_err("_handle_unlock_exit: missing exit_evennia_id")
+            return
+
+        try:
+            exit_obj = EvenniaExit.objects.get(id=int(exit_evennia_id))
+            exit_obj.locks.add("traverse:all()")
+            if exit_obj.db.err_traverse:
+                del exit_obj.db.err_traverse
+            if exit_obj.location:
+                exit_obj.location.msg_contents(
+                    f"The way {exit_obj.key} opens up, revealing a passable path."
+                )
+            logger.log_info(f"AgentCharacter: Unlocked exit '{exit_obj.key}' (id={exit_evennia_id})")
+        except (EvenniaExit.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_unlock_exit: {e}")
 
     def _handle_batch(self, command):
         """Execute a list of sub-commands sequentially."""

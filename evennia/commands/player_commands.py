@@ -406,6 +406,50 @@ class CmdReveal(Command):
         )
 
 
+class CmdExplore(Command):
+    """
+    Explore a blocked path.
+
+    Usage:
+      explore <direction>
+
+    Begin exploring a blocked exit. Progress is made each game tick
+    while you remain in the room.
+    """
+    key = "explore"
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        if not self.args:
+            self.caller.msg("Explore in which direction?")
+            return
+
+        direction = self.args.strip().lower()
+        char_id, room_id = _minare_ids(self.caller)
+        if not char_id or not room_id:
+            self.caller.msg("No character data available.")
+            return
+
+        def on_response(response):
+            if response.get('status') != 'success':
+                self.caller.msg(f"|r{response.get('error', 'Could not explore.')}|n")
+                return
+            progress = response.get('progress', 0)
+            threshold = response.get('threshold', 0)
+            self.caller.msg(
+                f"|yYou begin exploring the path {direction}. "
+                f"Progress: {progress}/{threshold}|n"
+            )
+
+        _get_client().send_with_callback({
+            'type': 'explore',
+            'character_id': char_id,
+            'room_id': room_id,
+            'direction': direction,
+        }, on_response)
+
+
 class CmdPose(Command):
     """
     Perform an emote.

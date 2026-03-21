@@ -48,6 +48,12 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Mutable
     var brainType: String = ""
 
+    @Property
+    var lastActed: Long = 0L
+
+    @Property
+    var lastThought: Long = 0L
+
     @State
     @Mutable
     var skills: List<Skill> = emptyList()
@@ -108,6 +114,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
         } else {
             evenniaCommUtils.sayInRoom(roomMinareId, _id!!, text)
         }
+        appendEcho(roomMinareId, "say", text)
     }
 
     override suspend fun emote(roomMinareId: String, text: String) {
@@ -116,5 +123,19 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
         } else {
             evenniaCommUtils.emoteInRoom(roomMinareId, _id!!, text)
         }
+        appendEcho(roomMinareId, "pose", text)
+    }
+
+    private suspend fun appendEcho(roomMinareId: String, type: String, text: String) {
+        val rooms = entityController.findByIds(listOf(roomMinareId))
+        val room = rooms[roomMinareId] as? com.eidolon.game.models.entity.Room ?: return
+        val echo = JsonObject()
+            .put("character", _id)
+            .put("characterName", evenniaName)
+            .put("message", text)
+            .put("type", type)
+            .put("timestamp", System.currentTimeMillis())
+        val updatedEchoes = room.echoes.copy().add(echo)
+        entityController.saveProperties(roomMinareId, JsonObject().put("echoes", updatedEchoes))
     }
 }

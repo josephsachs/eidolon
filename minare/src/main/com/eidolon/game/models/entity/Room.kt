@@ -1,13 +1,19 @@
 package com.eidolon.game.models.entity
 
 import com.eidolon.game.evennia.Viewable
+import com.google.inject.Inject
+import com.minare.controller.EntityController
 import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
 @EntityType("Room")
 class Room : Entity(), Serializable, Viewable {
+    @Inject
+    lateinit var entityController: EntityController
+
     init {
         type = "Room"
     }
@@ -28,12 +34,12 @@ class Room : Entity(), Serializable, Viewable {
     var exits: JsonObject = JsonObject()
 
     /**
-     * RoomMemory entity _id — child that stores echoes and room history.
+     * Accumulated room echoes: say, pose, and other observable events.
+     * Each entry: {character, characterName, message, type, timestamp}
+     * Property rather than State — not synced to Evennia.
      */
-    @Child
-    @State
-    @Mutable
-    var roomMemoryId: String = ""
+    @Property
+    var echoes: JsonArray = JsonArray()
 
     @State
     @Mutable
@@ -46,6 +52,26 @@ class Room : Entity(), Serializable, Viewable {
     @State
     @Mutable
     var concealment: Double = 0.0
+
+    companion object {
+        const val ECHO_TTL_MS: Long = 300_000L
+    }
+
+    @FixedTask
+    suspend fun forgetEchoes() {
+        if (echoes.isEmpty) return
+        val cutoff = System.currentTimeMillis() - ECHO_TTL_MS
+        val filtered = JsonArray()
+        for (i in 0 until echoes.size()) {
+            val echo = echoes.getJsonObject(i)
+            if (echo.getLong("timestamp", 0L) >= cutoff) {
+                filtered.add(echo)
+            }
+        }
+        if (filtered.size() < echoes.size()) {
+            entityController.saveProperties(_id!!, JsonObject().put("echoes", filtered))
+        }
+    }
 
     override fun project(viewName: String): JsonObject? = when (viewName) {
         "default" -> JsonObject()

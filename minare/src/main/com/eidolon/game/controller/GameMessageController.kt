@@ -3,6 +3,7 @@ package com.eidolon.game.controller
 import com.eidolon.game.commands.AccountRegister
 import com.eidolon.game.commands.CharacterCreate
 import com.eidolon.game.commands.EntityQuery
+import com.eidolon.game.commands.ExploreCommand
 import com.eidolon.game.commands.LinkDomainEntity
 import com.eidolon.game.commands.NpcInteraction
 import com.eidolon.game.commands.PlayerDisconnect
@@ -42,6 +43,7 @@ class GameMessageController @Inject constructor(
     private val skillEvent: SkillEvent,
     private val linkDomainEntity: LinkDomainEntity,
     private val npcInteraction: NpcInteraction,
+    private val exploreCommand: ExploreCommand,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -114,6 +116,13 @@ class GameMessageController @Inject constructor(
             message.getString("type") == "npc_interact" -> {
                 val requestId = message.getString("request_id")
                 val result = npcInteraction.execute(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "explore" -> {
+                val requestId = message.getString("request_id")
+                val result = exploreCommand.execute(message)
                 result.put("request_id", requestId)
                 sendToClient(connection, result)
             }

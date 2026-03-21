@@ -60,10 +60,10 @@ class GameModule : AbstractModule() {
 
     @Provides
     @Singleton
-    fun provideBrainRegistry(entityController: EntityController): BrainRegistry {
+    fun provideBrainRegistry(entityController: EntityController, modelAPI: ModelAPI): BrainRegistry {
         val registry = BrainRegistry()
         registry.register(IdleBrain())
-        registry.register(KibitzBrain(entityController))
+        registry.register(KibitzBrain(entityController, modelAPI))
         return registry
     }
 }
