@@ -1,13 +1,11 @@
 package com.eidolon.game.commands
 
-import com.eidolon.game.controller.GameConnectionController
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.models.entity.EvenniaObject
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
 import com.minare.core.storage.interfaces.StateStore
-import com.minare.core.transport.upsocket.handlers.SyncCommandHandler
 import eidolon.game.controller.GameChannelController
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
@@ -26,8 +24,7 @@ class LinkDomainEntity @Inject constructor(
     private val entityController: EntityController,
     private val crossLinkRegistry: CrossLinkRegistry,
     private val stateStore: StateStore,
-    private val channelController: GameChannelController,
-    private val syncCommandHandler: SyncCommandHandler
+    private val channelController: GameChannelController
 ) {
     private val log = LoggerFactory.getLogger(LinkDomainEntity::class.java)
 
@@ -76,10 +73,6 @@ class LinkDomainEntity @Inject constructor(
                 .put("evennia_id", evenniaId)
                 .put("domain_entity_id", domainEntityId)
                 .put("domain_entity_type", domainEntityType))
-
-            // Sync the domain entity's current state to Evennia
-            syncCommandHandler.syncChannelToConnection(
-                defaultChannelId, GameConnectionController.EVENNIA_CONNECTION_ID)
         }
 
         log.info("Linked {} {} <-> evennia {} (eo={})",

@@ -174,6 +174,145 @@ class CmdSay(Command):
             })
 
 
+_HP_STATUS_COLORS = {
+    "HEALTHY":   "|g",
+    "SCRATCHED": "|G",
+    "BRUISED":   "|y",
+    "WOUNDED":   "|Y",
+    "INJURED":   "|m",
+    "BROKEN":    "|r",
+    "CRITICAL":  "|R",
+    "DESTROYED": "|[r|x",
+}
+
+_HP_STATUS_LABELS = {
+    "HEALTHY":   "healthy",
+    "SCRATCHED": "scratched",
+    "BRUISED":   "bruised",
+    "WOUNDED":   "wounded",
+    "INJURED":   "injured",
+    "BROKEN":    "broken",
+    "CRITICAL":  "critical",
+    "DESTROYED": "destroyed",
+}
+
+_VITAL_COLORS = [
+    (80, "|g"),
+    (60, "|G"),
+    (40, "|y"),
+    (20, "|Y"),
+    (10, "|r"),
+    (0,  "|R"),
+]
+
+
+def _vital_color(value):
+    """Return the color code for a vitals value (0-100)."""
+    for threshold, color in _VITAL_COLORS:
+        if value >= threshold:
+            return color
+    return "|R"
+
+
+def _hp_line(label, hp_data):
+    """Format one hardpoint line: '  Right Arm    wounded (34)'."""
+    status = hp_data.get("status", "HEALTHY")
+    hp_val = hp_data.get("hp", 100)
+    color = _HP_STATUS_COLORS.get(status, "|n")
+    label_str = _HP_STATUS_LABELS.get(status, status.lower())
+    return f"  |w{label:<14}|n {color}{label_str:<12}|n ({hp_val:>3})"
+
+
+def _render_health(health_data):
+    """Render health as a formatted body/vitals display."""
+    raw_hardpoints = health_data.get("hardpoints", [])
+    # Convert list-of-dicts to dict keyed by name
+    if isinstance(raw_hardpoints, list):
+        hardpoints = {hp["name"]: hp for hp in raw_hardpoints}
+    else:
+        hardpoints = raw_hardpoints
+    w = 76
+    title = "  Health  "
+    border = "=" * w
+    title_l = "=" * 33
+    title_r = "=" * 33
+
+    lines = [f"|c+{title_l}{title}{title_r}+|n"]
+
+    # Body hardpoints in anatomical order
+    body_layout = [
+        ("HEAD",       "Head"),
+        ("NECK",       "Neck"),
+        ("RIGHT_ARM",  "Right Arm"),
+        ("RIGHT_HAND", "Right Hand"),
+        ("TORSO",      "Torso"),
+        ("LEFT_ARM",   "Left Arm"),
+        ("LEFT_HAND",  "Left Hand"),
+        ("RIGHT_LEG",  "Right Leg"),
+        ("LEFT_LEG",   "Left Leg"),
+    ]
+
+    for key, label in body_layout:
+        hp_data = hardpoints.get(key, {"hp": 100, "status": "HEALTHY"})
+        lines.append(f"|c||n{_hp_line(label, hp_data):<74}|c||n")
+
+    lines.append(f"|c|{'─' * w}||n")
+
+    # Global vitals
+    vitals = [
+        ("Vitality",      health_data.get("vitality", 100)),
+        ("Concentration", health_data.get("concentration", 100)),
+        ("Stamina",       health_data.get("stamina", 100)),
+        ("Luck",          health_data.get("luck", 100)),
+    ]
+
+    for name, val in vitals:
+        color = _vital_color(val)
+        lines.append(f"|c||n  |w{name:<14}|n {color}{val:>3}|n{'':55}|c||n")
+
+    lines.append(f"|c+{border}+|n")
+    return "\n".join(lines)
+
+
+class CmdHealth(Command):
+    """
+    View your health status.
+
+    Usage:
+      health
+
+    Shows your body condition and vital stats.
+    """
+    key = "health"
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        char_id, _ = _minare_ids(self.caller)
+        if not char_id:
+            self.caller.msg("No character data available.")
+            return
+
+        def on_health(response):
+            if response.get('status') != 'success':
+                self.caller.msg(
+                    f"|rCould not retrieve health: {response.get('error', 'unknown')}|n"
+                )
+                return
+
+            health = response.get('data', {})
+            self.caller.msg("\n" + _render_health(health))
+
+        _get_client().send_with_callback(
+            {
+                'type': 'entity_query',
+                'minare_id': char_id,
+                'view': 'health',
+            },
+            on_health,
+        )
+
+
 class CmdSkills(Command):
     """
     View your skills.

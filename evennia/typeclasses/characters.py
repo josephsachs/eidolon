@@ -96,8 +96,12 @@ class AgentCharacter(Character):
     ACTION_HANDLERS = {
         'create_exit': '_handle_create_exit',
         'create_npc': '_handle_create_npc',
+        'create_object': '_handle_create_object',
         'batch': '_handle_batch',
         'unlock_exit': '_handle_unlock_exit',
+        'hazard_msg': '_handle_hazard_msg',
+        'hazard_damage': '_handle_hazard_damage',
+        'flag_dead': '_handle_flag_dead',
     }
 
     def at_object_creation(self):
@@ -234,12 +238,131 @@ class AgentCharacter(Character):
         except (EvenniaExit.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_unlock_exit: {e}")
 
+    def _handle_create_object(self, command):
+        """Create a generic object in a room."""
+        from evennia import create_object
+        from typeclasses.rooms import Room
+
+        object_name = command.get('object_name')
+        room_evennia_id = command.get('room_evennia_id')
+        description = command.get('description', '')
+
+        if not object_name or not room_evennia_id:
+            logger.log_err(
+                f"AgentCharacter._handle_create_object: missing fields "
+                f"object_name={object_name}, room_evennia_id={room_evennia_id}"
+            )
+            return
+
+        try:
+            room = Room.objects.get(id=int(room_evennia_id))
+            obj = create_object(
+                "typeclasses.objects.Object",
+                key=object_name,
+                location=room,
+            )
+            if description:
+                obj.db.desc = description
+            logger.log_info(
+                f"AgentCharacter: Created object '{object_name}' "
+                f"(id={obj.id}) in room '{room.key}'"
+            )
+        except Exception as e:
+            logger.log_err(f"AgentCharacter._handle_create_object: {e}")
+
+    def _handle_hazard_msg(self, command):
+        """Send a hazard message to a room."""
+        from typeclasses.rooms import Room
+
+        room_evennia_id = command.get('room_evennia_id')
+        message = command.get('message', '')
+        if not room_evennia_id or not message:
+            logger.log_err("_handle_hazard_msg: missing room_evennia_id or message")
+            return
+
+        try:
+            room = Room.objects.get(id=int(room_evennia_id))
+            room.msg_contents(f"|R{message}|n")
+        except (Room.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_hazard_msg: {e}")
+
+    def _handle_hazard_damage(self, command):
+        """Find characters in a room and send apply_damage messages to Minare for each."""
+        from typeclasses.rooms import Room
+
+        room_evennia_id = command.get('room_evennia_id')
+        if not room_evennia_id:
+            logger.log_err("_handle_hazard_damage: missing room_evennia_id")
+            return
+
+        try:
+            room = Room.objects.get(id=int(room_evennia_id))
+        except (Room.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_hazard_damage: {e}")
+            return
+
+        source_id = command.get('source_id', '')
+        hardpoint_damage = command.get('hardpoint_damage', 0)
+        vitality_damage = command.get('vitality_damage', 0)
+        burn_duration = command.get('burn_duration', 0)
+        burn_tick_damage = command.get('burn_tick_damage', 0)
+
+        for obj in room.contents:
+            if not (isinstance(obj, PlayerCharacter) or isinstance(obj, NonplayerCharacter)):
+                continue
+            domain_id = getattr(obj.db, 'minare_domain_id', None)
+            if not domain_id:
+                continue
+
+            try:
+                from server.conf.minare_client import get_minare_client
+                client = get_minare_client()
+                client.send_message({
+                    "type": "apply_damage",
+                    "character_id": domain_id,
+                    "source_id": source_id,
+                    "hardpoint_damage": hardpoint_damage,
+                    "vitality_damage": vitality_damage,
+                    "burn_duration": burn_duration,
+                    "burn_tick_damage": burn_tick_damage,
+                })
+            except Exception as e:
+                logger.log_err(f"_handle_hazard_damage: failed to send apply_damage: {e}")
+
+    def _handle_flag_dead(self, command):
+        """Flag a character as dead — apply death locks and notify the room."""
+        character_evennia_id = command.get('character_evennia_id')
+        if not character_evennia_id:
+            logger.log_err("_handle_flag_dead: missing character_evennia_id")
+            return
+
+        try:
+            from evennia.objects.models import ObjectDB
+            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
+            char_obj.db.is_dead = True
+            char_obj.locks.add("cmd:false();move:false()")
+            if char_obj.location:
+                char_obj.location.msg_contents(
+                    f"|R{char_obj.key} collapses, lifeless.|n",
+                    exclude=[char_obj]
+                )
+                char_obj.msg("|RDarkness closes in. You have died.|n")
+            logger.log_info(
+                f"AgentCharacter: Flagged '{char_obj.key}' (id={character_evennia_id}) as dead"
+            )
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_flag_dead: {e}")
+
     def _handle_batch(self, command):
-        """Execute a list of sub-commands sequentially."""
+        """Execute a list of sub-commands sequentially with staggered timing."""
+        from twisted.internet import reactor
         commands = command.get('commands', [])
         logger.log_info(f"AgentCharacter: Executing batch of {len(commands)} commands")
-        for sub_command in commands:
-            self.handle_agent_command(sub_command)
+        for i, sub_command in enumerate(commands):
+            if i == 0:
+                self.handle_agent_command(sub_command)
+            else:
+                reactor.callLater(0.15 * i, self.handle_agent_command, sub_command)
 
 class NonplayerCharacter(Character):
     """

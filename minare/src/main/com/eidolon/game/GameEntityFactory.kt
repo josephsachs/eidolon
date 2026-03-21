@@ -4,6 +4,7 @@ import com.eidolon.game.models.entity.Account
 import com.eidolon.game.models.entity.EvenniaObject
 import com.eidolon.game.models.entity.Exit
 import com.eidolon.game.models.entity.ExplorableExit
+import com.eidolon.game.models.entity.ObjectActor
 import com.eidolon.game.models.entity.Room
 import eidolon.game.models.entity.Game
 import com.minare.core.entity.factories.EntityFactory
@@ -17,6 +18,7 @@ class GameEntityFactory : EntityFactory() {
         "Room" to Room::class.java,
         "Exit" to Exit::class.java,
         "ExplorableExit" to ExplorableExit::class.java,
+        "ObjectActor" to ObjectActor::class.java,
         "EvenniaCharacter" to EvenniaCharacter::class.java,
         "EvenniaObject" to EvenniaObject::class.java,
         "Account" to Account::class.java,

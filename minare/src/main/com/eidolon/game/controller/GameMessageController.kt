@@ -13,6 +13,7 @@ import com.eidolon.game.commands.RoomSay
 import com.eidolon.game.commands.SkillEvent
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommandHandler
+import com.eidolon.game.service.DamageService
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.MessageController
@@ -44,6 +45,7 @@ class GameMessageController @Inject constructor(
     private val linkDomainEntity: LinkDomainEntity,
     private val npcInteraction: NpcInteraction,
     private val exploreCommand: ExploreCommand,
+    private val damageService: DamageService,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -125,6 +127,10 @@ class GameMessageController @Inject constructor(
                 val result = exploreCommand.execute(message)
                 result.put("request_id", requestId)
                 sendToClient(connection, result)
+            }
+
+            message.getString("type") == "apply_damage" -> {
+                damageService.applyDamageFromEvennia(message)
             }
 
             message.getString("type") == "link_domain_entity" -> {

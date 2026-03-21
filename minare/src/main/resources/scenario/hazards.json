@@ -1,0 +1,22 @@
+[
+  {
+    "id": "flaming-barrel",
+    "room": "cracked-lot",
+    "name": "a flaming barrel",
+    "description": "A rusted oil drum, inexplicably ablaze. Flames lick from its open top in rhythmic pulses, as if something inside keeps detonating. The heat is oppressive.",
+    "hazardType": "burn",
+    "hardpointDamage": 8,
+    "vitalityDamage": 4,
+    "burnDuration": 15000,
+    "burnTickDamage": 3,
+    "intervalMin": 8000,
+    "intervalMax": 20000,
+    "explosionMessages": [
+      "The barrel erupts in a gout of flame!",
+      "Fire bursts from the barrel with a deafening crack!",
+      "The barrel belches a wave of searing heat!",
+      "An explosion rocks the barrel, sending sparks everywhere!",
+      "A column of fire shoots from the barrel, singeing everything nearby!"
+    ]
+  }
+]

@@ -1,6 +1,9 @@
 package eidolon.game.models.entity.agent
 
+import com.eidolon.game.models.HealthData
 import com.eidolon.game.models.Skill
+import com.eidolon.game.models.StatusEffect
+import com.eidolon.game.service.DamageService
 import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.evennia.EvenniaShadow
 import com.eidolon.game.evennia.Viewable
@@ -8,6 +11,7 @@ import com.google.inject.Inject
 import com.minare.controller.EntityController
 import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlinx.coroutines.CoroutineScope
 
@@ -19,6 +23,8 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     private lateinit var entityController: EntityController
     @Inject
     private lateinit var evenniaCommUtils: EvenniaCommUtils
+    @Inject
+    private lateinit var damageService: DamageService
 
     init {
         type = "EvenniaCharacter"
@@ -58,6 +64,17 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Mutable
     var skills: List<Skill> = emptyList()
 
+    @State
+    @Mutable
+    var health: HealthData = HealthData()
+
+    @Property
+    var statusEffects: List<StatusEffect> = emptyList()
+
+    @State
+    @Mutable
+    var dead: Boolean = false
+
     /**
      * The Room entity _id the character is currently in.
      */
@@ -71,6 +88,58 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Property
     var lastActivity: Long = 0L
 
+    // --- Status processing ---
+
+    @FixedTask
+    suspend fun processStatuses() {
+        if (dead || statusEffects.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        var updatedHealth = health
+
+        // Apply damage from active effects
+        for (effect in statusEffects) {
+            if (effect.damage > 0) {
+                updatedHealth = when (effect.type) {
+                    "burn" -> damageService.applyBurn(updatedHealth, effect.damage, effect.damage / 2)
+                    else -> damageService.applyVitalityDamage(updatedHealth, effect.damage)
+                }
+            }
+        }
+
+        // Prune expired effects
+        val remaining = damageService.pruneExpired(statusEffects, now)
+
+        // Death save check
+        if (updatedHealth.vitality <= 0) {
+            val result = damageService.rollDeathSave(this)
+            if (!result.passed) {
+                dead = true
+                health = updatedHealth
+                damageService.flagDead(this)
+                entityController.saveState(_id!!, JsonObject()
+                    .put("dead", true)
+                    .put("health", healthToJson()))
+                entityController.saveProperties(_id!!, JsonObject()
+                    .put("statusEffects", listOf<StatusEffect>()))
+                return
+            }
+        }
+
+        // Persist changes
+        val healthChanged = updatedHealth != health
+        val effectsChanged = remaining != statusEffects
+
+        if (healthChanged) {
+            health = updatedHealth
+            entityController.saveState(_id!!, JsonObject().put("health", healthToJson()))
+        }
+        if (effectsChanged) {
+            entityController.saveProperties(_id!!, JsonObject()
+                .put("statusEffects", remaining))
+        }
+    }
+
     // --- Viewable interface ---
 
     override fun project(viewName: String): JsonObject? = when (viewName) {
@@ -78,7 +147,9 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("evenniaName", evenniaName)
             .put("currentRoomId", currentRoomId)
             .put("skills", skillsToJson())
+            .put("health", healthToJson())
         "skills" -> skillsToJson()
+        "health" -> healthToJson()
         else -> null
     }
 
@@ -91,6 +162,22 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                 .put("lastUsed", skill.lastUsed))
         }
         return obj
+    }
+
+    private fun healthToJson(): JsonObject {
+        val hardpoints = JsonArray()
+        health.hardpoints.forEach { hp ->
+            hardpoints.add(JsonObject()
+                .put("name", hp.name.name)
+                .put("hp", hp.hp)
+                .put("status", hp.status.name))
+        }
+        return JsonObject()
+            .put("hardpoints", hardpoints)
+            .put("vitality", health.vitality)
+            .put("concentration", health.concentration)
+            .put("stamina", health.stamina)
+            .put("luck", health.luck)
     }
 
     // --- EvenniaShadow interface ---
