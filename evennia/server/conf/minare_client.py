@@ -36,6 +36,12 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
         # Store reference in factory so we can send messages later
         self.factory.active_protocol = self
 
+        # Send connect with hardcoded connection ID
+        self.sendMessage(json.dumps({
+            'type': 'connect',
+            'meta': {'connection_id': 'evennia-system'}
+        }).encode('utf8'))
+
     def onMessage(self, payload, isBinary):
         if isBinary:
             logger.log_warn("Minare UpSocket: Received unexpected binary message")

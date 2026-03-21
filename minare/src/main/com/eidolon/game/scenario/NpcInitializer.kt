@@ -200,16 +200,8 @@ class NpcInitializer @Inject constructor(
                 .put("brainType", brainType)
                 .put("currentRoomId", roomMinareId))
 
-            // Register cross-link
-            crossLinkRegistry.link("EvenniaCharacter", character._id!!, evenniaId)
-
-            // Link domain entity
-            val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId) ?: ""
-            linkDomainEntity.execute(JsonObject()
-                .put("evennia_id", evenniaId)
-                .put("eo_minare_id", eoMinareId)
-                .put("domain_entity_id", character._id)
-                .put("domain_entity_type", "EvenniaCharacter"))
+            // Link EvenniaObject stub <-> EvenniaCharacter domain entity
+            linkDomainEntity.link(evenniaId, character._id!!, "EvenniaCharacter")
 
             characters.add(character)
             log.info("Created Minare EvenniaCharacter '${name}' (id=${character._id}, brain=${brainType}, room=${roomMinareId})",)
@@ -217,16 +209,6 @@ class NpcInitializer @Inject constructor(
 
         if (characters.isNotEmpty()) {
             gameChannelController.addEntitiesToChannel(characters, defaultChannelId)
-
-            // Notify Evennia of domain entity links
-            for (character in characters) {
-                val evenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", character._id!!) ?: continue
-                gameChannelController.broadcast(defaultChannelId, JsonObject()
-                    .put("type", "set_domain_link")
-                    .put("evennia_id", evenniaId)
-                    .put("domain_entity_id", character._id)
-                    .put("domain_entity_type", "EvenniaCharacter"))
-            }
         }
     }
 

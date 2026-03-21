@@ -2,7 +2,6 @@ package com.eidolon.game.scenario
 
 import com.eidolon.game.commands.LinkDomainEntity
 import com.eidolon.game.controller.GameConnectionController
-import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.models.entity.ExplorableExit
 import com.eidolon.game.models.entity.Room
@@ -29,7 +28,6 @@ class RoomInitializer @Inject constructor(
     private val entityFactory: EntityFactory,
     private val entityController: EntityController,
     private val evenniaCommUtils: EvenniaCommUtils,
-    private val crossLinkRegistry: CrossLinkRegistry,
     private val linkDomainEntity: LinkDomainEntity,
     private val coroutineScope: CoroutineScope,
     private val vertx: Vertx
@@ -238,30 +236,13 @@ class RoomInitializer @Inject constructor(
             entityController.create(room)
 
             // Link EvenniaObject stub <-> Room domain entity
-            val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId) ?: ""
-            linkDomainEntity.execute(JsonObject()
-                .put("evennia_id", evenniaId)
-                .put("eo_minare_id", eoMinareId)
-                .put("domain_entity_id", room._id)
-                .put("domain_entity_type", "Room"))
+            linkDomainEntity.link(evenniaId, room._id!!, "Room")
 
             rooms.add(room)
             log.info("Created Minare Room '${room.shortDescription}' (id=${room._id}, evenniaId=$evenniaId)")
         }
 
         gameChannelController.addEntitiesToChannel(rooms, defaultChannelId)
-
-        // Notify Evennia of domain entity links so it can match incoming updates
-        for (json in roomData) {
-            val roomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
-            val evenniaId = roomKeyToEvenniaId[roomKey] ?: continue
-            val room = rooms.find { it.shortDescription == roomKey } ?: continue
-            gameChannelController.broadcast(defaultChannelId, JsonObject()
-                .put("type", "set_domain_link")
-                .put("evennia_id", evenniaId)
-                .put("domain_entity_id", room._id)
-                .put("domain_entity_type", "Room"))
-        }
 
         // Create ExplorableExit entities for exits marked explorable
         val explorableExits = mutableListOf<ExplorableExit>()

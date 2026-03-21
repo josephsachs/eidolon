@@ -16,17 +16,12 @@ class KibitzBrain(
     override val brainType: String = "kibitz"
 
     companion object {
-        const val COMMENTARY_CHANCE = 15
+        const val COMMENTARY_CHANCE = 0.33
     }
 
     override suspend fun onTurn(character: EvenniaCharacter, phase: String, context: JsonObject) {
         if (phase != "AFTER") return
 
-        val time = System.currentTimeMillis()
-        log.info("lastAction ${character.lastActed} , " +
-                "compared to ${time}. Hence the check is " +
-                "${time - character.lastActed} which `< 60000` is ${time - character.lastActed < 60000}"
-        )
         if (System.currentTimeMillis() - character.lastActed < 60000) return
 
         val roomId = character.currentRoomId
@@ -43,7 +38,7 @@ class KibitzBrain(
 
         val echoCount = room.echoes.size()
         if (echoCount <= 3) return
-        if (Random.nextDouble() > COMMENTARY_CHANCE) return
+        if (Random.nextInt(100) >= COMMENTARY_CHANCE) return
 
         val systemPrompt = buildSystemPrompt(character,
             "You are overhearing conversation in a room. React briefly in character (one short sentence, no quotes).")
