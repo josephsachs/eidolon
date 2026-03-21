@@ -246,11 +246,11 @@ def _puppet_character(caller, character_minare_id, character_name, session):
         if not character_name:
             character_name = "Unknown"
 
-        # Find a starting room (first Minare-synced room available)
+        # Find a starting room — first game world room (has domain link, not a system room)
         from typeclasses.rooms import Room
         start_room = None
         for room in Room.objects.all():
-            if room.db.minare_eo_id:
+            if room.db.minare_domain_id and not room.db.account_vault:
                 start_room = room
                 break
 

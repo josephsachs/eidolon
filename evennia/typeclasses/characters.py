@@ -46,6 +46,27 @@ class PlayerCharacter(Character):
             del self.db.hidden_mod
         self.locks.add("view:all()")
 
+    def at_post_move(self, source_location, move_type="move", **kwargs):
+        """Notify Minare when this character changes rooms."""
+        super().at_post_move(source_location, move_type=move_type, **kwargs)
+        try:
+            from server.conf.minare_client import get_minare_client
+            client = get_minare_client()
+            old_room_id = ""
+            if source_location and hasattr(source_location, 'db'):
+                old_room_id = source_location.db.minare_domain_id or ""
+            new_room_id = ""
+            if self.location and hasattr(self.location, 'db'):
+                new_room_id = self.location.db.minare_domain_id or ""
+            client.send_message({
+                "type": "character_moved",
+                "character_id": self.db.minare_domain_id or "",
+                "old_room_id": old_room_id,
+                "new_room_id": new_room_id,
+            })
+        except Exception:
+            pass
+
     def at_post_unpuppet(self, account, session=None, **kwargs):
         """Inform Minare when player disconnects."""
         super().at_post_unpuppet(account, session=session, **kwargs)
@@ -102,6 +123,11 @@ class AgentCharacter(Character):
         'hazard_msg': '_handle_hazard_msg',
         'hazard_damage': '_handle_hazard_damage',
         'flag_dead': '_handle_flag_dead',
+        'combat_lock': '_handle_combat_lock',
+        'combat_unlock': '_handle_combat_unlock',
+        'combat_msg': '_handle_combat_msg',
+        'archive_object': '_handle_archive_object',
+        'combat_feedback': '_handle_combat_feedback',
     }
 
     def at_object_creation(self):
@@ -352,6 +378,80 @@ class AgentCharacter(Character):
             )
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_flag_dead: {e}")
+
+    def _handle_combat_lock(self, command):
+        """Lock a character's movement for combat."""
+        character_evennia_id = command.get('character_evennia_id')
+        if not character_evennia_id:
+            logger.log_err("_handle_combat_lock: missing character_evennia_id")
+            return
+        try:
+            from evennia.objects.models import ObjectDB
+            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
+            char_obj.locks.add("move:false()")
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_combat_lock: {e}")
+
+    def _handle_combat_unlock(self, command):
+        """Unlock a character's movement after combat."""
+        character_evennia_id = command.get('character_evennia_id')
+        if not character_evennia_id:
+            logger.log_err("_handle_combat_unlock: missing character_evennia_id")
+            return
+        try:
+            from evennia.objects.models import ObjectDB
+            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
+            char_obj.locks.add("move:all()")
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_combat_unlock: {e}")
+
+    def _handle_combat_msg(self, command):
+        """Send a combat message to a room."""
+        from typeclasses.rooms import Room
+
+        room_evennia_id = command.get('room_evennia_id')
+        message = command.get('message', '')
+        if not room_evennia_id or not message:
+            logger.log_err("_handle_combat_msg: missing room_evennia_id or message")
+            return
+        try:
+            room = Room.objects.get(id=int(room_evennia_id))
+            room.msg_contents(message)
+        except (Room.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_combat_msg: {e}")
+
+    def _handle_archive_object(self, command):
+        """Archive an object — soft delete, invisible and untargetable."""
+        object_evennia_id = command.get('object_evennia_id')
+        message = command.get('message', '')
+        if not object_evennia_id:
+            logger.log_err("_handle_archive_object: missing object_evennia_id")
+            return
+        try:
+            from evennia.objects.models import ObjectDB
+            obj = ObjectDB.objects.get(id=int(object_evennia_id))
+            if message and obj.location:
+                obj.location.msg_contents(f"|R{message}|n")
+            obj.archive()
+            logger.log_info(
+                f"AgentCharacter: Archived '{obj.key}' (id={object_evennia_id})"
+            )
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_archive_object: {e}")
+
+    def _handle_combat_feedback(self, command):
+        """Send a personal combat message to a specific character."""
+        character_evennia_id = command.get('character_evennia_id')
+        message = command.get('message', '')
+        if not character_evennia_id or not message:
+            logger.log_err("_handle_combat_feedback: missing character_evennia_id or message")
+            return
+        try:
+            from evennia.objects.models import ObjectDB
+            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
+            char_obj.msg(f"|w{message}|n")
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_combat_feedback: {e}")
 
     def _handle_batch(self, command):
         """Execute a list of sub-commands sequentially with staggered timing."""

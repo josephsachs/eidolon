@@ -19,6 +19,9 @@ from commands.player_commands import (
     CmdSay, CmdPose, CmdSkills, CmdHealth, CmdHide, CmdSearch, CmdReveal,
     CmdExplore, CmdNoHome, CmdNoAccess,
 )
+from commands.combat_commands import (
+    CmdAttack, CmdDefend, CmdAvoid, CmdEscape, CmdStance, CmdTactic,
+)
 
 
 class PlayerCharacterCmdSet(CmdSet):
@@ -41,6 +44,12 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdExplore())
         self.add(CmdNoHome())
         self.add(CmdNoAccess())
+        self.add(CmdAttack())
+        self.add(CmdDefend())
+        self.add(CmdAvoid())
+        self.add(CmdEscape())
+        self.add(CmdStance())
+        self.add(CmdTactic())
 
 
 class AgentCharacterCmdSet(CmdSet):

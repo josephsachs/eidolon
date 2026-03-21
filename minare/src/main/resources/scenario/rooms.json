@@ -80,7 +80,16 @@
     "exits": [
       {"direction": "north", "destination": "rusted-guardrail", "description": "The guardrail is visible to the north."},
       {"direction": "west", "destination": "dry-creek-bed", "description": "A dry creek bed lies to the west."},
-      {"direction": "south", "destination": "rocky-outcropping", "description": "Sandstone boulders jut from the ground to the south."}
+      {"direction": "south", "destination": "rocky-outcropping", "description": "Sandstone boulders jut from the ground to the south."},
+      {"direction": "east", "destination": "pig-wallow", "description": "A muddy depression reeks of something feral to the east."}
+    ]
+  },
+  {
+    "id": "pig-wallow",
+    "shortDescription": "A Muddy Wallow",
+    "description": "A shallow depression of churned mud and trampled brush. Cloven hoofprints pock the ground and the air is thick with a rank, animal smell.",
+    "exits": [
+      {"direction": "west", "destination": "dark-brush", "description": "Dense dark brush lies to the west."}
     ]
   },
   {

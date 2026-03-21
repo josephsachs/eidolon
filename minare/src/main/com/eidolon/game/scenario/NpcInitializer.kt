@@ -191,14 +191,21 @@ class NpcInitializer @Inject constructor(
             val character = entityFactory.createEntity(EvenniaCharacter::class.java) as EvenniaCharacter
             entityController.create(character)
 
-            entityController.saveState(character._id!!, JsonObject()
+            val state = JsonObject()
                 .put("evenniaId", evenniaId)
                 .put("evenniaName", name)
                 .put("description", npc.getString("description", ""))
                 .put("shortDescription", npc.getString("shortDescription", ""))
                 .put("isNpc", true)
                 .put("brainType", brainType)
-                .put("currentRoomId", roomMinareId))
+                .put("currentRoomId", roomMinareId)
+
+            val attrJson = npc.getJsonObject("attributes")
+            if (attrJson != null) {
+                state.put("attributes", attrJson)
+            }
+
+            entityController.saveState(character._id!!, state)
 
             // Link EvenniaObject stub <-> EvenniaCharacter domain entity
             linkDomainEntity.link(evenniaId, character._id!!, "EvenniaCharacter")

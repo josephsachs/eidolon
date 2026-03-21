@@ -1,5 +1,7 @@
 package eidolon.game.models.entity.agent
 
+import com.eidolon.game.models.Attributes
+import com.eidolon.game.models.CombatEquilibrium
 import com.eidolon.game.models.HealthData
 import com.eidolon.game.models.Skill
 import com.eidolon.game.models.StatusEffect
@@ -73,6 +75,10 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @State
     @Mutable
+    var attributes: Attributes = Attributes()
+
+    @State
+    @Mutable
     var dead: Boolean = false
 
     /**
@@ -87,6 +93,24 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @Property
     var lastActivity: Long = 0L
+
+    @Property
+    var combatMode: String = ""
+
+    @Property
+    var targetId: String = ""
+
+    @Property
+    var combatId: String = ""
+
+    @Property
+    var stance: String = ""
+
+    @Property
+    var tactic: String = ""
+
+    @Property
+    var combatEquilibrium: CombatEquilibrium = CombatEquilibrium()
 
     // --- Status processing ---
 
@@ -148,8 +172,10 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("currentRoomId", currentRoomId)
             .put("skills", skillsToJson())
             .put("health", healthToJson())
+            .put("attributes", attributesToJson())
         "skills" -> skillsToJson()
         "health" -> healthToJson()
+        "attributes" -> attributesToJson()
         else -> null
     }
 
@@ -178,6 +204,19 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("concentration", health.concentration)
             .put("stamina", health.stamina)
             .put("luck", health.luck)
+    }
+
+    private fun attributesToJson(): JsonObject {
+        return JsonObject()
+            .put("strength", attributes.strength)
+            .put("agility", attributes.agility)
+            .put("toughness", attributes.toughness)
+            .put("intellect", attributes.intellect)
+            .put("imagination", attributes.imagination)
+            .put("discipline", attributes.discipline)
+            .put("charisma", attributes.charisma)
+            .put("empathy", attributes.empathy)
+            .put("wits", attributes.wits)
     }
 
     // --- EvenniaShadow interface ---

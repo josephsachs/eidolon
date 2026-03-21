@@ -92,6 +92,18 @@ class ObjectParent:
             pass
 
 
+    def archive(self):
+        """Soft-delete: hide from players, stop scripts, make untargetable."""
+        self.db.archived = True
+        self.locks.add("view:false();get:false()")
+        self.scripts.stop()
+
+    def unarchive(self):
+        """Reverse a soft-delete: restore visibility and interactability."""
+        self.db.archived = False
+        self.locks.add("view:all();get:all()")
+
+
 class Object(ObjectParent, DefaultObject):
     """
     This is the root Object typeclass, representing all entities that

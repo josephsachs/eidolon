@@ -16,7 +16,9 @@ import com.eidolon.clients.ModelAPI
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.minare.controller.EntityController
+import com.eidolon.game.service.CombatService
 import eidolon.game.models.entity.agent.BrainRegistry
+import eidolon.game.models.entity.agent.FeralBrain
 import eidolon.game.models.entity.agent.IdleBrain
 import eidolon.game.models.entity.agent.KibitzBrain
 import org.slf4j.LoggerFactory
@@ -60,10 +62,16 @@ class GameModule : AbstractModule() {
 
     @Provides
     @Singleton
-    fun provideBrainRegistry(entityController: EntityController, modelAPI: ModelAPI): BrainRegistry {
+    fun provideBrainRegistry(
+        entityController: EntityController,
+        modelAPI: ModelAPI,
+        combatService: CombatService,
+        stateStore: com.minare.core.storage.interfaces.StateStore
+    ): BrainRegistry {
         val registry = BrainRegistry()
         registry.register(IdleBrain())
         registry.register(KibitzBrain(entityController, modelAPI))
+        registry.register(FeralBrain(entityController, combatService, stateStore))
         return registry
     }
 }

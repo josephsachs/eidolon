@@ -73,6 +73,11 @@ class ObjectActor : Entity() {
     @Mutable
     var intervalMax: Long = 20_000L
 
+    /** Object HP. -1 means not damageable. 0 means destroyed. */
+    @State
+    @Mutable
+    var hp: Int = -1
+
     @Property
     var lastAction: Long = 0L
 

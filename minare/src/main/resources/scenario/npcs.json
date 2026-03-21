@@ -5,5 +5,23 @@
     "description": "A grizzled old-timer with sun-baked skin and squinting eyes. He seems to be listening intently to everything around him.",
     "brainType": "kibitz",
     "room": "valero-station"
+  },
+  {
+    "name": "a feral pig",
+    "shortDescription": "a bristling feral pig",
+    "description": "A squat, muscular pig with coarse dark bristles and small, furious eyes. Its tusks are chipped and yellowed. It smells terrible.",
+    "brainType": "feral",
+    "room": "pig-wallow",
+    "attributes": {
+      "strength": 75,
+      "agility": 55,
+      "toughness": 80,
+      "intellect": 10,
+      "imagination": 5,
+      "discipline": 30,
+      "charisma": 5,
+      "empathy": 5,
+      "wits": 60
+    }
   }
 ]

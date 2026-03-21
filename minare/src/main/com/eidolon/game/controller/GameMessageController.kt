@@ -13,6 +13,7 @@ import com.eidolon.game.commands.RoomSay
 import com.eidolon.game.commands.SkillEvent
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommandHandler
+import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -46,6 +47,7 @@ class GameMessageController @Inject constructor(
     private val npcInteraction: NpcInteraction,
     private val exploreCommand: ExploreCommand,
     private val damageService: DamageService,
+    private val combatService: CombatService,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -127,6 +129,40 @@ class GameMessageController @Inject constructor(
                 val result = exploreCommand.execute(message)
                 result.put("request_id", requestId)
                 sendToClient(connection, result)
+            }
+
+            message.getString("type") == "combat_attack" -> {
+                val characterId = message.getString("character_id", "")
+                val targetId = message.getString("target_id", "")
+                val roomId = message.getString("room_id", "")
+                val existing = combatService.findCombatInRoom(roomId)
+                if (existing != null) {
+                    combatService.joinCombat(existing._id!!, characterId)
+                    // Set attacker mode
+                    combatService.setAttackMode(characterId, targetId)
+                } else {
+                    combatService.createCombat(roomId, characterId, targetId)
+                }
+            }
+
+            message.getString("type") == "combat_mode" -> {
+                val characterId = message.getString("character_id", "")
+                val mode = message.getString("mode", "")
+                combatService.setCombatMode(characterId, mode)
+            }
+
+            message.getString("type") == "combat_escape" -> {
+                val requestId = message.getString("request_id")
+                val characterId = message.getString("character_id", "")
+                val result = combatService.attemptEscape(characterId)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "character_moved" -> {
+                val characterId = message.getString("character_id", "")
+                val newRoomId = message.getString("new_room_id", "")
+                combatService.onCharacterMoved(characterId, newRoomId)
             }
 
             message.getString("type") == "apply_damage" -> {

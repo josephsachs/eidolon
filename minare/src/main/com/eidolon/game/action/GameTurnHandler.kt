@@ -21,12 +21,14 @@ class GameTurnHandler @Inject constructor(
     private val scope: CoroutineScope,
     private val eventBusUtils: EventBusUtils,
     private val characterTurnHandler: CharacterTurnHandler,
+    private val combatTurnHandler: CombatTurnHandler,
     private val ingameTimeController: IngameTimeController,
+    private val sharedGameState: eidolon.game.action.cache.SharedGameState,
     private val vertx: Vertx
 ) {
     private var log = LoggerFactory.getLogger(GameTurnHandler::class.java)
 
-    // TODO: Elegant way of doing "turn phase advance every n frames" instead of "every frame"
+    private var frameCounter: Int = 0
 
     private val turnStateMachine: EventStateFlow = EventStateFlow(
         eventKey = "GAME_TURN_LOOP",
@@ -39,18 +41,21 @@ class GameTurnHandler @Inject constructor(
         //log.info("TURN_LOOP: ACT Phase Start")
         setGameProperties(TurnPhase.BEFORE, true)
         characterTurnHandler.handleTurn(TurnPhase.BEFORE)
+        combatTurnHandler.handleTurn(TurnPhase.BEFORE)
     }
 
     private val executeAction: suspend (StateFlowContext) -> Unit = { context ->
         //log.info("TURN_LOOP: EXECUTE Phase Start")
         setGameProperties(TurnPhase.DURING, true)
         characterTurnHandler.handleTurn(TurnPhase.DURING)
+        combatTurnHandler.handleTurn(TurnPhase.DURING)
     }
 
     private val resolveAction: suspend (StateFlowContext) -> Unit = { context ->
         //log.info("TURN_LOOP: RESOLVE Phase Start")
         setGameProperties(TurnPhase.AFTER, true)
         characterTurnHandler.handleTurn(TurnPhase.AFTER)
+        combatTurnHandler.handleTurn(TurnPhase.AFTER)
     }
 
     private val turnEndAction: suspend (StateFlowContext) -> Unit = { _ ->
@@ -80,9 +85,12 @@ class GameTurnHandler @Inject constructor(
     }
 
     /**
-     * Called each frame/tick. It attempts to advance the state ONLY if the previous state is finished.
+     * Called each frame/tick. Advances the turn state only after enough frames have elapsed.
      */
     suspend fun handleFrame() {
+        frameCounter++
+        if (frameCounter < sharedGameState.getTicksPerTurn()) return
+        frameCounter = 0
         turnStateMachine.tryNext()
     }
 

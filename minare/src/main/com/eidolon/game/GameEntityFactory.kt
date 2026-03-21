@@ -1,6 +1,7 @@
 package com.eidolon.game
 
 import com.eidolon.game.models.entity.Account
+import com.eidolon.game.models.entity.Combat
 import com.eidolon.game.models.entity.EvenniaObject
 import com.eidolon.game.models.entity.Exit
 import com.eidolon.game.models.entity.ExplorableExit
@@ -15,6 +16,7 @@ import javax.inject.Singleton
 class GameEntityFactory : EntityFactory() {
     override val entityTypes = mapOf(
         "Game" to Game::class.java,
+        "Combat" to Combat::class.java,
         "Room" to Room::class.java,
         "Exit" to Exit::class.java,
         "ExplorableExit" to ExplorableExit::class.java,
