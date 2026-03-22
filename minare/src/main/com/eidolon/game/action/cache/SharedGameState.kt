@@ -42,7 +42,7 @@ class SharedGameState @Inject constructor(
     }
 
     companion object {
-        const val DEFAULT_TICKS_PER_TURN = 4
+        const val DEFAULT_TICKS_PER_TURN = 24
         enum class GameClockState {
             RUNNING,
             PAUSED

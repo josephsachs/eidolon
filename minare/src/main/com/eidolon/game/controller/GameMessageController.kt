@@ -15,6 +15,8 @@ import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
+import com.eidolon.game.service.ItemRegistry
+import com.eidolon.game.service.VendorService
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
@@ -53,6 +55,8 @@ class GameMessageController @Inject constructor(
     private val combatService: CombatService,
     private val entityController: EntityController,
     private val brainRegistry: BrainRegistry,
+    private val itemRegistry: ItemRegistry,
+    private val vendorService: VendorService,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -174,6 +178,61 @@ class GameMessageController @Inject constructor(
                 handlePresence(message)
             }
 
+            message.getString("type") == "equip_item" -> {
+                val requestId = message.getString("request_id")
+                val result = handleEquip(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "unequip_item" -> {
+                val requestId = message.getString("request_id")
+                val result = handleUnequip(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "vendor_menu" -> {
+                val requestId = message.getString("request_id")
+                val vendorId = message.getString("vendor_id", "")
+                val menuType = message.getString("menu_type", "buy")
+                val result = if (menuType == "sell") {
+                    vendorService.getSellMenu(vendorId)
+                } else {
+                    vendorService.getBuyMenu(vendorId)
+                }
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "vendor_buy" -> {
+                val requestId = message.getString("request_id")
+                val vendorId = message.getString("vendor_id", "")
+                val characterId = message.getString("character_id", "")
+                val itemName = message.getString("item_name", "")
+                // Resolve item name to template ID
+                val template = itemRegistry.all().values.firstOrNull {
+                    it.name.equals(itemName, ignoreCase = true)
+                }
+                val result = if (template != null) {
+                    vendorService.buyItem(vendorId, characterId, template.id)
+                } else {
+                    io.vertx.core.json.JsonObject().put("success", false).put("reason", "Unknown item.")
+                }
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "vendor_sell" -> {
+                val requestId = message.getString("request_id")
+                val vendorId = message.getString("vendor_id", "")
+                val characterId = message.getString("character_id", "")
+                val templateId = message.getString("template_id", "")
+                val result = vendorService.sellItem(vendorId, characterId, templateId)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
             message.getString("type") == "apply_damage" -> {
                 damageService.applyDamageFromEvennia(message)
             }
@@ -284,6 +343,69 @@ class GameMessageController @Inject constructor(
         } else {
             log.warn("Cannot send response: defaultChannelId={}, messageId={}", defaultChannelId, messageId)
         }
+    }
+
+    private suspend fun handleEquip(message: JsonObject): JsonObject {
+        val characterId = message.getString("character_id", "")
+        val templateId = message.getString("template_id", "")
+
+        val template = itemRegistry.get(templateId)
+            ?: return JsonObject().put("success", false).put("reason", "unknown item")
+
+        if (template.slot.isEmpty())
+            return JsonObject().put("success", false).put("reason", "not equippable")
+
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("success", false).put("reason", "character not found")
+
+        val updatedEquipment = character.equipment.toMutableMap()
+        updatedEquipment[template.slot] = templateId
+
+        entityController.saveState(characterId, JsonObject()
+            .put("equipment", JsonObject(updatedEquipment as Map<String, Any>)))
+
+        return JsonObject()
+            .put("success", true)
+            .put("slot", template.slot)
+            .put("item_name", template.name)
+    }
+
+    private suspend fun handleUnequip(message: JsonObject): JsonObject {
+        val characterId = message.getString("character_id", "")
+        val slotOrItem = message.getString("slot_or_item", "").uppercase()
+
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("success", false).put("reason", "character not found")
+
+        val updatedEquipment = character.equipment.toMutableMap()
+
+        // Try as slot name first
+        val slot = if (updatedEquipment.containsKey(slotOrItem)) {
+            slotOrItem
+        } else {
+            // Try to find by template name
+            updatedEquipment.entries.firstOrNull { (_, templateId) ->
+                val template = itemRegistry.get(templateId)
+                template?.name?.equals(slotOrItem, ignoreCase = true) == true
+            }?.key
+        }
+
+        if (slot == null || updatedEquipment[slot].isNullOrEmpty())
+            return JsonObject().put("success", false).put("reason", "Nothing equipped there.")
+
+        val templateId = updatedEquipment[slot]!!
+        val template = itemRegistry.get(templateId)
+        updatedEquipment.remove(slot)
+
+        entityController.saveState(characterId, JsonObject()
+            .put("equipment", JsonObject(updatedEquipment as Map<String, Any>)))
+
+        return JsonObject()
+            .put("success", true)
+            .put("slot", slot)
+            .put("item_name", template?.name ?: templateId)
     }
 
     private suspend fun handlePresence(message: JsonObject) {

@@ -3,6 +3,7 @@ package com.eidolon.game.scenario
 import com.eidolon.game.commands.LinkDomainEntity
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommUtils
+import com.eidolon.game.service.VendorService
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
@@ -32,7 +33,8 @@ class NpcInitializer @Inject constructor(
     private val crossLinkRegistry: CrossLinkRegistry,
     private val linkDomainEntity: LinkDomainEntity,
     private val coroutineScope: CoroutineScope,
-    private val vertx: Vertx
+    private val vertx: Vertx,
+    private val vendorService: VendorService
 ) {
     private val log = LoggerFactory.getLogger(NpcInitializer::class.java)
     private val initialized = AtomicBoolean(false)
@@ -141,10 +143,11 @@ class NpcInitializer @Inject constructor(
                 continue
             }
 
-            createCommands.add(JsonObject()
+            val cmd = JsonObject()
                 .put("action", "create_npc")
                 .put("npc_name", name)
-                .put("room_evennia_id", roomEvenniaId))
+                .put("room_evennia_id", roomEvenniaId)
+            createCommands.add(cmd)
         }
 
         if (createCommands.isNotEmpty()) {
@@ -209,6 +212,15 @@ class NpcInitializer @Inject constructor(
 
             // Link EvenniaObject stub <-> EvenniaCharacter domain entity
             linkDomainEntity.link(evenniaId, character._id!!, "EvenniaCharacter")
+
+            // Register vendor config if applicable
+            val vendorJson = npc.getJsonObject("vendor")
+            if (vendorJson != null && brainType == "vendor") {
+                val buyMenu = vendorJson.getJsonArray("buyMenu")?.map { it as String } ?: emptyList()
+                val sellMenu = vendorJson.getJsonArray("sellMenu")?.map { it as String } ?: emptyList()
+                val currency = vendorJson.getString("currency", "dollar")
+                vendorService.registerVendor(character._id!!, VendorService.VendorConfig(buyMenu, sellMenu, currency))
+            }
 
             characters.add(character)
             log.info("Created Minare EvenniaCharacter '${name}' (id=${character._id}, brain=${brainType}, room=${roomMinareId})",)

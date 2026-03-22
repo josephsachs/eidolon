@@ -16,7 +16,7 @@ class KibitzBrain(
     override val brainType: String = "kibitz"
 
     companion object {
-        const val COMMENTARY_CHANCE = 0.33
+        const val COMMENTARY_CHANCE = 33
     }
 
     override suspend fun onTurn(character: EvenniaCharacter, phase: String, context: JsonObject) {

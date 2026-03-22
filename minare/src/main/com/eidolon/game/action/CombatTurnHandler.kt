@@ -8,6 +8,7 @@ import com.eidolon.game.models.HardpointName
 import com.eidolon.game.models.HealthData
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
+import com.eidolon.game.service.ItemRegistry
 import com.eidolon.game.models.entity.Combat
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -26,7 +27,8 @@ class CombatTurnHandler @Inject constructor(
     private val combatService: CombatService,
     private val damageService: DamageService,
     private val evenniaCommUtils: EvenniaCommUtils,
-    private val crossLinkRegistry: CrossLinkRegistry
+    private val crossLinkRegistry: CrossLinkRegistry,
+    private val itemRegistry: ItemRegistry
 ) {
     private val log = LoggerFactory.getLogger(CombatTurnHandler::class.java)
 
@@ -157,22 +159,31 @@ class CombatTurnHandler @Inject constructor(
         if (attackRoll > defenseRoll) {
             // Hit — balance affects damage output
             val balanceMod = attackerEq.balance / 50.0 // 0.0 to 2.0 multiplier
-            val baseDamage = (attacker.attributes.strength / 10.0 * balanceMod).toInt().coerceAtLeast(1)
-            val hardpointDamage = baseDamage
-            val vitalityDamage = baseDamage / 2
+
+            // Weapon damage: equipped weapon adds base damage, otherwise hand-to-hand
+            val weapon = attacker.equipment["MAIN_HAND"]?.let { itemRegistry.get(it) }
+            val weaponDamage = weapon?.damage ?: 0
+            val baseDamage = ((attacker.attributes.strength / 10.0 + weaponDamage) * balanceMod).toInt().coerceAtLeast(1)
 
             // Pick hit location
             val hitLocation = HardpointName.entries[Random.nextInt(HardpointName.entries.size)]
+
+            // Armor absorption on the hit location
+            val armor = target.equipment[hitLocation.name]?.let { itemRegistry.get(it) }
+            val absorption = armor?.absorption ?: 0
+            val hardpointDamage = (baseDamage - absorption).coerceAtLeast(1)
+            val vitalityDamage = hardpointDamage / 2
+
             var updatedHealth = damageService.applyHardpointDamage(target.health, hitLocation, hardpointDamage)
             updatedHealth = damageService.applyVitalityDamage(updatedHealth, vitalityDamage)
 
             // Stamina cost for absorbing a blow; torso hits cost extra
-            val staminaCost = baseDamage + if (hitLocation == HardpointName.TORSO) baseDamage / 2 else 0
+            val staminaCost = hardpointDamage + if (hitLocation == HardpointName.TORSO) hardpointDamage / 2 else 0
             updatedHealth = updatedHealth.copy(stamina = (updatedHealth.stamina - staminaCost).coerceAtLeast(0))
 
             // Head blows cost concentration
             if (hitLocation == HardpointName.HEAD) {
-                updatedHealth = updatedHealth.copy(concentration = (updatedHealth.concentration - baseDamage).coerceAtLeast(0))
+                updatedHealth = updatedHealth.copy(concentration = (updatedHealth.concentration - hardpointDamage).coerceAtLeast(0))
             }
 
             entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
@@ -251,8 +262,11 @@ class CombatTurnHandler @Inject constructor(
      * - Tempo: position gain on attack, save vs disordered
      */
     private fun calculateScores(character: EvenniaCharacter): CombatScores {
-        val handToHand = character.skills.firstOrNull { it.name == "Hand-to-Hand" }
-        val weaponSkill = handToHand?.level ?: 0.0
+        // Use weapon skill if equipped, otherwise Hand-to-Hand
+        val weapon = character.equipment["MAIN_HAND"]?.let { itemRegistry.get(it) }
+        val skillName = weapon?.skill?.ifEmpty { null } ?: "Hand-to-Hand"
+        val skill = character.skills.firstOrNull { it.name == skillName }
+        val weaponSkill = skill?.level ?: 0.0
         val eq = character.combatEquilibrium
 
         val attack = weaponSkill + character.attributes.strength * 0.5 + eq.balance * 0.2

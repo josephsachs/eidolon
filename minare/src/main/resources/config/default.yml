@@ -32,11 +32,11 @@ entity:
 
 frames:
   threads: 10
-  frame_duration: 1100
+  frame_duration: 400
   lookahead: 25
   session:
     auto_session: frames_per_session
-    frames_per_session: 500
+    frames_per_session: 800
   timeline:
     detach:
       flush_on_detach: true

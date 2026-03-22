@@ -112,6 +112,15 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Property
     var combatEquilibrium: CombatEquilibrium = CombatEquilibrium()
 
+    /**
+     * Equipment slots: slot name -> item template ID.
+     * Slots: HEAD, NECK, TORSO, RIGHT_ARM, RIGHT_HAND, LEFT_ARM, LEFT_HAND, RIGHT_LEG, LEFT_LEG (armor)
+     *        MAIN_HAND, OFF_HAND (held items/weapons)
+     */
+    @State
+    @Mutable
+    var equipment: Map<String, String> = emptyMap()
+
     // --- Regeneration ---
 
     @FixedTask
@@ -215,9 +224,11 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("skills", skillsToJson())
             .put("health", healthToJson())
             .put("attributes", attributesToJson())
+            .put("equipment", equipmentToJson())
         "skills" -> skillsToJson()
         "health" -> healthToJson()
         "attributes" -> attributesToJson()
+        "equipment" -> equipmentToJson()
         else -> null
     }
 
@@ -259,6 +270,14 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("charisma", attributes.charisma)
             .put("empathy", attributes.empathy)
             .put("wits", attributes.wits)
+    }
+
+    private fun equipmentToJson(): JsonObject {
+        val obj = JsonObject()
+        equipment.forEach { (slot, templateId) ->
+            obj.put(slot, templateId)
+        }
+        return obj
     }
 
     // --- EvenniaShadow interface ---

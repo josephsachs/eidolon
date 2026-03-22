@@ -2,11 +2,13 @@ package com.eidolon.game.commands
 
 import com.eidolon.game.GameEntityFactory
 import com.eidolon.game.models.entity.Account
+import com.eidolon.game.service.ItemRegistry
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
 import eidolon.game.controller.GameChannelController
 import eidolon.game.models.entity.agent.EvenniaCharacter
+import com.eidolon.game.models.Attributes
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
@@ -15,7 +17,8 @@ import org.slf4j.LoggerFactory
 class CharacterCreate @Inject constructor(
     private val entityController: EntityController,
     private val entityFactory: GameEntityFactory,
-    private val channelController: GameChannelController
+    private val channelController: GameChannelController,
+    private val itemRegistry: ItemRegistry
 ) {
     private val log = LoggerFactory.getLogger(CharacterCreate::class.java)
 
@@ -58,6 +61,46 @@ class CharacterCreate @Inject constructor(
             }
 
         }
+        // Attributes: base 50, +20 per boost, -20 for dump, +10 per dump bonus
+        val attrBoosts = characterData.getJsonArray("attr_boosts")?.map { it as String } ?: emptyList()
+        val attrDump = characterData.getString("attr_dump", null)
+        val attrDumpBoosts = characterData.getJsonArray("attr_dump_boosts")?.map { it as String } ?: emptyList()
+
+        val base = 50
+        val boostAmount = 20
+        val dumpPenalty = 20
+        val dumpBonus = 10
+
+        fun resolve(attr: String): Int {
+            var v = base
+            if (attr in attrBoosts) v += boostAmount
+            if (attr == attrDump) v -= dumpPenalty
+            if (attr in attrDumpBoosts) v += dumpBonus
+            return v
+        }
+
+        character.attributes = Attributes(
+            strength = resolve("strength"),
+            agility = resolve("agility"),
+            toughness = resolve("toughness"),
+            intellect = resolve("intellect"),
+            imagination = resolve("imagination"),
+            discipline = resolve("discipline"),
+            charisma = resolve("charisma"),
+            empathy = resolve("empathy"),
+            wits = resolve("wits")
+        )
+
+        // Starting equipment
+        val startingEquipment = characterData.getJsonObject("starting_equipment")
+        if (startingEquipment != null) {
+            val templateId = startingEquipment.getString("template_id", "")
+            val template = itemRegistry.get(templateId)
+            if (template != null && template.slot.isNotEmpty()) {
+                character.equipment = mapOf(template.slot to templateId)
+            }
+        }
+
         entityController.create(character)
 
         // Update account

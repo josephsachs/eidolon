@@ -17,10 +17,12 @@ import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.minare.controller.EntityController
 import com.eidolon.game.service.CombatService
+import com.eidolon.game.service.ItemRegistry
 import eidolon.game.models.entity.agent.BrainRegistry
 import eidolon.game.models.entity.agent.FeralBrain
 import eidolon.game.models.entity.agent.IdleBrain
 import eidolon.game.models.entity.agent.KibitzBrain
+import eidolon.game.models.entity.agent.VendorBrain
 import org.slf4j.LoggerFactory
 
 /**
@@ -62,15 +64,25 @@ class GameModule : AbstractModule() {
 
     @Provides
     @Singleton
+    fun provideItemRegistry(): ItemRegistry {
+        val registry = ItemRegistry()
+        registry.load()
+        return registry
+    }
+
+    @Provides
+    @Singleton
     fun provideBrainRegistry(
         entityController: EntityController,
         modelAPI: ModelAPI,
-        combatService: CombatService
+        combatService: CombatService,
+        itemRegistry: ItemRegistry
     ): BrainRegistry {
         val registry = BrainRegistry()
         registry.register(IdleBrain())
         registry.register(KibitzBrain(entityController, modelAPI))
         registry.register(FeralBrain(entityController, combatService))
+        registry.register(VendorBrain(entityController, itemRegistry))
         return registry
     }
 }

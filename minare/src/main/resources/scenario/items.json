@@ -1,0 +1,79 @@
+[
+  {
+    "id": "rusty-knife",
+    "name": "Rusty knife",
+    "description": "A dull, pitted blade with a cracked wooden handle. Better than bare fists, barely.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 8,
+    "skill": "Blades",
+    "price": { "currency": "dollar", "amount": 5 }
+  },
+  {
+    "id": "colt-45",
+    "name": "Colt 45",
+    "description": "A battered but functional revolver. Six shots, if you can find the ammo.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 20,
+    "skill": "Firearms",
+    "price": { "currency": "dollar", "amount": 50 }
+  },
+  {
+    "id": "ak-47",
+    "name": "AK-47",
+    "description": "A scratched-up assault rifle of indeterminate origin. Reliable as gravity.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 35,
+    "skill": "Firearms",
+    "price": { "currency": "dollar", "amount": 200 }
+  },
+  {
+    "id": "leather-vest",
+    "name": "Leather vest",
+    "description": "A stiff leather vest, sun-cracked but still good for stopping a blade.",
+    "type": "armor",
+    "slot": "TORSO",
+    "absorption": 5,
+    "price": { "currency": "dollar", "amount": 15 }
+  },
+  {
+    "id": "hard-hat",
+    "name": "Hard hat",
+    "description": "A scuffed yellow hard hat. Protects against falling debris and feral tusks alike.",
+    "type": "armor",
+    "slot": "HEAD",
+    "absorption": 3,
+    "price": { "currency": "dollar", "amount": 10 }
+  },
+  {
+    "id": "work-boots",
+    "name": "Work boots",
+    "description": "Heavy steel-toed boots, well worn but solid.",
+    "type": "armor",
+    "slot": "RIGHT_LEG",
+    "absorption": 2,
+    "price": { "currency": "dollar", "amount": 8 }
+  },
+  {
+    "id": "pickle-jar",
+    "name": "Pickle jar",
+    "description": "A sealed mason jar of dill pickles. Surprisingly refreshing in the desert heat.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 3 }
+  },
+  {
+    "id": "cucumber",
+    "name": "Cucumber",
+    "description": "A fresh cucumber. Where it came from in this desert is anyone's guess.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 1 }
+  },
+  {
+    "id": "dollar",
+    "name": "Dollar",
+    "description": "A crumpled greenback. Still spends.",
+    "type": "currency"
+  }
+]

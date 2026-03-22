@@ -7,6 +7,7 @@ import com.eidolon.game.models.entity.Exit
 import com.eidolon.game.models.entity.ExplorableExit
 import com.eidolon.game.models.entity.ObjectActor
 import com.eidolon.game.models.entity.Room
+import com.eidolon.game.models.entity.Spawner
 import eidolon.game.models.entity.Game
 import com.minare.core.entity.factories.EntityFactory
 import eidolon.game.models.entity.agent.EvenniaCharacter
@@ -24,5 +25,6 @@ class GameEntityFactory : EntityFactory() {
         "EvenniaCharacter" to EvenniaCharacter::class.java,
         "EvenniaObject" to EvenniaObject::class.java,
         "Account" to Account::class.java,
+        "Spawner" to Spawner::class.java,
     )
 }

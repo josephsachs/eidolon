@@ -23,5 +23,17 @@
       "empathy": 5,
       "wits": 60
     }
+  },
+  {
+    "name": "Earl",
+    "shortDescription": "a heavyset man behind a folding table",
+    "description": "A heavyset man in a stained trucker cap sits behind a folding table piled with dubious merchandise. He watches you with shrewd, calculating eyes.",
+    "brainType": "vendor",
+    "room": "valero-station",
+    "vendor": {
+      "buyMenu": ["colt-45", "ak-47", "pickle-jar"],
+      "sellMenu": ["cucumber"],
+      "currency": "dollar"
+    }
   }
 ]

@@ -22,6 +22,12 @@ from commands.player_commands import (
 from commands.combat_commands import (
     CmdAttack, CmdDefend, CmdAvoid, CmdEscape, CmdStance, CmdTactic,
 )
+from commands.equipment_commands import (
+    CmdEquip, CmdUnequip, CmdInventory,
+)
+from commands.vendor_commands import (
+    CmdBuy, CmdSell,
+)
 
 
 class PlayerCharacterCmdSet(CmdSet):
@@ -50,6 +56,11 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdEscape())
         self.add(CmdStance())
         self.add(CmdTactic())
+        self.add(CmdEquip())
+        self.add(CmdUnequip())
+        self.add(CmdInventory())
+        self.add(CmdBuy())
+        self.add(CmdSell())
 
 
 class AgentCharacterCmdSet(CmdSet):
