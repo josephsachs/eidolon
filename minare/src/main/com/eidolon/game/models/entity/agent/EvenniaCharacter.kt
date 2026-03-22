@@ -112,6 +112,48 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Property
     var combatEquilibrium: CombatEquilibrium = CombatEquilibrium()
 
+    // --- Regeneration ---
+
+    @FixedTask
+    suspend fun regenerate() {
+        if (dead) return
+
+        val max = 100
+        val regenRate = 1
+        val staminaRate = regenRate + (attributes.toughness / 50.0).toInt()
+        val concentrationRate = regenRate + (attributes.discipline / 50.0).toInt()
+
+        var updated = health
+
+        if (updated.vitality >= max
+            && updated.stamina >= max
+            && updated.concentration >= max
+            && updated.hardpoints.all { it.hp >= max }) return
+
+        // Vitality regens first, then hardpoint hp
+        if (updated.vitality < max) {
+            updated = updated.copy(vitality = (updated.vitality + regenRate).coerceAtMost(max))
+        } else {
+            val updatedHardpoints = updated.hardpoints.map { hp ->
+                if (hp.hp < max) hp.copy(hp = (hp.hp + regenRate).coerceAtMost(max))
+                else hp
+            }
+            updated = updated.copy(hardpoints = updatedHardpoints)
+        }
+
+        if (updated.stamina < max) {
+            updated = updated.copy(stamina = (updated.stamina + staminaRate).coerceAtMost(max))
+        }
+        if (updated.concentration < max) {
+            updated = updated.copy(concentration = (updated.concentration + concentrationRate).coerceAtMost(max))
+        }
+
+        if (updated != health) {
+            health = updated
+            entityController.saveState(_id!!, JsonObject().put("health", healthToJson()))
+        }
+    }
+
     // --- Status processing ---
 
     @FixedTask

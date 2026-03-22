@@ -2,14 +2,12 @@ package eidolon.game.models.entity.agent
 
 import com.eidolon.game.service.CombatService
 import com.minare.controller.EntityController
-import com.minare.core.storage.interfaces.StateStore
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
 
 class FeralBrain(
     private val entityController: EntityController,
-    private val combatService: CombatService,
-    private val stateStore: StateStore
+    private val combatService: CombatService
 ) : Brain {
     private val log = LoggerFactory.getLogger(FeralBrain::class.java)
 
@@ -32,24 +30,6 @@ class FeralBrain(
             // Stale combatId — combat ended or we're the only member. Clear it.
             combatService.clearStaleCombatProperties(character._id!!)
         }
-        if (character.currentRoomId.isEmpty()) return
-
-        // Poll room for player characters
-        val allCharKeys = stateStore.findAllKeysForType("EvenniaCharacter")
-        val allChars = entityController.findByIds(allCharKeys)
-
-        val targets = allChars.values
-            .filterIsInstance<EvenniaCharacter>()
-            .filter { it._id != character._id
-                && !it.isNpc
-                && !it.dead
-                && it.currentRoomId == character.currentRoomId }
-
-        if (targets.isEmpty()) return
-
-        val target = targets.random()
-        combatService.createCombat(character.currentRoomId, character._id!!, target._id!!)
-        log.info("${character.evenniaName} attacks ${target.evenniaName}!")
     }
 
     private suspend fun onDuring(character: EvenniaCharacter) {
@@ -68,6 +48,22 @@ class FeralBrain(
                 combatService.setAttackMode(character._id!!, target._id!!)
             }
         }
+    }
+
+    override suspend fun onPresence(character: EvenniaCharacter, event: JsonObject) {
+        if (character.dead) return
+        if (character.combatId.isNotEmpty()) return
+        if (event.getString("event") != "arrived") return
+
+        val arriverId = event.getString("character_id", "")
+        val isNpc = event.getBoolean("is_npc", false)
+        if (isNpc || arriverId.isEmpty()) return
+
+        val roomId = event.getString("room_id", "")
+        if (roomId.isEmpty()) return
+
+        combatService.createCombat(roomId, character._id!!, arriverId)
+        log.info("${character.evenniaName} attacks arriving player $arriverId!")
     }
 
     override suspend fun onPlayerInteraction(character: EvenniaCharacter, interaction: JsonObject) {

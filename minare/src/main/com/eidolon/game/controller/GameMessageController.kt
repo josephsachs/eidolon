@@ -17,6 +17,9 @@ import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.minare.controller.EntityController
+import eidolon.game.models.entity.agent.BrainRegistry
+import eidolon.game.models.entity.agent.EvenniaCharacter
 import com.minare.controller.MessageController
 import com.minare.core.transport.models.Connection
 import com.minare.core.transport.models.message.HeartbeatResponse
@@ -48,6 +51,8 @@ class GameMessageController @Inject constructor(
     private val exploreCommand: ExploreCommand,
     private val damageService: DamageService,
     private val combatService: CombatService,
+    private val entityController: EntityController,
+    private val brainRegistry: BrainRegistry,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -165,6 +170,10 @@ class GameMessageController @Inject constructor(
                 combatService.onCharacterMoved(characterId, newRoomId)
             }
 
+            message.getString("type") == "presence" -> {
+                handlePresence(message)
+            }
+
             message.getString("type") == "apply_damage" -> {
                 damageService.applyDamageFromEvennia(message)
             }
@@ -274,6 +283,31 @@ class GameMessageController @Inject constructor(
             log.debug("Broadcast response for message {} to channel {}", messageId, defaultChannelId)
         } else {
             log.warn("Cannot send response: defaultChannelId={}, messageId={}", defaultChannelId, messageId)
+        }
+    }
+
+    private suspend fun handlePresence(message: JsonObject) {
+        val occupants = message.getJsonArray("occupants") ?: return
+        if (occupants.isEmpty) return
+
+        // Collect all NPC IDs from the occupants list
+        val npcIds = (0 until occupants.size())
+            .map { occupants.getJsonObject(it) }
+            .filter { it.getBoolean("is_npc", false) }
+            .map { it.getString("id") }
+
+        if (npcIds.isEmpty()) return
+
+        val entities = entityController.findByIds(npcIds)
+        for ((id, entity) in entities) {
+            val character = entity as? EvenniaCharacter ?: continue
+            if (character.brainType.isEmpty()) continue
+            val brain = brainRegistry.get(character.brainType) ?: continue
+            try {
+                brain.onPresence(character, message)
+            } catch (e: Exception) {
+                log.error("Brain '${character.brainType}' onPresence error for ${character.evenniaName}: ${e.message}")
+            }
         }
     }
 

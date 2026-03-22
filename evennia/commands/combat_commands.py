@@ -63,7 +63,7 @@ class CmdAttack(Command):
 
         # Lock movement immediately so the player can't walk away before
         # Minare's combat_lock agent command arrives
-        caller.locks.add("move:false()")
+        caller.db.in_combat = True
 
         caller.msg(f"|RYou move to attack {target.key}!|n")
         _get_client().send_message({

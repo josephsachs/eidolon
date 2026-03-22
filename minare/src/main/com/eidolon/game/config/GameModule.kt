@@ -65,13 +65,12 @@ class GameModule : AbstractModule() {
     fun provideBrainRegistry(
         entityController: EntityController,
         modelAPI: ModelAPI,
-        combatService: CombatService,
-        stateStore: com.minare.core.storage.interfaces.StateStore
+        combatService: CombatService
     ): BrainRegistry {
         val registry = BrainRegistry()
         registry.register(IdleBrain())
         registry.register(KibitzBrain(entityController, modelAPI))
-        registry.register(FeralBrain(entityController, combatService, stateStore))
+        registry.register(FeralBrain(entityController, combatService))
         return registry
     }
 }

@@ -4,6 +4,7 @@ import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.models.CombatEquilibrium
 import com.eidolon.game.models.CombatScores
+import com.eidolon.game.models.HardpointName
 import com.eidolon.game.models.HealthData
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
@@ -91,6 +92,16 @@ class CombatTurnHandler @Inject constructor(
             }
         }
 
+        // Send status feedback once per member
+        for ((id, character) in members) {
+            if (character.dead) continue
+            val adversaryId = character.targetId
+            if (adversaryId.isEmpty()) continue
+            val adversary = members[adversaryId] ?: continue
+            sendPersonalFeedback(combat.roomId, id,
+                buildFeedback(character, adversary, adversary.health, "status"))
+        }
+
         // Remove dead members
         for ((id, character) in members) {
             if (character.dead && id in combat.members) {
@@ -150,7 +161,20 @@ class CombatTurnHandler @Inject constructor(
             val hardpointDamage = baseDamage
             val vitalityDamage = baseDamage / 2
 
-            var updatedHealth = damageService.applyBurn(target.health, hardpointDamage, vitalityDamage)
+            // Pick hit location
+            val hitLocation = HardpointName.entries[Random.nextInt(HardpointName.entries.size)]
+            var updatedHealth = damageService.applyHardpointDamage(target.health, hitLocation, hardpointDamage)
+            updatedHealth = damageService.applyVitalityDamage(updatedHealth, vitalityDamage)
+
+            // Stamina cost for absorbing a blow; torso hits cost extra
+            val staminaCost = baseDamage + if (hitLocation == HardpointName.TORSO) baseDamage / 2 else 0
+            updatedHealth = updatedHealth.copy(stamina = (updatedHealth.stamina - staminaCost).coerceAtLeast(0))
+
+            // Head blows cost concentration
+            if (hitLocation == HardpointName.HEAD) {
+                updatedHealth = updatedHealth.copy(concentration = (updatedHealth.concentration - baseDamage).coerceAtLeast(0))
+            }
+
             entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
 
             // Death check
@@ -179,23 +203,12 @@ class CombatTurnHandler @Inject constructor(
             sendCombatMessage(combat.roomId,
                 "|R${attacker.evenniaName} lands a blow on ${target.evenniaName}!|n")
 
-            // Feedback to attacker
-            sendPersonalFeedback(combat.roomId, attackerId,
-                buildFeedback(attacker, target, updatedHealth, "hit"))
-
-            // Feedback to target
-            sendPersonalFeedback(combat.roomId, targetId,
-                buildFeedback(target, attacker, attacker.health, "was_hit"))
-
         } else {
             // Miss — attacker loses balance from overcommitting
             shiftEquilibrium(attackerId, attacker, balanceShift = -3.0)
 
             sendCombatMessage(combat.roomId,
                 "|y${attacker.evenniaName} swings at ${target.evenniaName} but misses.|n")
-
-            sendPersonalFeedback(combat.roomId, attackerId,
-                buildFeedback(attacker, target, target.health, "miss"))
         }
     }
 
@@ -257,53 +270,47 @@ class CombatTurnHandler @Inject constructor(
         adversaryHealth: HealthData,
         outcome: String
     ): String {
-        val lines = mutableListOf<String>()
+        val selfStatus = describeEquilibrium(self.combatEquilibrium)
+        val adversaryStatus = describeEquilibrium(adversary.combatEquilibrium)
+        val adversaryVit = describeVitality(adversaryHealth.vitality)
+        val adversaryName = adversary.evenniaName.replaceFirstChar { it.uppercase() }
 
-        // Your equilibrium state
-        val eq = self.combatEquilibrium
-        lines.add(describeEquilibrium(eq))
-
-        // Adversary health read
-        lines.add("${adversary.evenniaName} ${describeVitality(adversaryHealth.vitality)}.")
-
-        return lines.joinToString(" ")
+        return "You: $selfStatus\n$adversaryName: $adversaryStatus [$adversaryVit]"
     }
 
     private fun describeEquilibrium(eq: CombatEquilibrium): String {
-        val parts = mutableListOf<String>()
+        val balance = when {
+            eq.balance >= 70 -> "solid"
+            eq.balance >= 40 -> "balanced"
+            eq.balance >= 20 -> "shaky"
+            else -> "staggering"
+        }
 
-        parts.add(when {
-            eq.balance >= 70 -> "Your footing is solid."
-            eq.balance >= 40 -> "Your balance is steady."
-            eq.balance >= 20 -> "Your balance is shaky."
-            else -> "You're staggering."
-        })
+        val position = when {
+            eq.position >= 70 -> "advantage"
+            eq.position >= 40 -> "even"
+            eq.position >= 20 -> "back foot"
+            else -> "cornered"
+        }
 
-        parts.add(when {
-            eq.position >= 70 -> "You have the advantage."
-            eq.position >= 40 -> "Your position is neutral."
-            eq.position >= 20 -> "You're on the back foot."
-            else -> "You're cornered."
-        })
+        val tempo = when {
+            eq.tempo >= 70 -> "momentum"
+            eq.tempo >= 40 -> "even"
+            eq.tempo >= 20 -> "losing tempo"
+            else -> "disordered"
+        }
 
-        parts.add(when {
-            eq.tempo >= 70 -> "You have momentum."
-            eq.tempo >= 40 -> "The pace is even."
-            eq.tempo >= 20 -> "You're losing the tempo."
-            else -> "You're completely disordered."
-        })
-
-        return parts.joinToString(" ")
+        return "[$balance, $position, $tempo]"
     }
 
     private fun describeVitality(vitality: Int): String {
         return when {
-            vitality >= 90 -> "looks fresh"
-            vitality >= 70 -> "is scratched up"
-            vitality >= 50 -> "looks battered"
-            vitality >= 30 -> "is badly wounded"
-            vitality >= 10 -> "is on the edge of death"
-            else -> "is barely standing"
+            vitality >= 90 -> "fresh"
+            vitality >= 70 -> "scratched up"
+            vitality >= 50 -> "battered"
+            vitality >= 30 -> "badly wounded"
+            vitality >= 10 -> "on the edge of death"
+            else -> "barely standing"
         }
     }
 

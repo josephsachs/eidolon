@@ -19,7 +19,15 @@ class Character(ObjectParent, DefaultCharacter):
     Base Character typeclass. All characters in Eidolon inherit from this.
     """
 
-    pass
+    def at_pre_move(self, destination, move_type="move", **kwargs):
+        """Block movement when in combat or dead."""
+        if self.db.in_combat:
+            self.msg("|rYou can't leave — you're in combat!|n")
+            return False
+        if self.db.is_dead:
+            self.msg("|xYou're dead. You aren't going anywhere.|n")
+            return False
+        return super().at_pre_move(destination, move_type=move_type, **kwargs)
 
 
 class PlayerCharacter(Character):
@@ -388,7 +396,7 @@ class AgentCharacter(Character):
         try:
             from evennia.objects.models import ObjectDB
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            char_obj.locks.add("move:false()")
+            char_obj.db.in_combat = True
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_combat_lock: {e}")
 
@@ -401,7 +409,7 @@ class AgentCharacter(Character):
         try:
             from evennia.objects.models import ObjectDB
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            char_obj.locks.add("move:all()")
+            char_obj.db.in_combat = False
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_combat_unlock: {e}")
 

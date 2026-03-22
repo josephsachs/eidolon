@@ -190,12 +190,13 @@ class CombatService @Inject constructor(
 
     suspend fun onCharacterMoved(characterId: String, newRoomId: String) {
         val character = getCharacter(characterId) ?: return
-        if (character.combatId.isEmpty()) return
 
-        // Update currentRoomId
+        // Always update currentRoomId
         entityController.saveState(characterId, JsonObject().put("currentRoomId", newRoomId))
 
-        // Remove from combat
+        if (character.combatId.isEmpty()) return
+
+        // Remove from combat if in one
         removeMember(character.combatId, characterId)
         log.info("$characterId moved rooms, removed from combat ${character.combatId}")
     }
