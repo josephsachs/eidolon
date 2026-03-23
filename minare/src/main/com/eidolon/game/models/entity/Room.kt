@@ -62,6 +62,7 @@ class Room : Entity(), Serializable, Viewable {
 
     @FixedTask
     suspend fun forgetEchoes() {
+        val start = System.currentTimeMillis()
         try {
             if (echoes.isEmpty) return
             val cutoff = System.currentTimeMillis() - ECHO_TTL_MS
@@ -77,6 +78,9 @@ class Room : Entity(), Serializable, Viewable {
             }
         } catch (e: Exception) {
             log.error("forgetEchoes failed for room {}: {}", _id, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW forgetEchoes for room {}: {}ms", _id, elapsed)
         }
     }
 

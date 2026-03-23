@@ -52,10 +52,14 @@ class WorkSite : Entity() {
 
     @FixedTask
     suspend fun tick() {
+        val start = System.currentTimeMillis()
         try {
             tickInner()
         } catch (e: Exception) {
             log.error("WorkSite tick failed for '{}' ({}): {}", name, _id, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW WorkSite tick for '{}' ({}): {}ms", name, _id, elapsed)
         }
     }
 

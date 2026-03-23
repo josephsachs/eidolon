@@ -88,12 +88,16 @@ class ObjectActor : Entity() {
 
     @FixedTask
     suspend fun act() {
+        val start = System.currentTimeMillis()
         try {
             when (actorType) {
                 "exploding_hazard" -> actExplodingHazard()
             }
         } catch (e: Exception) {
             log.error("act failed for ObjectActor {} (type={}): {}", _id, actorType, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW ObjectActor act for {} (type={}): {}ms", _id, actorType, elapsed)
         }
     }
 

@@ -71,6 +71,7 @@ class ExplorableExit : Entity(), Serializable {
 
     @FixedTask
     suspend fun progressExploration() {
+        val start = System.currentTimeMillis()
         try {
             if (unlocked || explorers.isEmpty()) return
 
@@ -124,6 +125,9 @@ class ExplorableExit : Entity(), Serializable {
             entityController.saveState(_id, changes)
         } catch (e: Exception) {
             log.error("progressExploration failed for exit {}: {}", _id, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW progressExploration for exit {}: {}ms", _id, elapsed)
         }
     }
 

@@ -31,6 +31,7 @@ class Spawner : Entity() {
 
     @FixedTask
     suspend fun tick() {
+        val start = System.currentTimeMillis()
         try {
             if (templateId.isEmpty() || roomId.isEmpty()) return
 
@@ -53,6 +54,9 @@ class Spawner : Entity() {
             log.info("Spawner $_id spawned '${template.name}' in room $roomId")
         } catch (e: Exception) {
             log.error("Spawner tick failed for {}: {}", _id, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW Spawner tick for {}: {}ms", _id, elapsed)
         }
     }
 }

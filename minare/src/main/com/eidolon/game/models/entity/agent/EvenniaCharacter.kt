@@ -134,6 +134,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @FixedTask
     suspend fun regenerate() {
+        val start = System.currentTimeMillis()
         try {
             if (dead) return
             if (Random.nextInt(4) != 0) return
@@ -187,6 +188,9 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             }
         } catch (e: Exception) {
             log.error("regenerate failed for {} ({}): {}", evenniaName, _id, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW regenerate for {} ({}): {}ms", evenniaName, _id, elapsed)
         }
     }
 
@@ -209,6 +213,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @FixedTask
     suspend fun processStatuses() {
+        val start = System.currentTimeMillis()
         try {
             if (dead || statusEffects.isEmpty()) return
 
@@ -269,6 +274,9 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             if (!propChanges.isEmpty) entityController.saveProperties(_id, propChanges)
         } catch (e: Exception) {
             log.error("processStatuses failed for {} ({}): {}", evenniaName, _id, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW processStatuses for {} ({}): {}ms", evenniaName, _id, elapsed)
         }
     }
 

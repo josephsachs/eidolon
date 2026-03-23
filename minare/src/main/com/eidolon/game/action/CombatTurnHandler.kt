@@ -304,7 +304,6 @@ class CombatTurnHandler @Inject constructor(
                     .put("downed", true)
                     .put("health", healthToJson(updatedHealth)))
                 damageService.flagDowned(target)
-                sendCombatMessage(combat.roomId, "|R${target.evenniaName} collapses!|n")
 
                 appendCombatLog(combat, JsonObject()
                     .put("round", combat.currentRound)
@@ -444,7 +443,6 @@ class CombatTurnHandler @Inject constructor(
                 .put("downed", true)
                 .put("health", healthToJson(updatedHealth)))
             damageService.flagDowned(target)
-            sendCombatMessage(combat.roomId, "|R${target.evenniaName} collapses!|n")
         }
 
         val msg = combatMessageService.hitMessage(weaponType, attacker.evenniaName, target.evenniaName, hitLocation)

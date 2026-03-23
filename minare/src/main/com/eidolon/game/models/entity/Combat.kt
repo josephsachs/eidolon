@@ -47,6 +47,7 @@ class Combat : Entity() {
 
     @FixedTask
     suspend fun checkExpiry() {
+        val start = System.currentTimeMillis()
         try {
             if (members.isNotEmpty()) {
                 if (emptyAt != 0L) {
@@ -70,6 +71,9 @@ class Combat : Entity() {
             }
         } catch (e: Exception) {
             log.error("checkExpiry failed for combat {}: {}", _id, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW checkExpiry for combat {}: {}ms", _id, elapsed)
         }
     }
 }

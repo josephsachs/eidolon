@@ -25,13 +25,13 @@ entity:
   factory: com.eidolon.game.GameEntityFactory
   update:
     collect_changes: true
-    interval: 3000
+    interval: 200
   graphing:
     store: mongo
 
 
 frames:
-  threads: 15
+  threads: 10
   frame_duration: 400
   lookahead: 25
   session:

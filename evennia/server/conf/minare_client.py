@@ -305,9 +305,35 @@ def _handle_entity_updates(updates):
             continue
 
         sim_state = evennia_obj.db.sim_state or {}
+        old_downed = sim_state.get('downed', False)
         sim_state.update(delta)
         evennia_obj.db.sim_state = sim_state
         logger.log_info(f"Minare sync: updated sim_state for {evennia_obj.key}: {sim_state}")
+
+        # Sync downed state to Evennia's is_downed flag when it changes
+        if 'downed' in delta and entity_type == 'EvenniaCharacter':
+            new_downed = delta['downed']
+            if new_downed and not old_downed:
+                evennia_obj.db.is_downed = True
+                evennia_obj.db.in_combat = False
+                evennia_obj.locks.add("cmd:false()")
+                if evennia_obj.location:
+                    evennia_obj.location.msg_contents(
+                        f"|R{evennia_obj.key} collapses!|n",
+                        exclude=[evennia_obj]
+                    )
+                    evennia_obj.msg("|RYou collapse, unable to continue.|n")
+                logger.log_info(f"Minare sync: {evennia_obj.key} downed via entity sync")
+            elif not new_downed and old_downed:
+                evennia_obj.db.is_downed = False
+                evennia_obj.locks.add("cmd:true()")
+                if evennia_obj.location:
+                    evennia_obj.location.msg_contents(
+                        f"|G{evennia_obj.key} stirs and gets back up.|n",
+                        exclude=[evennia_obj]
+                    )
+                    evennia_obj.msg("|GYou pull yourself together and get back up.|n")
+                logger.log_info(f"Minare sync: {evennia_obj.key} recovered via entity sync")
 
 
 def _handle_set_domain_link(msg):

@@ -435,14 +435,17 @@ class AgentCharacter(Character):
         try:
             from evennia.objects.models import ObjectDB
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            char_obj.db.is_downed = True
-            char_obj.locks.add("cmd:false()")
-            if char_obj.location:
-                char_obj.location.msg_contents(
-                    f"|R{char_obj.key} collapses!|n",
-                    exclude=[char_obj]
-                )
-                char_obj.msg("|RYou collapse, unable to continue.|n")
+            if not char_obj.db.is_downed:
+                # Only act if entity sync hasn't already handled this
+                char_obj.db.is_downed = True
+                char_obj.db.in_combat = False
+                char_obj.locks.add("cmd:false()")
+                if char_obj.location:
+                    char_obj.location.msg_contents(
+                        f"|R{char_obj.key} collapses!|n",
+                        exclude=[char_obj]
+                    )
+                    char_obj.msg("|RYou collapse, unable to continue.|n")
             logger.log_info(
                 f"AgentCharacter: Flagged '{char_obj.key}' (id={character_evennia_id}) as downed"
             )
@@ -459,14 +462,16 @@ class AgentCharacter(Character):
         try:
             from evennia.objects.models import ObjectDB
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            char_obj.db.is_downed = False
-            char_obj.locks.add("cmd:true()")
-            if char_obj.location:
-                char_obj.location.msg_contents(
-                    f"|G{char_obj.key} stirs and gets back up.|n",
-                    exclude=[char_obj]
-                )
-                char_obj.msg("|GYou pull yourself together and get back up.|n")
+            if char_obj.db.is_downed:
+                # Only act if entity sync hasn't already handled this
+                char_obj.db.is_downed = False
+                char_obj.locks.add("cmd:true()")
+                if char_obj.location:
+                    char_obj.location.msg_contents(
+                        f"|G{char_obj.key} stirs and gets back up.|n",
+                        exclude=[char_obj]
+                    )
+                    char_obj.msg("|GYou pull yourself together and get back up.|n")
             logger.log_info(
                 f"AgentCharacter: Cleared downed for '{char_obj.key}' (id={character_evennia_id})"
             )
