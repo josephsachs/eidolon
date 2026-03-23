@@ -54,6 +54,34 @@ class PlayerCharacter(Character):
             del self.db.hidden_mod
         self.locks.add("view:all()")
 
+    def at_object_leave(self, moved_obj, target_location, move_type="move", **kwargs):
+        """Auto-unequip items leaving inventory (drop, give, etc.)."""
+        super().at_object_leave(moved_obj, target_location, move_type=move_type, **kwargs)
+        template_id = getattr(moved_obj.db, 'template_id', None)
+        if not template_id:
+            return
+        sim_state = self.db.sim_state or {}
+        equipment = sim_state.get('equipment', {})
+        slot = None
+        for s, tid in equipment.items():
+            if tid == template_id:
+                slot = s
+                break
+        if not slot:
+            return
+        try:
+            from server.conf.minare_client import get_minare_client
+            client = get_minare_client()
+            char_id = self.db.minare_domain_id or ""
+            if char_id:
+                client.send_message({
+                    "type": "unequip_item",
+                    "character_id": char_id,
+                    "slot_or_item": slot,
+                })
+        except Exception:
+            pass
+
     def at_post_move(self, source_location, move_type="move", **kwargs):
         """Notify Minare when this character changes rooms."""
         super().at_post_move(source_location, move_type=move_type, **kwargs)

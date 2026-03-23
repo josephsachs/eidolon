@@ -336,6 +336,9 @@ EQUIPMENT_CHOICES = {
     "Nothing": "",
 }
 
+# NOTE: Equipment choices are item template IDs from items.json.
+# Update these if templates change.
+
 
 def menunode_create_equipment(caller, raw_string, **kwargs):
     """Choose starting equipment."""

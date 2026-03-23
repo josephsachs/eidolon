@@ -63,6 +63,6 @@ class GameInitializer @Inject constructor(
     companion object {
         const val ADDRESS_INITIALIZE_GAME_COMPLETE = "eidolon.initialize.game.complete"
 
-        const val GAME_TITLE = "Eidolon; Minare 0.4.0"
+        const val GAME_TITLE = "Eidolon; Minare 0.5.0"
     }
 }

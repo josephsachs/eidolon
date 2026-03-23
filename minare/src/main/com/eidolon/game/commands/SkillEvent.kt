@@ -16,6 +16,10 @@ class SkillEvent @Inject constructor(
 ) {
     private val log = LoggerFactory.getLogger(SkillEvent::class.java)
 
+    companion object {
+        const val DEFAULT_COOLDOWN_MS = 2000L
+    }
+
     suspend fun execute(message: JsonObject): JsonObject {
         val characterId = message.getString("character_id")
             ?: return JsonObject().put("status", "error").put("error", "Missing character_id")
@@ -32,6 +36,11 @@ class SkillEvent @Inject constructor(
         val updatedSkills = character.skills.toMutableList()
         val skillIndex = updatedSkills.indexOfFirst { it.name == skillName }
         val oldSkill = if (skillIndex >= 0) updatedSkills[skillIndex] else Skill(name = skillName)
+
+        // Cooldown check
+        if (now - oldSkill.lastUsed < DEFAULT_COOLDOWN_MS) {
+            return JsonObject().put("status", "cooldown").put("skill_name", skillName)
+        }
 
         val oldLevel = oldSkill.level
         var newLevel = oldLevel
@@ -51,7 +60,7 @@ class SkillEvent @Inject constructor(
                 newLevel += baseGain * multiplier
             }
             "failure" -> {
-                // No level gain, small status gain
+                // No level gain, higher status gain (status decays into level over time)
                 newStatus = (newStatus + 7.0).coerceAtMost(100.0)
             }
         }

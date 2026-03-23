@@ -129,6 +129,15 @@ class GameMessageController @Inject constructor(
             message.getString("type") == "npc_interact" -> {
                 val requestId = message.getString("request_id")
                 val result = npcInteraction.execute(message)
+                if (result.getString("status") == "success") {
+                    val playerId = message.getString("player_id", "")
+                    if (playerId.isNotEmpty()) {
+                        skillEvent.execute(JsonObject()
+                            .put("character_id", playerId)
+                            .put("skill_name", "Smalltalk")
+                            .put("outcome", "success"))
+                    }
+                }
                 result.put("request_id", requestId)
                 sendToClient(connection, result)
             }
@@ -215,7 +224,14 @@ class GameMessageController @Inject constructor(
                     it.name.equals(itemName, ignoreCase = true)
                 }
                 val result = if (template != null) {
-                    vendorService.buyItem(vendorId, characterId, template.id)
+                    val buyResult = vendorService.buyItem(vendorId, characterId, template.id)
+                    if (buyResult.getBoolean("success", false)) {
+                        skillEvent.execute(JsonObject()
+                            .put("character_id", characterId)
+                            .put("skill_name", "Haggling")
+                            .put("outcome", "success"))
+                    }
+                    buyResult
                 } else {
                     io.vertx.core.json.JsonObject().put("success", false).put("reason", "Unknown item.")
                 }
@@ -229,6 +245,12 @@ class GameMessageController @Inject constructor(
                 val characterId = message.getString("character_id", "")
                 val templateId = message.getString("template_id", "")
                 val result = vendorService.sellItem(vendorId, characterId, templateId)
+                if (result.getBoolean("success", false)) {
+                    skillEvent.execute(JsonObject()
+                        .put("character_id", characterId)
+                        .put("skill_name", "Haggling")
+                        .put("outcome", "success"))
+                }
                 result.put("request_id", requestId)
                 sendToClient(connection, result)
             }
@@ -385,10 +407,12 @@ class GameMessageController @Inject constructor(
         val slot = if (updatedEquipment.containsKey(slotOrItem)) {
             slotOrItem
         } else {
-            // Try to find by template name
+            // Try to find by template name (exact or partial match)
             updatedEquipment.entries.firstOrNull { (_, templateId) ->
-                val template = itemRegistry.get(templateId)
-                template?.name?.equals(slotOrItem, ignoreCase = true) == true
+                if (templateId.isEmpty()) return@firstOrNull false
+                val template = itemRegistry.get(templateId) ?: return@firstOrNull false
+                template.name.equals(slotOrItem, ignoreCase = true)
+                    || template.name.contains(slotOrItem, ignoreCase = true)
             }?.key
         }
 
@@ -397,7 +421,7 @@ class GameMessageController @Inject constructor(
 
         val templateId = updatedEquipment[slot]!!
         val template = itemRegistry.get(templateId)
-        updatedEquipment.remove(slot)
+        updatedEquipment[slot] = ""
 
         entityController.saveState(characterId, JsonObject()
             .put("equipment", JsonObject(updatedEquipment as Map<String, Any>)))

@@ -10,7 +10,8 @@ import org.slf4j.LoggerFactory
 
 @Singleton
 class ExploreCommand @Inject constructor(
-    private val entityController: EntityController
+    private val entityController: EntityController,
+    private val skillEvent: SkillEvent
 ) : EvenniaCommand {
     private val log = LoggerFactory.getLogger(ExploreCommand::class.java)
 
@@ -44,6 +45,12 @@ class ExploreCommand @Inject constructor(
             entityController.saveState(exitId, JsonObject()
                 .put("explorers", updatedExplorers.toList()))
         }
+
+        // Explore skill gain
+        skillEvent.execute(JsonObject()
+            .put("character_id", characterId)
+            .put("skill_name", "Explore")
+            .put("outcome", "success"))
 
         log.info("ExploreCommand: {} exploring {} in room {}", characterId, direction, roomId)
 

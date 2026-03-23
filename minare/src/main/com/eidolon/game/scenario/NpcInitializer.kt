@@ -208,6 +208,11 @@ class NpcInitializer @Inject constructor(
                 state.put("attributes", attrJson)
             }
 
+            val equipmentJson = npc.getJsonObject("equipment")
+            if (equipmentJson != null) {
+                state.put("equipment", equipmentJson)
+            }
+
             entityController.saveState(character._id!!, state)
 
             // Link EvenniaObject stub <-> EvenniaCharacter domain entity

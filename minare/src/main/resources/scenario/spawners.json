@@ -1,7 +1,7 @@
 [
   {
     "templateId": "cucumber",
-    "room": "cracked-lot",
+    "room": "garden",
     "intervalMs": 120000
   }
 ]

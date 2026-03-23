@@ -10,6 +10,16 @@
     "price": { "currency": "dollar", "amount": 5 }
   },
   {
+    "id": "stinger",
+    "name": "Stinger",
+    "description": "A hefty electrical prod shaped like a bee's stinger. Crackles with barely contained voltage. Standard issue for the bee guards.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 15,
+    "skill": "Hand-to-Hand",
+    "price": { "currency": "dollar", "amount": 30 }
+  },
+  {
     "id": "colt-45",
     "name": "Colt 45",
     "description": "A battered but functional revolver. Six shots, if you can find the ammo.",

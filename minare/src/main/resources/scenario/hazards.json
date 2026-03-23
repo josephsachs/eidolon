@@ -1,7 +1,7 @@
 [
   {
     "id": "flaming-barrel",
-    "room": "cracked-lot",
+    "room": "loading-bay",
     "name": "a flaming barrel",
     "description": "A rusted oil drum, inexplicably ablaze. Flames lick from its open top in rhythmic pulses, as if something inside keeps detonating. The heat is oppressive.",
     "hazardType": "burn",

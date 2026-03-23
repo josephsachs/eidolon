@@ -6,6 +6,7 @@ import com.eidolon.game.models.CombatEquilibrium
 import com.eidolon.game.models.CombatScores
 import com.eidolon.game.models.HardpointName
 import com.eidolon.game.models.HealthData
+import com.eidolon.game.commands.SkillEvent
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
 import com.eidolon.game.service.ItemRegistry
@@ -28,7 +29,8 @@ class CombatTurnHandler @Inject constructor(
     private val damageService: DamageService,
     private val evenniaCommUtils: EvenniaCommUtils,
     private val crossLinkRegistry: CrossLinkRegistry,
-    private val itemRegistry: ItemRegistry
+    private val itemRegistry: ItemRegistry,
+    private val skillEvent: SkillEvent
 ) {
     private val log = LoggerFactory.getLogger(CombatTurnHandler::class.java)
 
@@ -220,6 +222,17 @@ class CombatTurnHandler @Inject constructor(
 
             sendCombatMessage(combat.roomId,
                 "|y${attacker.evenniaName} swings at ${target.evenniaName} but misses.|n")
+        }
+
+        // Weapon skill gain for attacker (hit = success, miss = failure)
+        if (!attacker.isNpc) {
+            val weapon = attacker.equipment["MAIN_HAND"]?.let { itemRegistry.get(it) }
+            val weaponSkillName = weapon?.skill?.ifEmpty { null } ?: "Hand-to-Hand"
+            val outcome = if (attackRoll > defenseRoll) "success" else "failure"
+            skillEvent.execute(JsonObject()
+                .put("character_id", attackerId)
+                .put("skill_name", weaponSkillName)
+                .put("outcome", outcome))
         }
     }
 

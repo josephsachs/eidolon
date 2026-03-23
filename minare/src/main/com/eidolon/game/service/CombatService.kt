@@ -1,5 +1,6 @@
 package com.eidolon.game.service
 
+import com.eidolon.game.commands.SkillEvent
 import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.models.entity.Combat
@@ -20,7 +21,8 @@ class CombatService @Inject constructor(
     private val stateStore: StateStore,
     private val evenniaCommUtils: EvenniaCommUtils,
     private val crossLinkRegistry: CrossLinkRegistry,
-    private val gameChannelController: GameChannelController
+    private val gameChannelController: GameChannelController,
+    private val skillEvent: SkillEvent
 ) {
     private val log = LoggerFactory.getLogger(CombatService::class.java)
 
@@ -94,12 +96,23 @@ class CombatService @Inject constructor(
         val name = getCharacterName(characterId)
         sendCombatMessage(combat.roomId, "|w$name disengages from combat.|n")
 
-        // Clear targets pointing at the removed member
+        // Clear targets pointing at the removed member and re-acquire for NPCs
         for (memberId in updatedMembers) {
             val member = getCharacter(memberId) ?: continue
             if (member.targetId == characterId) {
-                entityController.saveProperties(memberId, JsonObject()
-                    .put("targetId", ""))
+                // Find a new target from remaining members
+                val newTarget = updatedMembers
+                    .filter { it != memberId }
+                    .firstNotNullOfOrNull { id -> getCharacter(id)?.takeIf { !it.dead }?.let { id } }
+
+                if (newTarget != null && member.isNpc) {
+                    entityController.saveProperties(memberId, JsonObject()
+                        .put("targetId", newTarget)
+                        .put("combatMode", "attack"))
+                } else {
+                    entityController.saveProperties(memberId, JsonObject()
+                        .put("targetId", ""))
+                }
             }
         }
 
@@ -122,7 +135,8 @@ class CombatService @Inject constructor(
         val combats = entityController.findByIds(combatKeys)
         return combats.values
             .filterIsInstance<Combat>()
-            .firstOrNull { it.roomId == roomId && it.members.isNotEmpty() }
+            .filter { it.roomId == roomId && it.members.isNotEmpty() }
+            .maxByOrNull { it.members.size }
     }
 
     suspend fun findCombatForCharacter(characterId: String): Combat? {
@@ -175,7 +189,17 @@ class CombatService @Inject constructor(
         val threshold = (skillLevel + agility) / 3.0 + positionBonus
         val roll = kotlin.random.Random.nextInt(100)
 
-        return if (roll < threshold) {
+        val escaped = roll < threshold
+
+        // Escape skill gain regardless of outcome
+        if (!character.isNpc) {
+            skillEvent.execute(JsonObject()
+                .put("character_id", characterId)
+                .put("skill_name", "Escape")
+                .put("outcome", if (escaped) "success" else "failure"))
+        }
+
+        return if (escaped) {
             removeMember(character.combatId, characterId)
             val name = character.evenniaName
             val combat = getCombat(character.combatId)

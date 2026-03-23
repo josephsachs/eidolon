@@ -74,7 +74,7 @@ def _render_skills(skills_data):
     for i in range(0, len(sorted_skills), 2):
         left = _skill_col(*sorted_skills[i])
         right = _skill_col(*sorted_skills[i + 1]) if i + 1 < len(sorted_skills) else " " * 35
-        lines.append(f"|c||n {left} |c||n {right} |c||n")
+        lines.append(f"|c|||n {left} |c|||n {right} |c|||n")
     lines.append(f"|c+{border_fill}+|n")
 
     return "\n".join(lines)
@@ -254,9 +254,9 @@ def _render_health(health_data):
 
     for key, label in body_layout:
         hp_data = hardpoints.get(key, {"hp": 100, "status": "HEALTHY"})
-        lines.append(f"|c||n{_hp_line(label, hp_data):<74}|c||n")
+        lines.append(f"|c|||n{_hp_line(label, hp_data)}|c|||n")
 
-    lines.append(f"|c|{'─' * w}||n")
+    lines.append(f"|c||{'─' * w}|||n")
 
     # Global vitals
     vitals = [
@@ -268,7 +268,7 @@ def _render_health(health_data):
 
     for name, val in vitals:
         color = _vital_color(val)
-        lines.append(f"|c||n  |w{name:<14}|n {color}{val:>3}|n{'':55}|c||n")
+        lines.append(f"|c|||n  |w{name:<14}|n {color}{val:>3}|n")
 
     lines.append(f"|c+{border}+|n")
     return "\n".join(lines)
@@ -626,5 +626,170 @@ class CmdPose(Command):
                 "room_id": room_id,
                 "message": pose_text,
             })
+
+
+# ---------------------------------------------------------------------------
+# Info / character sheet
+# ---------------------------------------------------------------------------
+
+_VITALITY_LABELS = [
+    (90, "healthy",      "|g"),
+    (70, "scratched up", "|G"),
+    (50, "battered",     "|y"),
+    (30, "wounded",      "|Y"),
+    (10, "critical",     "|r"),
+    (0,  "dying",        "|R"),
+]
+
+_CONCENTRATION_LABELS = [
+    (80, "focused",     "|g"),
+    (60, "alert",       "|G"),
+    (40, "distracted",  "|y"),
+    (20, "foggy",       "|Y"),
+    (0,  "dazed",       "|r"),
+]
+
+_BODY_AVERAGE_LABELS = [
+    (90, "pristine",   "|g"),
+    (70, "scuffed",    "|G"),
+    (50, "battered",   "|y"),
+    (30, "mangled",    "|Y"),
+    (10, "wrecked",    "|r"),
+    (0,  "destroyed",  "|R"),
+]
+
+
+def _label_from_thresholds(value, thresholds):
+    for thresh, label, color in thresholds:
+        if value >= thresh:
+            return f"{color}{label}|n"
+    last = thresholds[-1]
+    return f"{last[2]}{last[1]}|n"
+
+
+def _render_info(name, data):
+    """Render the full character sheet from the 'default' view data."""
+    w = 76
+    border = "=" * w
+    dash = "-" * w
+
+    # --- Title ---
+    name_display = name.upper()
+    pad_total = w - len(name_display)
+    pad_l = pad_total // 2
+    pad_r = pad_total - pad_l
+    lines = [f"|c+{'-' * pad_l} {name_display} {'-' * pad_r}+|n"]
+
+    # --- Attributes ---
+    attrs = data.get("attributes", {})
+    attr_rows = [
+        [("Strength", attrs.get("strength", 50)),
+         ("Agility", attrs.get("agility", 50)),
+         ("Toughness", attrs.get("toughness", 50))],
+        [("Intellect", attrs.get("intellect", 50)),
+         ("Imagination", attrs.get("imagination", 50)),
+         ("Discipline", attrs.get("discipline", 50))],
+        [("Charisma", attrs.get("charisma", 50)),
+         ("Empathy", attrs.get("empathy", 50)),
+         ("Wits", attrs.get("wits", 50))],
+    ]
+
+    lines.append(f"|c|||n")
+    lines.append(f"|c|||n  |wStats|n")
+    for row in attr_rows:
+        cols = []
+        for attr_name, val in row:
+            cols.append(f"|w{attr_name:<13}|n {val:<3}")
+        line = "  " + "  ".join(cols)
+        lines.append(f"|c|||n{line}")
+
+    # --- Skills ---
+    skills = data.get("skills", {})
+    merged = {s: {"level": 0.0, "status": "clear"} for s in DEFAULT_SKILLS}
+    for skill_name, info in skills.items():
+        merged[skill_name] = info
+
+    sorted_skills = sorted(merged.items())
+
+    lines.append(f"|c||{dash}|||n")
+    lines.append(f"|c|||n  |wSkills|n")
+    for i in range(0, len(sorted_skills), 3):
+        cols = []
+        for j in range(3):
+            if i + j < len(sorted_skills):
+                sname, sinfo = sorted_skills[i + j]
+                slevel = sinfo.get("level", 0.0)
+                cols.append(f"|w{sname:<15}|n {slevel:5.2f}")
+            else:
+                cols.append(" " * 22)
+        line = "  " + "  ".join(cols)
+        lines.append(f"|c|||n{line}")
+
+    # --- Body & Mind ---
+    health = data.get("health", {})
+    vitality = health.get("vitality", 100)
+    concentration = health.get("concentration", 100)
+
+    raw_hardpoints = health.get("hardpoints", [])
+    if isinstance(raw_hardpoints, list):
+        hp_avg = sum(hp.get("hp", 100) for hp in raw_hardpoints) / max(len(raw_hardpoints), 1)
+    else:
+        hp_avg = 100
+
+    vitality_str = _label_from_thresholds(vitality, _VITALITY_LABELS)
+    body_str = _label_from_thresholds(hp_avg, _BODY_AVERAGE_LABELS)
+    concentration_str = _label_from_thresholds(concentration, _CONCENTRATION_LABELS)
+
+    lines.append(f"|c||{dash}|||n")
+    lines.append(f"|c|||n  |wBody|n  - {vitality_str}, {body_str}")
+    lines.append(f"|c|||n  |wMind|n  - {concentration_str}")
+
+    lines.append(f"|c+{border}+|n")
+    return "\n".join(lines)
+
+
+class CmdInfo(Command):
+    """
+    View your character sheet.
+
+    Usage:
+      info
+      character
+
+    Displays your stats, skills, and condition at a glance.
+    """
+    key = "info"
+    aliases = ["character"]
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        char_id, _ = _minare_ids(self.caller)
+        if not char_id:
+            self.caller.msg("No character data available.")
+            return
+
+        caller = self.caller
+
+        def on_response(response):
+            if response.get('status') != 'success':
+                caller.msg(
+                    f"|rCould not retrieve character data: "
+                    f"{response.get('error', 'unknown')}|n"
+                )
+                return
+
+            data = response.get('data', {})
+            name = data.get("evenniaName", caller.key)
+            caller.msg("\n" + _render_info(name, data))
+
+        _get_client().send_with_callback(
+            {
+                'type': 'entity_query',
+                'minare_id': char_id,
+                'view': 'default',
+            },
+            on_response,
+        )
 
 

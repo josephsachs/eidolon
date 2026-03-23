@@ -17,7 +17,7 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 from evennia import default_cmds, CmdSet
 from commands.player_commands import (
     CmdSay, CmdPose, CmdSkills, CmdHealth, CmdHide, CmdSearch, CmdReveal,
-    CmdExplore, CmdNoHome, CmdNoAccess,
+    CmdExplore, CmdNoHome, CmdNoAccess, CmdInfo,
 )
 from commands.combat_commands import (
     CmdAttack, CmdDefend, CmdAvoid, CmdEscape, CmdStance, CmdTactic,
@@ -61,6 +61,7 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdInventory())
         self.add(CmdBuy())
         self.add(CmdSell())
+        self.add(CmdInfo())
 
 
 class AgentCharacterCmdSet(CmdSet):

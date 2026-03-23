@@ -22,22 +22,37 @@ class VendorService @Inject constructor(
 ) {
     private val log = LoggerFactory.getLogger(VendorService::class.java)
 
-    // Vendor configs keyed by vendor character Minare ID
-    private val vendorConfigs = mutableMapOf<String, VendorConfig>()
-
     data class VendorConfig(
         val buyMenu: List<String>,   // template IDs the vendor sells to players
         val sellMenu: List<String>,  // template IDs the vendor buys from players
         val currency: String         // currency template ID
     )
 
-    fun registerVendor(vendorId: String, config: VendorConfig) {
-        vendorConfigs[vendorId] = config
+    /**
+     * Persist vendor config as properties on the EvenniaCharacter entity.
+     */
+    suspend fun registerVendor(vendorId: String, config: VendorConfig) {
+        entityController.saveProperties(vendorId, JsonObject()
+            .put("vendorBuyMenu", JsonArray(config.buyMenu))
+            .put("vendorSellMenu", JsonArray(config.sellMenu))
+            .put("vendorCurrency", config.currency))
         log.info("Registered vendor {} with buy={}, sell={}", vendorId, config.buyMenu, config.sellMenu)
     }
 
+    private suspend fun getConfig(vendorId: String): VendorConfig? {
+        val json = stateStore.findOneJson(vendorId) ?: return null
+        val props = json.getJsonObject("properties", JsonObject())
+        val buyMenu = props.getJsonArray("vendorBuyMenu")
+        if (buyMenu == null || buyMenu.isEmpty) return null
+        return VendorConfig(
+            buyMenu = buyMenu.map { it as String },
+            sellMenu = (props.getJsonArray("vendorSellMenu") ?: JsonArray()).map { it as String },
+            currency = props.getString("vendorCurrency", "dollar")
+        )
+    }
+
     suspend fun getBuyMenu(vendorId: String): JsonObject {
-        val config = vendorConfigs[vendorId]
+        val config = getConfig(vendorId)
             ?: return JsonObject().put("success", false).put("reason", "not a vendor")
 
         val items = JsonArray()
@@ -54,7 +69,7 @@ class VendorService @Inject constructor(
     }
 
     suspend fun getSellMenu(vendorId: String): JsonObject {
-        val config = vendorConfigs[vendorId]
+        val config = getConfig(vendorId)
             ?: return JsonObject().put("success", false).put("reason", "not a vendor")
 
         val items = JsonArray()
@@ -69,17 +84,12 @@ class VendorService @Inject constructor(
         return JsonObject().put("success", true).put("items", items)
     }
 
-    /**
-     * Player buys an item from the vendor.
-     * Evennia validates inventory (currency count) and sends the result.
-     * We tell the Agent to destroy currency items and create the purchased item.
-     */
     suspend fun buyItem(
         vendorId: String,
         characterId: String,
         templateId: String
     ): JsonObject {
-        val config = vendorConfigs[vendorId]
+        val config = getConfig(vendorId)
             ?: return JsonObject().put("success", false).put("reason", "not a vendor")
 
         if (templateId !in config.buyMenu)
@@ -93,7 +103,6 @@ class VendorService @Inject constructor(
 
         val currencyTemplate = itemRegistry.get(config.currency)
 
-        // Tell the Agent to check currency, destroy it, and create the item
         evenniaCommUtils.sendAgentCommand(JsonObject()
             .put("action", "vendor_buy")
             .put("character_evennia_id", characterEvenniaId)
@@ -107,16 +116,12 @@ class VendorService @Inject constructor(
         return JsonObject().put("success", true).put("item_name", template.name)
     }
 
-    /**
-     * Player sells an item to the vendor.
-     * Agent destroys the item and creates currency.
-     */
     suspend fun sellItem(
         vendorId: String,
         characterId: String,
         templateId: String
     ): JsonObject {
-        val config = vendorConfigs[vendorId]
+        val config = getConfig(vendorId)
             ?: return JsonObject().put("success", false).put("reason", "not a vendor")
 
         if (templateId !in config.sellMenu)
@@ -142,5 +147,6 @@ class VendorService @Inject constructor(
         return JsonObject().put("success", true)
             .put("item_name", template.name)
             .put("payout", template.price.amount)
+            .put("currency", currencyTemplate?.name ?: config.currency)
     }
 }

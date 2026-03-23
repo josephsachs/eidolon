@@ -1,17 +1,20 @@
 [
   {
-    "name": "Dusty Pete",
-    "shortDescription": "a grizzled old-timer",
-    "description": "A grizzled old-timer with sun-baked skin and squinting eyes. He seems to be listening intently to everything around him.",
+    "name": "Dr. Ganz",
+    "shortDescription": "a thin man in a stained lab coat",
+    "description": "A gaunt man in a once-white lab coat, now bearing unidentifiable stains. He peers at you through smudged bifocals with an expression of mild academic interest, as if you were a culture in a petri dish exhibiting unexpected behavior.",
     "brainType": "kibitz",
-    "room": "valero-station"
+    "room": "exam-room-1"
   },
   {
-    "name": "Feral pig",
-    "shortDescription": "a bristling feral pig",
-    "description": "A squat, muscular pig with coarse dark bristles and small, furious eyes. Its tusks are chipped and yellowed. It smells terrible.",
+    "name": "Bee guard",
+    "shortDescription": "a guard in a bee costume",
+    "description": "A stocky figure in a full-body bee costume — fuzzy yellow-and-black stripes, vestigial wings, bobbing antennae. The effect would be comical if not for the crackling electrical weapon holstered at its hip. Its face is hidden behind a mesh visor. It buzzes menacingly.",
     "brainType": "feral",
-    "room": "pig-wallow",
+    "room": "security-station",
+    "equipment": {
+      "MAIN_HAND": "stinger"
+    },
     "attributes": {
       "strength": 75,
       "agility": 55,
@@ -27,9 +30,9 @@
   {
     "name": "Earl",
     "shortDescription": "a heavyset man behind a folding table",
-    "description": "A heavyset man in a stained trucker cap sits behind a folding table piled with dubious merchandise. He watches you with shrewd, calculating eyes.",
+    "description": "A heavyset man in an orange jumpsuit sits behind a folding table piled with dubious merchandise. He has somehow set up shop in the middle of a prison riot. He watches you with shrewd, calculating eyes.",
     "brainType": "vendor",
-    "room": "valero-station",
+    "room": "intake-lobby",
     "vendor": {
       "buyMenu": ["colt-45", "ak-47", "pickle-jar"],
       "sellMenu": ["cucumber"],
