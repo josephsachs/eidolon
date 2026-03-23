@@ -159,6 +159,20 @@ class CombatService @Inject constructor(
         clearCombatProperties(characterId)
     }
 
+    suspend fun rejectAttack(attackerId: String, targetId: String, roomId: String) {
+        val targetName = getCharacterName(targetId)
+        val attackerEvenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", attackerId)
+        val roomEvenniaId = crossLinkRegistry.getEvenniaId("Room", roomId)
+        if (attackerEvenniaId != null && roomEvenniaId != null) {
+            evenniaCommUtils.sendAgentCommand(JsonObject()
+                .put("action", "combat_feedback")
+                .put("room_evennia_id", roomEvenniaId)
+                .put("character_evennia_id", attackerEvenniaId)
+                .put("message", "|w$targetName is already down.|n"))
+        }
+        sendCombatUnlock(attackerId)
+    }
+
     suspend fun setAttackMode(characterId: String, targetId: String) {
         entityController.saveProperties(characterId, JsonObject()
             .put("combatMode", "attack")

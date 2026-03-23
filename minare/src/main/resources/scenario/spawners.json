@@ -1,10 +1,5 @@
 [
   {
-    "templateId": "cucumber",
-    "room": "garden",
-    "intervalMs": 120000
-  },
-  {
     "templateId": "rusty-knife",
     "room": "ward-c",
     "intervalMs": 60000

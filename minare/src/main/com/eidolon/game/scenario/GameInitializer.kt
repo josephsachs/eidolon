@@ -15,8 +15,10 @@ import io.vertx.core.json.JsonObject
 class GameInitializer @Inject constructor(
     private val mapInitializer: RoomInitializer,
     private val npcInitializer: NpcInitializer,
+    private val objectInitializer: ObjectInitializer,
     private val hazardInitializer: HazardInitializer,
     private val spawnerInitializer: SpawnerInitializer,
+    private val workSiteInitializer: WorkSiteInitializer,
     private val entityController: EntityController,
     private val entityFactory: GameEntityFactory,
     private val channelController: GameChannelController,
@@ -52,8 +54,10 @@ class GameInitializer @Inject constructor(
 
         mapInitializer.initialize()
         npcInitializer.initialize()
+        objectInitializer.initialize()
         hazardInitializer.initialize()
         spawnerInitializer.initialize()
+        workSiteInitializer.initialize()
 
         vertx.eventBus().publish(ADDRESS_INITIALIZE_GAME_COMPLETE, JsonObject())
 

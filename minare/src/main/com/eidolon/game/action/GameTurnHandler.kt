@@ -38,29 +38,34 @@ class GameTurnHandler @Inject constructor(
     )
 
     private val actAction: suspend (StateFlowContext) -> Unit = { context ->
-        //log.info("TURN_LOOP: ACT Phase Start")
+        val start = System.currentTimeMillis()
         setGameProperties(TurnPhase.BEFORE, true)
         characterTurnHandler.handleTurn(TurnPhase.BEFORE)
         combatTurnHandler.handleTurn(TurnPhase.BEFORE)
+        val elapsed = System.currentTimeMillis() - start
+        if (elapsed > 100) log.warn("TURN_LOOP: ACT phase took ${elapsed}ms")
     }
 
     private val executeAction: suspend (StateFlowContext) -> Unit = { context ->
-        //log.info("TURN_LOOP: EXECUTE Phase Start")
+        val start = System.currentTimeMillis()
         setGameProperties(TurnPhase.DURING, true)
         characterTurnHandler.handleTurn(TurnPhase.DURING)
         combatTurnHandler.handleTurn(TurnPhase.DURING)
+        val elapsed = System.currentTimeMillis() - start
+        if (elapsed > 100) log.warn("TURN_LOOP: EXECUTE phase took ${elapsed}ms")
     }
 
     private val resolveAction: suspend (StateFlowContext) -> Unit = { context ->
-        //log.info("TURN_LOOP: RESOLVE Phase Start")
+        val start = System.currentTimeMillis()
         setGameProperties(TurnPhase.AFTER, true)
         characterTurnHandler.handleTurn(TurnPhase.AFTER)
         combatTurnHandler.handleTurn(TurnPhase.AFTER)
+        val elapsed = System.currentTimeMillis() - start
+        if (elapsed > 100) log.warn("TURN_LOOP: RESOLVE phase took ${elapsed}ms")
     }
 
     private val turnEndAction: suspend (StateFlowContext) -> Unit = { _ ->
-        //log.info("TURN_LOOP: Turn End Start (Cleanup)")
-
+        val start = System.currentTimeMillis()
         setGameProperties(null, false)
         incrementGameTurn()
 
@@ -68,9 +73,8 @@ class GameTurnHandler @Inject constructor(
         ingameTimeController.onTurn(game.currentTurn)
 
         eventBusUtils.sendWithTracing(ADDRESS_TURN_COMPLETE, JsonObject())
-
-        // Since the state machine is looping=true, the next tryNext() call
-        // will cycle back to ACT_PHASE.
+        val elapsed = System.currentTimeMillis() - start
+        if (elapsed > 100) log.warn("TURN_LOOP: TURN_END phase took ${elapsed}ms")
     }
 
     init {

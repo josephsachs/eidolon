@@ -85,4 +85,4 @@ else
   exit 1
 fi
 
-docker compose logs -f
+docker compose logs -f app-coordinator infra worker evennia

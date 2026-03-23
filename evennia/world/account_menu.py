@@ -67,7 +67,7 @@ PHYSICAL_ATTRS = ["strength", "agility", "toughness"]
 MENTAL_ATTRS = ["intellect", "imagination", "discipline"]
 SOCIAL_ATTRS = ["charisma", "empathy", "wits"]
 
-SKILL_CHOICES = ["Explore", "Hide", "Smalltalk", "Hand-to-Hand", "Blades", "Firearms", "Escape"]
+SKILL_CHOICES = ["Explore", "Hiding", "Smalltalk", "Hand-to-Hand", "Blades", "Firearms", "Escape"]
 SKILL_INITIAL = (5.0, 0.0)
 NUM_SKILLS = 3
 

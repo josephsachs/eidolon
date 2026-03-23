@@ -32,9 +32,18 @@ class Item(ObjectParent, DefaultObject):
         return self.key
 
     def at_post_move(self, source_location, **kwargs):
-        """After moving, merge into any existing stack at the new location."""
+        """After moving, merge into any existing stack at the new location.
+
+        Skip merge when picked up by a character — Evennia's CmdGet still
+        holds a reference to the moved object and will crash if we delete
+        it mid-command (get_numbered_name on a deleted object has no DB id).
+        Merging still happens on drop/room placement.
+        """
         super().at_post_move(source_location, **kwargs)
         if not self.location or not self.db.template_id:
+            return
+        from typeclasses.characters import Character
+        if isinstance(self.location, Character):
             return
         for obj in self.location.contents:
             if obj is self:

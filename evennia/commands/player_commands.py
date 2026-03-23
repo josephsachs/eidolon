@@ -14,8 +14,8 @@ from commands.command import Command
 # Skills that always appear in the display, even at zero.
 DEFAULT_SKILLS = [
     "Block", "Climbing", "Dancing", "Dodge", "Escape",
-    "First Aid", "Gossip", "Haggling", "Hand-to-Hand", "Hiding",
-    "Investigation", "Meditating", "Menace", "Pathfinding", "Search", "Swimming",
+    "Farming", "First Aid", "Gossip", "Haggling", "Hand-to-Hand", "Hiding",
+    "Investigation", "Meditating", "Menace", "Pathfinding", "Search", "Smalltalk", "Swimming",
 ]
 
 _STATUS_COLORS = {
@@ -381,6 +381,18 @@ class CmdHide(Command):
         room = caller.location
         concealment = room.concealment
 
+        def on_cooldown(response):
+            if response.get('status') == 'cooldown':
+                remaining = response.get('remaining_seconds', 0)
+                caller.msg(f"|yYou need to wait {remaining} seconds before hiding again.|n")
+                return
+
+            # Cooldown clear — proceed with skill check
+            _get_client().send_with_callback(
+                {'type': 'entity_query', 'minare_id': char_id, 'view': 'skills'},
+                on_skills,
+            )
+
         def on_skills(response):
             if response.get('status') != 'success':
                 caller.msg("|rCouldn't check your skills.|n")
@@ -423,8 +435,12 @@ class CmdHide(Command):
             )
 
         _get_client().send_with_callback(
-            {'type': 'entity_query', 'minare_id': char_id, 'view': 'skills'},
-            on_skills,
+            {
+                'type': 'skill_cooldown_check',
+                'character_id': char_id,
+                'skill_name': 'Hiding',
+            },
+            on_cooldown,
         )
 
 
@@ -449,31 +465,42 @@ class CmdSearch(Command):
             return
 
         room = caller.location
-        hidden_targets = [
-            obj for obj in room.contents
-            if obj != caller
-            and hasattr(obj, 'db')
-            and obj.db.hidden_mod is not None
-        ]
 
-        if not hidden_targets:
-            caller.msg("You search the area but find no one hiding.")
-            # Still send the skill event for status gain
+        def on_cooldown(response):
+            if response.get('status') == 'cooldown':
+                remaining = response.get('remaining_seconds', 0)
+                caller.msg(f"|yYou need to wait {remaining} seconds before searching again.|n")
+                return
+
+            hidden_targets = [
+                obj for obj in room.contents
+                if obj != caller
+                and hasattr(obj, 'db')
+                and obj.db.hidden_mod is not None
+            ]
+
+            if not hidden_targets:
+                caller.msg("You search the area but find no one hiding.")
+                _get_client().send_with_callback(
+                    {
+                        'type': 'skill_event',
+                        'character_id': char_id,
+                        'skill_name': 'Search',
+                        'outcome': 'failure',
+                    },
+                    lambda resp: (
+                        caller.msg("|gYou have learned something new about Search.|n")
+                        if resp.get('level_up') else None
+                    ),
+                )
+                return
+
             _get_client().send_with_callback(
-                {
-                    'type': 'skill_event',
-                    'character_id': char_id,
-                    'skill_name': 'Search',
-                    'outcome': 'failure',
-                },
-                lambda resp: (
-                    caller.msg("|gYou have learned something new about Search.|n")
-                    if resp.get('level_up') else None
-                ),
+                {'type': 'entity_query', 'minare_id': char_id, 'view': 'skills'},
+                lambda response: on_skills(response, hidden_targets),
             )
-            return
 
-        def on_skills(response):
+        def on_skills(response, hidden_targets):
             if response.get('status') != 'success':
                 caller.msg("|rCouldn't check your skills.|n")
                 return
@@ -514,8 +541,12 @@ class CmdSearch(Command):
             )
 
         _get_client().send_with_callback(
-            {'type': 'entity_query', 'minare_id': char_id, 'view': 'skills'},
-            on_skills,
+            {
+                'type': 'skill_cooldown_check',
+                'character_id': char_id,
+                'skill_name': 'Search',
+            },
+            on_cooldown,
         )
 
 
@@ -793,3 +824,116 @@ class CmdInfo(Command):
         )
 
 
+class CmdWork(Command):
+    """
+    Work at a site to contribute to resource production.
+
+    Usage:
+      work <object>
+
+    Join a work site's labor pool. While you remain in the room,
+    you contribute to its output and train the associated skill
+    each time it produces.
+    """
+    key = "work"
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        if not self.args:
+            self.caller.msg("Work at what?")
+            return
+
+        target_name = self.args.strip()
+        room = self.caller.location
+
+        # Find the target object in the room
+        target = room.search(target_name, quiet=True)
+        if not target:
+            self.caller.msg(f"You don't see '{target_name}' here.")
+            return
+        # search returns a list when quiet=True
+        if isinstance(target, list):
+            target = target[0] if target else None
+        if not target:
+            self.caller.msg(f"You don't see '{target_name}' here.")
+            return
+
+        char_id, room_id = _minare_ids(self.caller)
+        if not char_id or not room_id:
+            self.caller.msg("No character data available.")
+            return
+
+        caller = self.caller
+
+        def on_response(response):
+            if response.get('status') != 'success':
+                caller.msg(
+                    f"|r{response.get('error', 'Could not join work site.')}|n"
+                )
+                return
+
+            site_name = response.get('work_site_name', target_name)
+            skill_name = response.get('skill_name', '')
+            skill_msg = f" Training |w{skill_name}|n." if skill_name else ""
+            caller.msg(
+                f"|gYou begin working at the {site_name}.{skill_msg}|n"
+            )
+            caller.location.msg_contents(
+                f"|w{caller.key}|n begins working at the {site_name}.",
+                exclude=[caller],
+            )
+
+        _get_client().send_with_callback(
+            {
+                'type': 'work_site_join',
+                'character_id': char_id,
+                'room_id': room_id,
+            },
+            on_response,
+        )
+
+
+class CmdStopWorking(Command):
+    """
+    Stop working at a work site.
+
+    Usage:
+      stop working
+
+    Leave the labor pool at your current work site.
+    """
+    key = "stop working"
+    locks = "cmd:all()"
+    help_category = "General"
+
+    def func(self):
+        char_id, room_id = _minare_ids(self.caller)
+        if not char_id or not room_id:
+            self.caller.msg("No character data available.")
+            return
+
+        caller = self.caller
+
+        def on_response(response):
+            if response.get('status') != 'success':
+                caller.msg(
+                    f"|y{response.get('error', 'Could not stop working.')}|n"
+                )
+                return
+
+            site_name = response.get('work_site_name', 'the work site')
+            caller.msg(f"|yYou stop working at the {site_name}.|n")
+            caller.location.msg_contents(
+                f"|w{caller.key}|n stops working.",
+                exclude=[caller],
+            )
+
+        _get_client().send_with_callback(
+            {
+                'type': 'work_site_leave',
+                'character_id': char_id,
+                'room_id': room_id,
+            },
+            on_response,
+        )

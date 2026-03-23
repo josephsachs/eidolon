@@ -47,25 +47,29 @@ class Combat : Entity() {
 
     @FixedTask
     suspend fun checkExpiry() {
-        if (members.isNotEmpty()) {
-            if (emptyAt != 0L) {
-                emptyAt = 0L
-                entityController.saveProperties(_id!!, JsonObject().put("emptyAt", 0L))
+        try {
+            if (members.isNotEmpty()) {
+                if (emptyAt != 0L) {
+                    emptyAt = 0L
+                    entityController.saveProperties(_id, JsonObject().put("emptyAt", 0L))
+                }
+                return
             }
-            return
-        }
 
-        val now = System.currentTimeMillis()
+            val now = System.currentTimeMillis()
 
-        if (emptyAt == 0L) {
-            emptyAt = now
-            entityController.saveProperties(_id!!, JsonObject().put("emptyAt", now))
-            return
-        }
+            if (emptyAt == 0L) {
+                emptyAt = now
+                entityController.saveProperties(_id, JsonObject().put("emptyAt", now))
+                return
+            }
 
-        if (now - emptyAt >= EXPIRY_DELAY_MS) {
-            log.info("Combat $_id expired (empty for ${EXPIRY_DELAY_MS}ms), deleting")
-            entityController.delete(_id!!)
+            if (now - emptyAt >= EXPIRY_DELAY_MS) {
+                log.info("Combat $_id expired (empty for ${EXPIRY_DELAY_MS}ms), deleting")
+                entityController.delete(_id)
+            }
+        } catch (e: Exception) {
+            log.error("checkExpiry failed for combat {}: {}", _id, e.message)
         }
     }
 }

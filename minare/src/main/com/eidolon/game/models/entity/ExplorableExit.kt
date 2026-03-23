@@ -71,56 +71,60 @@ class ExplorableExit : Entity(), Serializable {
 
     @FixedTask
     suspend fun progressExploration() {
-        if (unlocked || explorers.isEmpty()) return
+        try {
+            if (unlocked || explorers.isEmpty()) return
 
-        // Prune explorers who left the source room
-        val explorerIds = explorers.toList()
-        val characters = entityController.findByIds(explorerIds)
-        val validExplorers = mutableSetOf<String>()
-        for (id in explorerIds) {
-            val char = characters[id] as? EvenniaCharacter ?: continue
-            if (char.currentRoomId == sourceRoomId) {
-                validExplorers.add(id)
+            // Prune explorers who left the source room
+            val explorerIds = explorers.toList()
+            val characters = entityController.findByIds(explorerIds)
+            val validExplorers = mutableSetOf<String>()
+            for (id in explorerIds) {
+                val char = characters[id] as? EvenniaCharacter ?: continue
+                if (char.currentRoomId == sourceRoomId) {
+                    validExplorers.add(id)
+                }
             }
-        }
 
-        if (validExplorers.isEmpty()) {
-            if (validExplorers.size != explorers.size) {
-                entityController.saveState(_id!!, JsonObject()
-                    .put("explorers", validExplorers.toList()))
+            if (validExplorers.isEmpty()) {
+                if (validExplorers.size != explorers.size) {
+                    entityController.saveState(_id, JsonObject()
+                        .put("explorers", validExplorers.toList()))
+                }
+                return
             }
-            return
-        }
 
-        // Append contributions for each active explorer
-        val updatedContributions = contributions.copy()
-        val now = System.currentTimeMillis()
-        for (explorerId in validExplorers) {
-            updatedContributions.add(JsonObject()
-                .put("characterId", explorerId)
-                .put("timestamp", now))
-        }
-
-        val changes = JsonObject()
-            .put("explorers", validExplorers.toList())
-            .put("contributions", updatedContributions)
-
-        if (updatedContributions.size() >= threshold) {
-            changes.put("unlocked", true)
-            changes.put("explorers", emptyList<String>())
-
-            val exitEvenniaId = resolveExitEvenniaId()
-            if (exitEvenniaId != null) {
-                evenniaCommUtils.sendAgentCommand(JsonObject()
-                    .put("action", "unlock_exit")
-                    .put("exit_evennia_id", exitEvenniaId))
-                log.info("ExplorableExit: {} unlocked (direction={})", _id, direction)
-            } else {
-                log.warn("ExplorableExit: {} unlocked but could not resolve Evennia exit ID", _id)
+            // Append contributions for each active explorer
+            val updatedContributions = contributions.copy()
+            val now = System.currentTimeMillis()
+            for (explorerId in validExplorers) {
+                updatedContributions.add(JsonObject()
+                    .put("characterId", explorerId)
+                    .put("timestamp", now))
             }
-        }
 
-        entityController.saveState(_id!!, changes)
+            val changes = JsonObject()
+                .put("explorers", validExplorers.toList())
+                .put("contributions", updatedContributions)
+
+            if (updatedContributions.size() >= threshold) {
+                changes.put("unlocked", true)
+                changes.put("explorers", emptyList<String>())
+
+                val exitEvenniaId = resolveExitEvenniaId()
+                if (exitEvenniaId != null) {
+                    evenniaCommUtils.sendAgentCommand(JsonObject()
+                        .put("action", "unlock_exit")
+                        .put("exit_evennia_id", exitEvenniaId))
+                    log.info("ExplorableExit: {} unlocked (direction={})", _id, direction)
+                } else {
+                    log.warn("ExplorableExit: {} unlocked but could not resolve Evennia exit ID", _id)
+                }
+            }
+
+            entityController.saveState(_id, changes)
+        } catch (e: Exception) {
+            log.error("progressExploration failed for exit {}: {}", _id, e.message)
+        }
     }
 
     /**

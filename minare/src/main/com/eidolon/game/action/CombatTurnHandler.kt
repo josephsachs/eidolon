@@ -40,21 +40,35 @@ class CombatTurnHandler @Inject constructor(
 
     // Transient per-turn derived scores
     private val turnScores = mutableMapOf<String, CombatScores>()
+    private val downedThisRound = mutableSetOf<String>()
+    private val pendingEquilibrium = mutableMapOf<String, CombatEquilibrium>()
 
     suspend fun handleTurn(turnPhase: GameTurnHandler.Companion.TurnPhase) {
+        if (turnPhase == GameTurnHandler.Companion.TurnPhase.DURING) {
+            downedThisRound.clear()
+        }
+
         val combatKeys = stateStore.findAllKeysForType("Combat")
         if (combatKeys.isEmpty()) return
 
         val combats = entityController.findByIds(combatKeys)
-        for ((_, entity) in combats) {
+        for ((id, entity) in combats) {
             val combat = entity as? Combat ?: continue
             if (combat.members.isEmpty()) continue
+
+            if (turnPhase == GameTurnHandler.Companion.TurnPhase.DURING) {
+                log.info("Combat $id DURING phase: ${combat.members.size} members in room ${combat.roomId}")
+            }
 
             when (turnPhase) {
                 GameTurnHandler.Companion.TurnPhase.BEFORE -> handleBefore(combat)
                 GameTurnHandler.Companion.TurnPhase.DURING -> handleDuring(combat)
                 GameTurnHandler.Companion.TurnPhase.AFTER -> handleAfter(combat)
             }
+        }
+
+        if (turnPhase == GameTurnHandler.Companion.TurnPhase.AFTER) {
+            downedThisRound.clear()
         }
     }
 
@@ -63,7 +77,7 @@ class CombatTurnHandler @Inject constructor(
 
         // Increment round
         val newRound = combat.currentRound + 1
-        entityController.saveProperties(combat._id!!, JsonObject().put("currentRound", newRound))
+        entityController.saveProperties(combat._id, JsonObject().put("currentRound", newRound))
 
         for ((id, character) in members) {
             if (character.dead || character.downed) continue
@@ -76,20 +90,24 @@ class CombatTurnHandler @Inject constructor(
         val members = loadMembers(combat.members)
 
         for ((id, character) in members) {
-            if (character.dead || character.downed) continue
+            log.info("Combat member ${character.evenniaName} ($id): mode=${character.combatMode} target=${character.targetId} dead=${character.dead} downed=${character.downed}")
+            if (character.dead || character.downed || id in downedThisRound) continue
 
             when (character.combatMode) {
                 "attack" -> resolveAttack(combat, id, character, members)
                 "defend" -> resolveDefend(combat, id, character)
                 "avoid" -> resolveAvoid(combat, id, character)
+                else -> log.info("Combat member ${character.evenniaName} has no actionable mode: '${character.combatMode}'")
             }
         }
+
+        flushEquilibrium()
     }
 
     private suspend fun handleAfter(combat: Combat) {
         val members = loadMembers(combat.members)
 
-        // Drift equilibrium toward center
+        // Drift equilibrium toward center (accumulate, don't save yet)
         for ((id, character) in members) {
             if (character.dead || character.downed) continue
 
@@ -100,20 +118,20 @@ class CombatTurnHandler @Inject constructor(
 
             val updated = CombatEquilibrium(newBalance, newPosition, newTempo)
             if (updated != eq) {
-                saveEquilibrium(id, updated)
+                pendingEquilibrium[id] = updated
             }
         }
 
         // Second-strikes: defenders/avoiders with high position may counter
         for ((id, character) in members) {
-            if (character.dead || character.downed) continue
+            if (character.dead || character.downed || id in downedThisRound) continue
             if (character.combatMode !in listOf("defend", "avoid")) continue
 
-            val eq = character.combatEquilibrium
+            val eq = pendingEquilibrium[id] ?: character.combatEquilibrium
             if (eq.position < 65.0) continue
 
             val attackerTargetingMe = members.entries
-                .firstOrNull { it.value.targetId == id && it.key != id && !it.value.dead && !it.value.downed }
+                .firstOrNull { it.value.targetId == id && it.key != id && !it.value.dead && !it.value.downed && it.key !in downedThisRound }
             val targetEntry = attackerTargetingMe ?: continue
             val targetId = targetEntry.key
             val target = targetEntry.value
@@ -134,9 +152,11 @@ class CombatTurnHandler @Inject constructor(
             shiftEquilibrium(id, character, positionShift = -15.0)
         }
 
+        flushEquilibrium()
+
         // Send status feedback once per member
         for ((id, character) in members) {
-            if (character.dead || character.downed) continue
+            if (character.dead || character.downed || id in downedThisRound) continue
             val adversaryId = character.targetId
             if (adversaryId.isEmpty()) continue
             val adversary = members[adversaryId] ?: continue
@@ -144,10 +164,26 @@ class CombatTurnHandler @Inject constructor(
                 buildFeedback(character, adversary, adversary.health, "status"))
         }
 
-        // Remove dead and downed members
+        // Remove dead and downed members (including those downed this round)
         for ((id, character) in members) {
-            if ((character.dead || character.downed) && id in combat.members) {
-                combatService.removeMember(combat._id!!, id)
+            if ((character.dead || character.downed || id in downedThisRound) && id in combat.members) {
+                combatService.removeMember(combat._id, id)
+            }
+        }
+
+        // Remove members with no target and no one targeting them
+        val refreshedCombat = entityController.findByIds(listOf(combat._id!!))
+            .values.firstOrNull() as? Combat
+        if (refreshedCombat != null && refreshedCombat.members.size > 1) {
+            val refreshedMembers = loadMembers(refreshedCombat.members)
+            val targeted = refreshedMembers.values.map { it.targetId }.toSet()
+
+            for ((id, character) in refreshedMembers) {
+                val hasTarget = character.targetId.isNotEmpty() && character.targetId in refreshedMembers
+                val isTargeted = id in targeted
+                if (!hasTarget && !isTargeted) {
+                    combatService.removeMember(combat._id, id)
+                }
             }
         }
 
@@ -163,16 +199,28 @@ class CombatTurnHandler @Inject constructor(
         members: Map<String, EvenniaCharacter>
     ) {
         val targetId = attacker.targetId
-        if (targetId.isEmpty()) return
+        if (targetId.isEmpty()) {
+            log.info("resolveAttack: ${attacker.evenniaName} has empty targetId")
+            return
+        }
 
         val target = members[targetId]
-        if (target == null || target.dead || target.downed) {
+        if (target == null || target.dead || target.downed || targetId in downedThisRound) {
+            log.info("resolveAttack: ${attacker.evenniaName} target ${targetId} is null=${target == null} dead=${target?.dead} downed=${target?.downed} downedThisRound=${targetId in downedThisRound}")
             entityController.saveProperties(attackerId, JsonObject().put("targetId", ""))
             return
         }
 
-        val attackScores = turnScores[attackerId] ?: return
-        val defenseScores = turnScores[targetId] ?: return
+        val attackScores = turnScores[attackerId]
+        if (attackScores == null) {
+            log.info("resolveAttack: ${attacker.evenniaName} has no turnScores (keys: ${turnScores.keys})")
+            return
+        }
+        val defenseScores = turnScores[targetId]
+        if (defenseScores == null) {
+            log.info("resolveAttack: target ${target.evenniaName} has no turnScores (keys: ${turnScores.keys})")
+            return
+        }
         val attackerEq = attacker.combatEquilibrium
         val targetEq = target.combatEquilibrium
 
@@ -206,6 +254,8 @@ class CombatTurnHandler @Inject constructor(
 
         val attackRoll = Random.nextInt(100) + attackScores.attack + toHitBonus
         val defenseRoll = defenseScores.defense + modeDefenseBonus + freeDefense
+
+        log.info("resolveAttack: ${attacker.evenniaName} vs ${target.evenniaName} — roll ${attackRoll} vs defense ${defenseRoll} (hit=${attackRoll > defenseRoll})")
 
         if (attackRoll > defenseRoll) {
             // Hit — apply damage with crit check
@@ -248,7 +298,8 @@ class CombatTurnHandler @Inject constructor(
             entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
 
             // Downed check (vitality <= 0)
-            if (updatedHealth.vitality <= 0 && !target.downed) {
+            if (updatedHealth.vitality <= 0 && !target.downed && targetId !in downedThisRound) {
+                downedThisRound.add(targetId)
                 entityController.saveState(targetId, JsonObject()
                     .put("downed", true)
                     .put("health", healthToJson(updatedHealth)))
@@ -387,7 +438,8 @@ class CombatTurnHandler @Inject constructor(
 
         entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
 
-        if (updatedHealth.vitality <= 0 && !target.downed) {
+        if (updatedHealth.vitality <= 0 && !target.downed && targetId !in downedThisRound) {
+            downedThisRound.add(targetId)
             entityController.saveState(targetId, JsonObject()
                 .put("downed", true)
                 .put("health", healthToJson(updatedHealth)))
@@ -526,34 +578,36 @@ class CombatTurnHandler @Inject constructor(
 
     private suspend fun appendCombatLog(combat: Combat, entry: JsonObject) {
         val updatedLog = combat.combatLog + entry
-        entityController.saveProperties(combat._id!!, JsonObject()
+        entityController.saveProperties(combat._id, JsonObject()
             .put("combatLog", JsonArray(updatedLog)))
     }
 
     // --- Equilibrium helpers ---
 
-    private suspend fun shiftEquilibrium(
+    private fun shiftEquilibrium(
         characterId: String,
         character: EvenniaCharacter,
         balanceShift: Double = 0.0,
         positionShift: Double = 0.0,
         tempoShift: Double = 0.0
     ) {
-        val eq = character.combatEquilibrium
-        val updated = CombatEquilibrium(
+        val eq = pendingEquilibrium[characterId] ?: character.combatEquilibrium
+        pendingEquilibrium[characterId] = CombatEquilibrium(
             balance = (eq.balance + balanceShift).coerceIn(0.0, 100.0),
             position = (eq.position + positionShift).coerceIn(0.0, 100.0),
             tempo = (eq.tempo + tempoShift).coerceIn(0.0, 100.0)
         )
-        saveEquilibrium(characterId, updated)
     }
 
-    private suspend fun saveEquilibrium(characterId: String, eq: CombatEquilibrium) {
-        entityController.saveProperties(characterId, JsonObject()
-            .put("combatEquilibrium", JsonObject()
-                .put("balance", eq.balance)
-                .put("position", eq.position)
-                .put("tempo", eq.tempo)))
+    private suspend fun flushEquilibrium() {
+        for ((characterId, eq) in pendingEquilibrium) {
+            entityController.saveProperties(characterId, JsonObject()
+                .put("combatEquilibrium", JsonObject()
+                    .put("balance", eq.balance)
+                    .put("position", eq.position)
+                    .put("tempo", eq.tempo)))
+        }
+        pendingEquilibrium.clear()
     }
 
     private fun driftToward(current: Double, target: Double, rate: Double): Double {

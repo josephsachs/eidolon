@@ -31,24 +31,28 @@ class Spawner : Entity() {
 
     @FixedTask
     suspend fun tick() {
-        if (templateId.isEmpty() || roomId.isEmpty()) return
+        try {
+            if (templateId.isEmpty() || roomId.isEmpty()) return
 
-        val now = System.currentTimeMillis()
-        if (now - lastSpawnedAt < intervalMs) return
+            val now = System.currentTimeMillis()
+            if (now - lastSpawnedAt < intervalMs) return
 
-        val template = itemRegistry.get(templateId) ?: return
-        val roomEvenniaId = crossLinkRegistry.getEvenniaId("Room", roomId) ?: return
+            val template = itemRegistry.get(templateId) ?: return
+            val roomEvenniaId = crossLinkRegistry.getEvenniaId("Room", roomId) ?: return
 
-        lastSpawnedAt = now
-        entityController.saveProperties(_id!!, JsonObject().put("lastSpawnedAt", now))
+            lastSpawnedAt = now
+            entityController.saveProperties(_id, JsonObject().put("lastSpawnedAt", now))
 
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "create_item")
-            .put("room_evennia_id", roomEvenniaId)
-            .put("template_id", templateId)
-            .put("item_name", template.name)
-            .put("item_description", template.description))
+            evenniaCommUtils.sendAgentCommand(JsonObject()
+                .put("action", "create_item")
+                .put("room_evennia_id", roomEvenniaId)
+                .put("template_id", templateId)
+                .put("item_name", template.name)
+                .put("item_description", template.description))
 
-        log.info("Spawner $_id spawned '${template.name}' in room $roomId")
+            log.info("Spawner $_id spawned '${template.name}' in room $roomId")
+        } catch (e: Exception) {
+            log.error("Spawner tick failed for {}: {}", _id, e.message)
+        }
     }
 }

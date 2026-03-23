@@ -59,5 +59,137 @@
       "sellMenu": ["cucumber"],
       "currency": "dollar"
     }
+  },
+  {
+    "name": "Jasper",
+    "shortDescription": "a tired-looking janitor",
+    "description": "A wiry man in faded grey coveralls, pushing sixty but too stubborn to admit it. He carries himself with the weary authority of someone who has been cleaning up other people's messes for decades. A ring of keys jangles at his hip. His name tag reads 'JASPER' in blocky letters, the 'J' half-scraped off.",
+    "brainType": "state_machine",
+    "room": "exam-room-1",
+    "stateMachine": {
+      "initial": "pickup_emote",
+      "states": {
+        "pickup_emote": {
+          "type": "emote",
+          "args": "sighs, shuffles over to the copy machine, and grabs the sheet of paper from the tray.",
+          "delay": 2,
+          "next": "pickup"
+        },
+        "pickup": {
+          "type": "command",
+          "args": "get sheet of paper",
+          "delay": 2,
+          "next": "grumble"
+        },
+        "grumble": {
+          "type": "say",
+          "args": "Every damn day with this machine.",
+          "delay": 2,
+          "next": "walk_south_1"
+        },
+        "walk_south_1": {
+          "type": "command",
+          "args": "south",
+          "delay": 2,
+          "next": "walk_west_1"
+        },
+        "walk_west_1": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "walk_south_2"
+        },
+        "walk_south_2": {
+          "type": "command",
+          "args": "south",
+          "delay": 2,
+          "next": "walk_east_1"
+        },
+        "walk_east_1": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "walk_east_2"
+        },
+        "walk_east_2": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "walk_east_3"
+        },
+        "walk_east_3": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "walk_east_4"
+        },
+        "walk_east_4": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "drop_paper"
+        },
+        "drop_paper": {
+          "type": "command",
+          "args": "drop sheet of paper",
+          "delay": 1,
+          "next": "trash_emote"
+        },
+        "trash_emote": {
+          "type": "emote",
+          "args": "crumples the paper and stuffs it into the trash can with a grunt of satisfaction.",
+          "delay": 3,
+          "next": "return_west_1"
+        },
+        "return_west_1": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "return_west_2"
+        },
+        "return_west_2": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "return_west_3"
+        },
+        "return_west_3": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "return_west_4"
+        },
+        "return_west_4": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "return_north_1"
+        },
+        "return_north_1": {
+          "type": "command",
+          "args": "north",
+          "delay": 2,
+          "next": "return_east_1"
+        },
+        "return_east_1": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "return_north_2"
+        },
+        "return_north_2": {
+          "type": "command",
+          "args": "north",
+          "delay": 2,
+          "next": "arrive_back"
+        },
+        "arrive_back": {
+          "type": "emote",
+          "args": "mops his brow and glances at the copy machine. Its output tray is full again.",
+          "delay": 4,
+          "next": "pickup_emote"
+        }
+      }
+    }
   }
 ]

@@ -16,7 +16,9 @@ import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
+import org.slf4j.LoggerFactory
 
 @EntityType("EvenniaCharacter")
 class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
@@ -28,6 +30,8 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     private lateinit var evenniaCommUtils: EvenniaCommUtils
     @Inject
     private lateinit var damageService: DamageService
+
+    private val log = LoggerFactory.getLogger(EvenniaCharacter::class.java)
 
     init {
         type = "EvenniaCharacter"
@@ -130,52 +134,59 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @FixedTask
     suspend fun regenerate() {
-        if (dead) return
+        try {
+            if (dead) return
+            if (Random.nextInt(4) != 0) return
 
-        val max = 100
-        val regenRate = 1
-        val staminaRate = regenRate + (attributes.toughness / 50.0).toInt()
-        val concentrationRate = regenRate + (attributes.discipline / 50.0).toInt()
+            val max = 100
+            val regenRate = 1
+            val staminaRate = regenRate + (attributes.toughness / 50.0).toInt()
+            val concentrationRate = regenRate + (attributes.discipline / 50.0).toInt()
 
-        var updated = health
+            var updated = health
 
-        if (updated.vitality >= max
-            && updated.stamina >= max
-            && updated.concentration >= max
-            && updated.hardpoints.all { it.hp >= max }) return
+            if (updated.vitality >= max
+                && updated.stamina >= max
+                && updated.concentration >= max
+                && updated.hardpoints.all { it.hp >= max }) return
 
-        // Vitality regens first, then hardpoint hp
-        if (updated.vitality < max) {
-            updated = updated.copy(vitality = (updated.vitality + regenRate).coerceAtMost(max))
-        } else {
-            // Hardpoint hp regens but status never improves — cap hp at current status ceiling
-            val updatedHardpoints = updated.hardpoints.map { hp ->
-                val statusCeiling = statusHpCeiling(hp.status)
-                if (hp.hp < statusCeiling) hp.copy(hp = (hp.hp + regenRate).coerceAtMost(statusCeiling))
-                else hp
+            // Vitality regens first, then hardpoint hp
+            if (updated.vitality < max) {
+                updated = updated.copy(vitality = (updated.vitality + regenRate).coerceAtMost(max))
+            } else {
+                // Hardpoint hp regens but status never improves — cap hp at current status ceiling
+                val updatedHardpoints = updated.hardpoints.map { hp ->
+                    val statusCeiling = statusHpCeiling(hp.status)
+                    if (hp.hp < statusCeiling) hp.copy(hp = (hp.hp + regenRate).coerceAtMost(statusCeiling))
+                    else hp
+                }
+                updated = updated.copy(hardpoints = updatedHardpoints)
             }
-            updated = updated.copy(hardpoints = updatedHardpoints)
-        }
 
-        if (updated.stamina < max) {
-            updated = updated.copy(stamina = (updated.stamina + staminaRate).coerceAtMost(max))
-        }
-        if (updated.concentration < max) {
-            updated = updated.copy(concentration = (updated.concentration + concentrationRate).coerceAtMost(max))
-        }
-
-        if (updated != health) {
-            health = updated
-            entityController.saveState(_id!!, JsonObject().put("health", healthToJson()))
-
-            // Recover from downed if vitality is back above 0
-            if (downed && updated.vitality > 0) {
-                downed = false
-                entityController.saveState(_id!!, JsonObject()
-                    .put("downed", false)
-                    .put("health", healthToJson()))
-                damageService.flagUndowned(this)
+            if (updated.stamina < max) {
+                updated = updated.copy(stamina = (updated.stamina + staminaRate).coerceAtMost(max))
             }
+            if (updated.concentration < max) {
+                updated = updated.copy(concentration = (updated.concentration + concentrationRate).coerceAtMost(max))
+            }
+
+            if (updated != health) {
+                health = updated
+                val recovering = downed && updated.vitality > 0
+
+                val changes = JsonObject().put("health", healthToJson())
+                if (recovering) {
+                    downed = false
+                    changes.put("downed", false)
+                }
+                entityController.saveState(_id, changes)
+
+                if (recovering) {
+                    damageService.flagUndowned(this)
+                }
+            }
+        } catch (e: Exception) {
+            log.error("regenerate failed for {} ({}): {}", evenniaName, _id, e.message)
         }
     }
 
@@ -198,62 +209,66 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @FixedTask
     suspend fun processStatuses() {
-        if (dead || statusEffects.isEmpty()) return
+        try {
+            if (dead || statusEffects.isEmpty()) return
 
-        val now = System.currentTimeMillis()
-        var updatedHealth = health
+            val now = System.currentTimeMillis()
+            var updatedHealth = health
 
-        // Apply damage from active effects
-        for (effect in statusEffects) {
-            if (effect.damage > 0) {
-                updatedHealth = when (effect.type) {
-                    "burn" -> damageService.applyBurn(updatedHealth, effect.damage, effect.damage / 2)
-                    else -> damageService.applyVitalityDamage(updatedHealth, effect.damage)
+            // Apply damage from active effects
+            for (effect in statusEffects) {
+                if (effect.damage > 0) {
+                    updatedHealth = when (effect.type) {
+                        "burn" -> damageService.applyBurn(updatedHealth, effect.damage, effect.damage / 2)
+                        else -> damageService.applyVitalityDamage(updatedHealth, effect.damage)
+                    }
                 }
             }
-        }
 
-        // Prune expired effects
-        val remaining = damageService.pruneExpired(statusEffects, now)
+            // Prune expired effects
+            val remaining = damageService.pruneExpired(statusEffects, now)
 
-        // Downed/death check
-        if (updatedHealth.vitality <= 0) {
-            if (downed) {
-                // Already downed, taking more damage — death save
-                val result = damageService.rollDeathSave(this)
-                if (!result.passed) {
-                    dead = true
+            // Downed/death check
+            if (updatedHealth.vitality <= 0) {
+                if (downed) {
+                    val result = damageService.rollDeathSave(this)
+                    if (!result.passed) {
+                        dead = true
+                        health = updatedHealth
+                        damageService.flagDead(this)
+                        entityController.saveState(_id, JsonObject()
+                            .put("dead", true)
+                            .put("health", healthToJson()))
+                        entityController.saveProperties(_id, JsonObject()
+                            .put("statusEffects", listOf<StatusEffect>()))
+                        return
+                    }
+                } else {
+                    downed = true
                     health = updatedHealth
-                    damageService.flagDead(this)
+                    damageService.flagDowned(this)
                     entityController.saveState(_id!!, JsonObject()
-                        .put("dead", true)
+                        .put("downed", true)
                         .put("health", healthToJson()))
-                    entityController.saveProperties(_id!!, JsonObject()
-                        .put("statusEffects", listOf<StatusEffect>()))
-                    return
                 }
-            } else {
-                // First time at 0 — downed
-                downed = true
-                health = updatedHealth
-                damageService.flagDowned(this)
-                entityController.saveState(_id!!, JsonObject()
-                    .put("downed", true)
-                    .put("health", healthToJson()))
             }
-        }
 
-        // Persist changes
-        val healthChanged = updatedHealth != health
-        val effectsChanged = remaining != statusEffects
+            // Persist remaining changes in one pass
+            val stateChanges = JsonObject()
+            val propChanges = JsonObject()
 
-        if (healthChanged) {
-            health = updatedHealth
-            entityController.saveState(_id!!, JsonObject().put("health", healthToJson()))
-        }
-        if (effectsChanged) {
-            entityController.saveProperties(_id!!, JsonObject()
-                .put("statusEffects", remaining))
+            if (updatedHealth != health) {
+                health = updatedHealth
+                stateChanges.put("health", healthToJson())
+            }
+            if (remaining != statusEffects) {
+                propChanges.put("statusEffects", remaining)
+            }
+
+            if (!stateChanges.isEmpty) entityController.saveState(_id, stateChanges)
+            if (!propChanges.isEmpty) entityController.saveProperties(_id, propChanges)
+        } catch (e: Exception) {
+            log.error("processStatuses failed for {} ({}): {}", evenniaName, _id, e.message)
         }
     }
 
@@ -339,18 +354,18 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     override suspend fun say(roomMinareId: String, text: String) {
         if (isNpc) {
-            evenniaCommUtils.npcSayInRoom(roomMinareId, _id!!, text)
+            evenniaCommUtils.npcSayInRoom(roomMinareId, _id, text)
         } else {
-            evenniaCommUtils.sayInRoom(roomMinareId, _id!!, text)
+            evenniaCommUtils.sayInRoom(roomMinareId, _id, text)
         }
         appendEcho(roomMinareId, "say", text)
     }
 
     override suspend fun emote(roomMinareId: String, text: String) {
         if (isNpc) {
-            evenniaCommUtils.npcEmoteInRoom(roomMinareId, _id!!, text)
+            evenniaCommUtils.npcEmoteInRoom(roomMinareId, _id, text)
         } else {
-            evenniaCommUtils.emoteInRoom(roomMinareId, _id!!, text)
+            evenniaCommUtils.emoteInRoom(roomMinareId, _id, text)
         }
         appendEcho(roomMinareId, "pose", text)
     }

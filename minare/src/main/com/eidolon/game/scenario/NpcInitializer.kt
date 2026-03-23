@@ -10,7 +10,11 @@ import com.minare.controller.EntityController
 import com.minare.core.entity.factories.EntityFactory
 import com.minare.core.storage.interfaces.StateStore
 import eidolon.game.controller.GameChannelController
+import eidolon.game.models.entity.agent.BrainRegistry
 import eidolon.game.models.entity.agent.EvenniaCharacter
+import eidolon.game.models.entity.agent.StateConfig
+import eidolon.game.models.entity.agent.StateMachineBrain
+import eidolon.game.models.entity.agent.StateMachineConfig
 import io.vertx.core.Vertx
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
@@ -34,7 +38,8 @@ class NpcInitializer @Inject constructor(
     private val linkDomainEntity: LinkDomainEntity,
     private val coroutineScope: CoroutineScope,
     private val vertx: Vertx,
-    private val vendorService: VendorService
+    private val vendorService: VendorService,
+    private val brainRegistry: BrainRegistry
 ) {
     private val log = LoggerFactory.getLogger(NpcInitializer::class.java)
     private val initialized = AtomicBoolean(false)
@@ -227,6 +232,16 @@ class NpcInitializer @Inject constructor(
                 vendorService.registerVendor(character._id!!, VendorService.VendorConfig(buyMenu, sellMenu, currency))
             }
 
+            // Register state machine config if applicable
+            val smJson = npc.getJsonObject("stateMachine")
+            if (smJson != null && brainType == "state_machine") {
+                val smBrain = brainRegistry.get("state_machine") as? StateMachineBrain
+                if (smBrain != null) {
+                    val config = parseStateMachineConfig(smJson)
+                    smBrain.registerConfig(character._id!!, config)
+                }
+            }
+
             characters.add(character)
             log.info("Created Minare EvenniaCharacter '${name}' (id=${character._id}, brain=${brainType}, room=${roomMinareId})",)
         }
@@ -256,5 +271,23 @@ class NpcInitializer @Inject constructor(
             log.error("Failed to read rooms.json: $e")
             emptyList()
         }
+    }
+
+    private fun parseStateMachineConfig(json: JsonObject): StateMachineConfig {
+        val initial = json.getString("initial")
+        val statesJson = json.getJsonObject("states")
+        val states = mutableMapOf<String, StateConfig>()
+
+        for (key in statesJson.fieldNames()) {
+            val stateJson = statesJson.getJsonObject(key)
+            states[key] = StateConfig(
+                type = stateJson.getString("type"),
+                args = stateJson.getString("args", ""),
+                delay = stateJson.getInteger("delay", 1),
+                next = stateJson.getString("next", null)
+            )
+        }
+
+        return StateMachineConfig(initial = initial, states = states)
     }
 }

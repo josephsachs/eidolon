@@ -7,12 +7,15 @@ import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.slf4j.LoggerFactory
 import java.io.Serializable
 
 @EntityType("Room")
 class Room : Entity(), Serializable, Viewable {
     @Inject
     lateinit var entityController: EntityController
+
+    private val log = LoggerFactory.getLogger(Room::class.java)
 
     init {
         type = "Room"
@@ -59,17 +62,21 @@ class Room : Entity(), Serializable, Viewable {
 
     @FixedTask
     suspend fun forgetEchoes() {
-        if (echoes.isEmpty) return
-        val cutoff = System.currentTimeMillis() - ECHO_TTL_MS
-        val filtered = JsonArray()
-        for (i in 0 until echoes.size()) {
-            val echo = echoes.getJsonObject(i)
-            if (echo.getLong("timestamp", 0L) >= cutoff) {
-                filtered.add(echo)
+        try {
+            if (echoes.isEmpty) return
+            val cutoff = System.currentTimeMillis() - ECHO_TTL_MS
+            val filtered = JsonArray()
+            for (i in 0 until echoes.size()) {
+                val echo = echoes.getJsonObject(i)
+                if (echo.getLong("timestamp", 0L) >= cutoff) {
+                    filtered.add(echo)
+                }
             }
-        }
-        if (filtered.size() < echoes.size()) {
-            entityController.saveProperties(_id!!, JsonObject().put("echoes", filtered))
+            if (filtered.size() < echoes.size()) {
+                entityController.saveProperties(_id, JsonObject().put("echoes", filtered))
+            }
+        } catch (e: Exception) {
+            log.error("forgetEchoes failed for room {}: {}", _id, e.message)
         }
     }
 

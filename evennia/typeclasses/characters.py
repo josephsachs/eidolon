@@ -20,12 +20,15 @@ class Character(ObjectParent, DefaultCharacter):
     """
 
     def at_pre_move(self, destination, move_type="move", **kwargs):
-        """Block movement when in combat or dead."""
+        """Block movement when in combat, dead, or downed."""
         if self.db.in_combat:
             self.msg("|rYou can't leave — you're in combat!|n")
             return False
         if self.db.is_dead:
             self.msg("|xYou're dead. You aren't going anywhere.|n")
+            return False
+        if self.db.is_downed:
+            self.msg("|rYou're too injured to move.|n")
             return False
         return super().at_pre_move(destination, move_type=move_type, **kwargs)
 
@@ -170,6 +173,7 @@ class AgentCharacter(Character):
         'vendor_sell': '_handle_vendor_sell',
         'create_item': '_handle_create_item',
         'npc_move': '_handle_npc_move',
+        'npc_command': '_handle_npc_command',
     }
 
     def at_object_creation(self):
@@ -525,6 +529,24 @@ class AgentCharacter(Character):
             )
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_npc_move: {e}")
+
+    def _handle_npc_command(self, command):
+        """Execute an arbitrary command as an NPC via execute_cmd."""
+        character_evennia_id = command.get('character_evennia_id')
+        cmd_string = command.get('command', '')
+        if not character_evennia_id or not cmd_string:
+            logger.log_err("_handle_npc_command: missing character_evennia_id or command")
+            return
+
+        try:
+            from evennia.objects.models import ObjectDB
+            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
+            char_obj.execute_cmd(cmd_string)
+            logger.log_info(
+                f"NPC '{char_obj.key}' executed command: {cmd_string}"
+            )
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_npc_command: {e}")
 
     def _handle_combat_msg(self, command):
         """Send a combat message to a room."""

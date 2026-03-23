@@ -16,10 +16,12 @@ import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
 import com.eidolon.game.service.ItemRegistry
+import com.eidolon.game.models.entity.WorkSite
 import com.eidolon.game.service.VendorService
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
+import com.minare.core.storage.interfaces.StateStore
 import eidolon.game.models.entity.agent.BrainRegistry
 import eidolon.game.models.entity.agent.EvenniaCharacter
 import com.minare.controller.MessageController
@@ -57,6 +59,7 @@ class GameMessageController @Inject constructor(
     private val brainRegistry: BrainRegistry,
     private val itemRegistry: ItemRegistry,
     private val vendorService: VendorService,
+    private val stateStore: StateStore,
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
@@ -112,6 +115,15 @@ class GameMessageController @Inject constructor(
                 playerDisconnect.execute(message)
             }
 
+            message.getString("type") == "skill_cooldown_check" -> {
+                val requestId = message.getString("request_id")
+                val characterId = message.getString("character_id", "")
+                val skillName = message.getString("skill_name", "")
+                val result = skillEvent.checkCooldown(characterId, skillName)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
             message.getString("type") == "skill_event" -> {
                 val requestId = message.getString("request_id")
                 val result = skillEvent.execute(message)
@@ -153,13 +165,20 @@ class GameMessageController @Inject constructor(
                 val characterId = message.getString("character_id", "")
                 val targetId = message.getString("target_id", "")
                 val roomId = message.getString("room_id", "")
-                val existing = combatService.findCombatInRoom(roomId)
-                if (existing != null) {
-                    combatService.joinCombat(existing._id!!, characterId)
-                    // Set attacker mode
-                    combatService.setAttackMode(characterId, targetId)
+
+                // Reject attacks on dead/downed targets
+                val target = entityController.findByIds(listOf(targetId))
+                    .values.firstOrNull() as? eidolon.game.models.entity.agent.EvenniaCharacter
+                if (target != null && (target.dead || target.downed)) {
+                    combatService.rejectAttack(characterId, targetId, roomId)
                 } else {
-                    combatService.createCombat(roomId, characterId, targetId)
+                    val existing = combatService.findCombatInRoom(roomId)
+                    if (existing != null) {
+                        combatService.joinCombat(existing._id!!, characterId)
+                        combatService.setAttackMode(characterId, targetId)
+                    } else {
+                        combatService.createCombat(roomId, characterId, targetId)
+                    }
                 }
             }
 
@@ -317,6 +336,20 @@ class GameMessageController @Inject constructor(
                 handleEvenniaMessage(connection, message)
             }
 
+            message.getString("type") == "work_site_join" -> {
+                val requestId = message.getString("request_id")
+                val result = handleWorkSiteJoin(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
+            message.getString("type") == "work_site_leave" -> {
+                val requestId = message.getString("request_id")
+                val result = handleWorkSiteLeave(message)
+                result.put("request_id", requestId)
+                sendToClient(connection, result)
+            }
+
             else -> {
                 val operationCommand = OperationCommand(message)
 
@@ -432,11 +465,69 @@ class GameMessageController @Inject constructor(
             .put("item_name", template?.name ?: templateId)
     }
 
+    private suspend fun handleWorkSiteJoin(message: JsonObject): JsonObject {
+        val characterId = message.getString("character_id", "")
+        val roomId = message.getString("room_id", "")
+
+        if (characterId.isEmpty() || roomId.isEmpty()) {
+            return JsonObject().put("status", "error").put("error", "Missing character_id or room_id")
+        }
+
+        // Find WorkSite entities in this room
+        val workSiteKeys = stateStore.findAllKeysForType("WorkSite")
+        val workSites = entityController.findByIds(workSiteKeys)
+        val workSite = workSites.values
+            .filterIsInstance<WorkSite>()
+            .firstOrNull { it.roomId == roomId }
+            ?: return JsonObject().put("status", "error").put("error", "No work site here")
+
+        workSite.addWorker(characterId)
+        log.info("Character {} joined work site '{}'", characterId, workSite.name)
+
+        return JsonObject()
+            .put("status", "success")
+            .put("work_site_name", workSite.name)
+            .put("skill_name", workSite.skillName)
+    }
+
+    private suspend fun handleWorkSiteLeave(message: JsonObject): JsonObject {
+        val characterId = message.getString("character_id", "")
+        val roomId = message.getString("room_id", "")
+
+        if (characterId.isEmpty() || roomId.isEmpty()) {
+            return JsonObject().put("status", "error").put("error", "Missing character_id or room_id")
+        }
+
+        val workSiteKeys = stateStore.findAllKeysForType("WorkSite")
+        val workSites = entityController.findByIds(workSiteKeys)
+        val workSite = workSites.values
+            .filterIsInstance<WorkSite>()
+            .firstOrNull { it.roomId == roomId && characterId in it.workers }
+            ?: return JsonObject().put("status", "error").put("error", "You aren't working here")
+
+        workSite.removeWorker(characterId)
+        log.info("Character {} left work site '{}'", characterId, workSite.name)
+
+        return JsonObject()
+            .put("status", "success")
+            .put("work_site_name", workSite.name)
+    }
+
     private suspend fun handlePresence(message: JsonObject) {
+        val event = message.getString("event", "")
+        val characterId = message.getString("character_id", "")
+        val isNpc = message.getBoolean("is_npc", false)
+        val roomId = message.getString("room_id", "")
+
+        // Remove departing players from work sites
+        if (event == "departed" && !isNpc && characterId.isNotEmpty() && roomId.isNotEmpty()) {
+            removeWorkerFromSites(characterId, roomId)
+        }
+
+        // Notify NPC brains
         val occupants = message.getJsonArray("occupants") ?: return
         if (occupants.isEmpty) return
 
-        // Collect all NPC IDs from the occupants list
         val npcIds = (0 until occupants.size())
             .map { occupants.getJsonObject(it) }
             .filter { it.getBoolean("is_npc", false) }
@@ -453,6 +544,20 @@ class GameMessageController @Inject constructor(
                 brain.onPresence(character, message)
             } catch (e: Exception) {
                 log.error("Brain '${character.brainType}' onPresence error for ${character.evenniaName}: ${e.message}")
+            }
+        }
+    }
+
+    private suspend fun removeWorkerFromSites(characterId: String, roomId: String) {
+        val workSiteKeys = stateStore.findAllKeysForType("WorkSite")
+        if (workSiteKeys.isEmpty()) return
+
+        val workSites = entityController.findByIds(workSiteKeys)
+        for ((_, entity) in workSites) {
+            val site = entity as? WorkSite ?: continue
+            if (site.roomId == roomId && characterId in site.workers) {
+                site.removeWorker(characterId)
+                log.info("Removed departed player {} from work site '{}'", characterId, site.name)
             }
         }
     }

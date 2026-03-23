@@ -61,6 +61,14 @@ class CmdAttack(Command):
             caller.msg("You can't attack that.")
             return
 
+        if getattr(target.db, 'is_downed', False) or getattr(target.db, 'is_dead', False):
+            caller.msg(f"{target.key} is already down.")
+            return
+
+        if getattr(caller.db, 'is_downed', False):
+            caller.msg("|rYou're too injured to fight.|n")
+            return
+
         # Lock movement immediately so the player can't walk away before
         # Minare's combat_lock agent command arrives
         caller.db.in_combat = True
@@ -155,6 +163,7 @@ class CmdEscape(Command):
         def on_escape(response):
             success = response.get('success', False)
             if success:
+                caller.db.in_combat = False
                 caller.msg("|GYou break free and escape!|n")
             else:
                 caller.msg("|rYou try to escape but can't break free!|n")

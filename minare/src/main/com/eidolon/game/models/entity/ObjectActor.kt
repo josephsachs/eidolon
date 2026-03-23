@@ -88,8 +88,12 @@ class ObjectActor : Entity() {
 
     @FixedTask
     suspend fun act() {
-        when (actorType) {
-            "exploding_hazard" -> actExplodingHazard()
+        try {
+            when (actorType) {
+                "exploding_hazard" -> actExplodingHazard()
+            }
+        } catch (e: Exception) {
+            log.error("act failed for ObjectActor {} (type={}): {}", _id, actorType, e.message)
         }
     }
 
@@ -99,7 +103,7 @@ class ObjectActor : Entity() {
 
         if (nextActionAt == 0L) {
             nextActionAt = now + randomInterval()
-            entityController.saveProperties(_id!!, JsonObject()
+            entityController.saveProperties(_id, JsonObject()
                 .put("nextActionAt", nextActionAt))
             return
         }
@@ -128,7 +132,7 @@ class ObjectActor : Entity() {
 
         lastAction = now
         nextActionAt = now + randomInterval()
-        entityController.saveProperties(_id!!, JsonObject()
+        entityController.saveProperties(_id, JsonObject()
             .put("lastAction", lastAction)
             .put("nextActionAt", nextActionAt))
     }

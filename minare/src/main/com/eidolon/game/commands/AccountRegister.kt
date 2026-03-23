@@ -43,7 +43,7 @@ class AccountRegister @Inject constructor(
         account.evenniaAccountId = evenniaAccountId
         entityController.create(account)
 
-        crossLinkRegistry.link("Account", account._id!!, evenniaAccountId)
+        crossLinkRegistry.link("Account", account._id, evenniaAccountId)
 
         log.info("Created Account for Evennia account {}: {}", evenniaAccountId, account._id)
         return JsonObject()

@@ -8,6 +8,7 @@ import eidolon.game.models.entity.agent.EvenniaCharacter
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
+import kotlin.math.ceil
 import kotlin.math.floor
 
 @Singleton
@@ -17,7 +18,33 @@ class SkillEvent @Inject constructor(
     private val log = LoggerFactory.getLogger(SkillEvent::class.java)
 
     companion object {
-        const val DEFAULT_COOLDOWN_MS = 2000L
+        const val DEFAULT_COOLDOWN_MS = 30_000L
+    }
+
+    /**
+     * Check whether a skill is on cooldown for a character.
+     * Returns a response with status "ready" or "cooldown" (with remaining_seconds).
+     */
+    suspend fun checkCooldown(characterId: String, skillName: String): JsonObject {
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("status", "error").put("error", "Character not found")
+
+        val skill = character.skills.firstOrNull { it.name == skillName }
+        val lastUsed = skill?.lastUsed ?: 0L
+        val now = System.currentTimeMillis()
+        val elapsed = now - lastUsed
+
+        if (elapsed < DEFAULT_COOLDOWN_MS) {
+            val remainingMs = DEFAULT_COOLDOWN_MS - elapsed
+            val remainingSec = ceil(remainingMs / 1000.0).toInt()
+            return JsonObject()
+                .put("status", "cooldown")
+                .put("skill_name", skillName)
+                .put("remaining_seconds", remainingSec)
+        }
+
+        return JsonObject().put("status", "ready").put("skill_name", skillName)
     }
 
     suspend fun execute(message: JsonObject): JsonObject {
@@ -39,7 +66,12 @@ class SkillEvent @Inject constructor(
 
         // Cooldown check
         if (now - oldSkill.lastUsed < DEFAULT_COOLDOWN_MS) {
-            return JsonObject().put("status", "cooldown").put("skill_name", skillName)
+            val remainingMs = DEFAULT_COOLDOWN_MS - (now - oldSkill.lastUsed)
+            val remainingSec = ceil(remainingMs / 1000.0).toInt()
+            return JsonObject()
+                .put("status", "cooldown")
+                .put("skill_name", skillName)
+                .put("remaining_seconds", remainingSec)
         }
 
         val oldLevel = oldSkill.level
