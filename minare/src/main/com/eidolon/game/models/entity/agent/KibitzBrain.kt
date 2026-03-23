@@ -4,6 +4,9 @@ import com.eidolon.clients.ModelAPI
 import com.eidolon.game.models.entity.Room
 import com.minare.controller.EntityController
 import io.vertx.core.json.JsonObject
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import org.slf4j.LoggerFactory
 import kotlin.random.Random
 
@@ -12,6 +15,7 @@ class KibitzBrain(
     private val modelAPI: ModelAPI
 ) : Brain {
     private val log = LoggerFactory.getLogger(KibitzBrain::class.java)
+    private val scope = CoroutineScope(Dispatchers.Default)
 
     override val brainType: String = "kibitz"
 
@@ -30,31 +34,29 @@ class KibitzBrain(
         val roomEntities = entityController.findByIds(listOf(roomId))
         val room = roomEntities[roomId] as? Room ?: return
 
-        /**entityController.saveProperties(character._id,
-            JsonObject()
-                .put("lastThought", System.currentTimeMillis())
-        )**/ // But not really, because the real use of lastThought is for a more
-        // complex and rare decision-making thought process that doesn't exist yet.
-
         val echoCount = room.echoes.size()
         if (echoCount <= 3) return
         if (Random.nextInt(100) >= COMMENTARY_CHANCE) return
 
+        // Mark acted now to prevent re-triggering while the API call is in flight
+        entityController.saveProperties(character._id,
+            JsonObject().put("lastActed", System.currentTimeMillis()))
+
         val systemPrompt = buildSystemPrompt(character,
             "You are overhearing conversation in a room. React briefly in character (one short sentence, no quotes).")
-
         val echoSummary = formatEchoes(room.echoes, 8)
+        val charName = character.evenniaName
+        val charId = character._id
 
-        try {
-            val response = modelAPI.query(systemPrompt, echoSummary).await()
-            character.say(roomId, response.trim())
-            log.info("KibitzBrain: {} said '{}'", character.evenniaName, response.trim())
-            entityController.saveProperties(character._id,
-                JsonObject()
-                    .put("lastActed", System.currentTimeMillis())
-            )
-        } catch (e: Exception) {
-            log.warn("KibitzBrain: ModelAPI failed for {}: {}", character.evenniaName, e.message)
+        // Fire and forget — don't block the turn loop
+        scope.launch {
+            try {
+                val response = modelAPI.query(systemPrompt, echoSummary).await()
+                character.say(roomId, response.trim())
+                log.info("KibitzBrain: {} said '{}'", charName, response.trim())
+            } catch (e: Exception) {
+                log.warn("KibitzBrain: ModelAPI failed for {}: {}", charName, e.message)
+            }
         }
     }
 
@@ -67,16 +69,18 @@ class KibitzBrain(
 
         val systemPrompt = buildSystemPrompt(character,
             "A player is speaking to you directly. Respond briefly in character (one short sentence, no quotes).")
-
         val message = "$playerName says to you: $text"
+        val charName = character.evenniaName
 
-        try {
-            val response = modelAPI.query(systemPrompt, message).await()
-            character.say(roomId, response.trim())
-            log.info("KibitzBrain: {} replied to {}: '{}'", character.evenniaName, playerName, response.trim())
-        } catch (e: Exception) {
-            log.warn("KibitzBrain: ModelAPI failed for {}: {}", character.evenniaName, e.message)
-            character.say(roomId, "Hmm? What was that?")
+        scope.launch {
+            try {
+                val response = modelAPI.query(systemPrompt, message).await()
+                character.say(roomId, response.trim())
+                log.info("KibitzBrain: {} replied to {}: '{}'", charName, playerName, response.trim())
+            } catch (e: Exception) {
+                log.warn("KibitzBrain: ModelAPI failed for {}: {}", charName, e.message)
+                character.say(roomId, "Hmm? What was that?")
+            }
         }
     }
 
