@@ -16,6 +16,8 @@ import com.eidolon.clients.ModelAPI
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.minare.controller.EntityController
+import com.eidolon.game.evennia.CrossLinkRegistry
+import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.ItemRegistry
 import eidolon.game.models.entity.agent.BrainRegistry
@@ -76,12 +78,14 @@ class GameModule : AbstractModule() {
         entityController: EntityController,
         modelAPI: ModelAPI,
         combatService: CombatService,
-        itemRegistry: ItemRegistry
+        itemRegistry: ItemRegistry,
+        evenniaCommUtils: EvenniaCommUtils,
+        crossLinkRegistry: CrossLinkRegistry
     ): BrainRegistry {
         val registry = BrainRegistry()
         registry.register(IdleBrain())
         registry.register(KibitzBrain(entityController, modelAPI))
-        registry.register(FeralBrain(entityController, combatService))
+        registry.register(FeralBrain(entityController, combatService, evenniaCommUtils, crossLinkRegistry))
         registry.register(VendorBrain(entityController, itemRegistry))
         return registry
     }

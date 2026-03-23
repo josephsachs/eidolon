@@ -52,6 +52,19 @@
     "price": { "currency": "dollar", "amount": 200 }
   },
   {
+    "id": "restraint-arm",
+    "name": "Restraint arm",
+    "description": "A hydraulic clamp arm designed for patient restraint. Crushes with mechanical indifference.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 30,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 10,
+    "critModifier": -2.0,
+    "price": { "currency": "dollar", "amount": 0 }
+  },
+  {
     "id": "leather-vest",
     "name": "Leather vest",
     "description": "A stiff leather vest, sun-cracked but still good for stopping a blade.",

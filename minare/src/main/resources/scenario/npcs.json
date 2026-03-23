@@ -28,6 +28,27 @@
     }
   },
   {
+    "name": "Nanny",
+    "shortDescription": "a hulking robot in a nurse's cap",
+    "description": "A seven-foot industrial robot squeezed into a dented white chassis. Someone has bolted a nurse's cap to its head and painted a red cross on its chest plate. Its hydraulic arms end in padded clamps designed for patient restraint. A speaker in its throat emits a continuous low hum that might once have been a lullaby. Its targeting optics are scratched but functional.",
+    "brainType": "feral",
+    "room": "security-station",
+    "equipment": {
+      "MAIN_HAND": "restraint-arm"
+    },
+    "attributes": {
+      "strength": 90,
+      "agility": 20,
+      "toughness": 95,
+      "intellect": 5,
+      "imagination": 5,
+      "discipline": 50,
+      "charisma": 5,
+      "empathy": 5,
+      "wits": 30
+    }
+  },
+  {
     "name": "Earl",
     "shortDescription": "a heavyset man behind a folding table",
     "description": "A heavyset man in an orange jumpsuit sits behind a folding table piled with dubious merchandise. He has somehow set up shop in the middle of a prison riot. He watches you with shrewd, calculating eyes.",

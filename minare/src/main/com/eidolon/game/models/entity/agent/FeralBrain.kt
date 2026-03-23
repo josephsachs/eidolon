@@ -1,13 +1,18 @@
 package eidolon.game.models.entity.agent
 
+import com.eidolon.game.evennia.CrossLinkRegistry
+import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.service.CombatService
 import com.minare.controller.EntityController
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
+import kotlin.random.Random
 
 class FeralBrain(
     private val entityController: EntityController,
-    private val combatService: CombatService
+    private val combatService: CombatService,
+    private val evenniaCommUtils: EvenniaCommUtils,
+    private val crossLinkRegistry: CrossLinkRegistry
 ) : Brain {
     private val log = LoggerFactory.getLogger(FeralBrain::class.java)
 
@@ -30,6 +35,11 @@ class FeralBrain(
             // Stale combatId — combat ended or we're the only member. Clear it.
             combatService.clearStaleCombatProperties(character._id!!)
         }
+
+        // Not in combat — maybe wander (~20% chance per turn)
+        if (character.combatId.isEmpty() && Random.nextInt(5) == 0) {
+            wander(character)
+        }
     }
 
     private suspend fun onDuring(character: EvenniaCharacter) {
@@ -37,7 +47,6 @@ class FeralBrain(
 
         // Ensure we're in attack mode with a valid target
         if (character.combatMode != "attack" || character.targetId.isEmpty()) {
-            // Find a target in the combat
             val combat = combatService.findCombatForCharacter(character._id!!) ?: return
             val allChars = entityController.findByIds(combat.members)
             val target = allChars.values
@@ -48,6 +57,14 @@ class FeralBrain(
                 combatService.setAttackMode(character._id!!, target._id!!)
             }
         }
+    }
+
+    private suspend fun wander(character: EvenniaCharacter) {
+        val evenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", character._id!!) ?: return
+        evenniaCommUtils.sendAgentCommand(JsonObject()
+            .put("action", "npc_move")
+            .put("character_evennia_id", evenniaId))
+        log.info("${character.evenniaName} wanders to a new room")
     }
 
     override suspend fun onPresence(character: EvenniaCharacter, event: JsonObject) {
@@ -62,8 +79,16 @@ class FeralBrain(
         val roomId = event.getString("room_id", "")
         if (roomId.isEmpty()) return
 
-        combatService.createCombat(roomId, character._id!!, arriverId)
-        log.info("${character.evenniaName} attacks arriving player $arriverId!")
+        // Join existing combat in this room if there is one, otherwise create new
+        val existingCombat = combatService.findCombatInRoom(roomId)
+        if (existingCombat != null) {
+            combatService.joinCombat(existingCombat._id!!, character._id!!)
+            combatService.setAttackMode(character._id!!, arriverId)
+            log.info("${character.evenniaName} joins combat to attack arriving player $arriverId!")
+        } else {
+            combatService.createCombat(roomId, character._id!!, arriverId)
+            log.info("${character.evenniaName} attacks arriving player $arriverId!")
+        }
     }
 
     override suspend fun onPlayerInteraction(character: EvenniaCharacter, interaction: JsonObject) {

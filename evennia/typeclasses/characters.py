@@ -169,6 +169,7 @@ class AgentCharacter(Character):
         'vendor_buy': '_handle_vendor_buy',
         'vendor_sell': '_handle_vendor_sell',
         'create_item': '_handle_create_item',
+        'npc_move': '_handle_npc_move',
     }
 
     def at_object_creation(self):
@@ -493,6 +494,37 @@ class AgentCharacter(Character):
             char_obj.db.in_combat = False
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_combat_unlock: {e}")
+
+    def _handle_npc_move(self, command):
+        """Move an NPC to a random connected room via a random exit."""
+        character_evennia_id = command.get('character_evennia_id')
+        if not character_evennia_id:
+            logger.log_err("_handle_npc_move: missing character_evennia_id")
+            return
+
+        try:
+            from evennia.objects.models import ObjectDB
+            import random
+            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
+
+            if not char_obj.location:
+                return
+
+            # Find all exits from current room
+            exits = [
+                obj for obj in char_obj.location.contents
+                if obj.destination and obj.destination != char_obj.location
+            ]
+            if not exits:
+                return
+
+            chosen_exit = random.choice(exits)
+            char_obj.move_to(chosen_exit.destination, quiet=False)
+            logger.log_info(
+                f"NPC '{char_obj.key}' wandered to {chosen_exit.destination.key}"
+            )
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_npc_move: {e}")
 
     def _handle_combat_msg(self, command):
         """Send a combat message to a room."""
