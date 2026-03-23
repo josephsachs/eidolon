@@ -32,7 +32,7 @@ data class Hardpoint(
 ) : Serializable
 
 data class HealthData(
-    val hardpoints: List<Hardpoint> = HardpointName.entries.map { Hardpoint(name = it) },
+    val hardpoints: List<Hardpoint> = HardpointName.values().map { Hardpoint(name = it) },
     val vitality: Int = 100,
     val concentration: Int = 100,
     val stamina: Int = 100,

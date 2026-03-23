@@ -5,7 +5,7 @@ import java.io.Serializable
 data class CombatScores(
     val attack: Double = 0.0,
     val defense: Double = 0.0,
-    val control: Double = 0.0
+    val mobility: Double = 0.0
 ) : Serializable
 
 data class CombatEquilibrium(

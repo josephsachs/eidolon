@@ -51,7 +51,7 @@ class DamageService @Inject constructor(
      * Apply a burn effect: damage a random hardpoint and reduce vitality.
      */
     fun applyBurn(health: HealthData, hardpointDamage: Int, vitalityDamage: Int): HealthData {
-        val target = HardpointName.entries[Random.nextInt(HardpointName.entries.size)]
+        val target = HardpointName.values().let { it[Random.nextInt(it.size)] }
         val afterHardpoint = applyHardpointDamage(health, target, hardpointDamage)
         return applyVitalityDamage(afterHardpoint, vitalityDamage)
     }
@@ -115,6 +115,26 @@ class DamageService @Inject constructor(
     }
 
     /**
+     * Flag a character as downed (incapacitated) in Evennia.
+     */
+    suspend fun flagDowned(character: EvenniaCharacter) {
+        evenniaCommUtils.sendAgentCommand(JsonObject()
+            .put("action", "flag_downed")
+            .put("character_evennia_id", character.evenniaId))
+        log.info("Character {} ({}) has been downed", character.evenniaName, character._id)
+    }
+
+    /**
+     * Clear downed state in Evennia (character recovered).
+     */
+    suspend fun flagUndowned(character: EvenniaCharacter) {
+        evenniaCommUtils.sendAgentCommand(JsonObject()
+            .put("action", "flag_undowned")
+            .put("character_evennia_id", character.evenniaId))
+        log.info("Character {} ({}) has recovered from downed", character.evenniaName, character._id)
+    }
+
+    /**
      * Handle an apply_damage message from Evennia.
      * Evennia has already resolved room occupancy — we just apply the damage.
      */
@@ -153,16 +173,24 @@ class DamageService @Inject constructor(
                 .put("statusEffects", updatedEffects))
         }
 
-        // Death save if vitality drops to zero or below
         if (updatedHealth.vitality <= 0) {
-            val result = rollDeathSave(character)
-            if (!result.passed) {
-                character.dead = true
-                flagDead(character)
+            if (character.downed) {
+                // Already downed, taking more damage — death save
+                val result = rollDeathSave(character)
+                if (!result.passed) {
+                    character.dead = true
+                    flagDead(character)
+                    entityController.saveState(characterId, JsonObject()
+                        .put("dead", true))
+                    entityController.saveProperties(characterId, JsonObject()
+                        .put("statusEffects", listOf<StatusEffect>()))
+                }
+            } else {
+                // First time at 0 — downed, not dead
+                character.downed = true
+                flagDowned(character)
                 entityController.saveState(characterId, JsonObject()
-                    .put("dead", true))
-                entityController.saveProperties(characterId, JsonObject()
-                    .put("statusEffects", listOf<StatusEffect>()))
+                    .put("downed", true))
             }
         }
 

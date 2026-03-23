@@ -103,7 +103,7 @@ class CombatService @Inject constructor(
                 // Find a new target from remaining members
                 val newTarget = updatedMembers
                     .filter { it != memberId }
-                    .firstNotNullOfOrNull { id -> getCharacter(id)?.takeIf { !it.dead }?.let { id } }
+                    .firstNotNullOfOrNull { id -> getCharacter(id)?.takeIf { !it.dead && !it.downed }?.let { id } }
 
                 if (newTarget != null && member.isNpc) {
                     entityController.saveProperties(memberId, JsonObject()
@@ -181,15 +181,21 @@ class CombatService @Inject constructor(
             return JsonObject().put("success", true).put("status", "not_in_combat")
         }
 
-        // Skill check: Escape skill + Agility + position bonus
-        val escapeSkill = character.skills.firstOrNull { it.name == "Escape" }
-        val skillLevel = escapeSkill?.level ?: 0.0
-        val agility = character.attributes.agility
-        val positionBonus = (character.combatEquilibrium.position - 50.0) * 0.5
-        val threshold = (skillLevel + agility) / 3.0 + positionBonus
-        val roll = kotlin.random.Random.nextInt(100)
+        // Mobility-based escape: Escape skill + agility + wits + tempo + tactics
+        val escapeSkill = character.skills.firstOrNull { it.name == "Escape" }?.level ?: 0.0
+        val tacticsSkill = character.skills.firstOrNull { it.name == "Tactics" }?.level ?: 0.0
+        val eq = character.combatEquilibrium
 
-        val escaped = roll < threshold
+        // Mobility score: escape skill + agility + wits + tempo + position bonus
+        val mobility = escapeSkill * 1.5 +
+                character.attributes.agility * 0.3 +
+                character.attributes.wits * 0.2 +
+                eq.tempo * 0.2 +
+                tacticsSkill * 0.2 +
+                (eq.position - 50.0) * 0.3
+
+        val roll = kotlin.random.Random.nextInt(100)
+        val escaped = roll < mobility
 
         // Escape skill gain regardless of outcome
         if (!character.isNpc) {

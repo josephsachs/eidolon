@@ -14,7 +14,7 @@ class FeralBrain(
     override val brainType: String = "feral"
 
     override suspend fun onTurn(character: EvenniaCharacter, phase: String, context: JsonObject) {
-        if (character.dead) return
+        if (character.dead || character.downed) return
 
         when (phase) {
             "BEFORE" -> onBefore(character)
@@ -42,7 +42,7 @@ class FeralBrain(
             val allChars = entityController.findByIds(combat.members)
             val target = allChars.values
                 .filterIsInstance<EvenniaCharacter>()
-                .firstOrNull { it._id != character._id && !it.dead }
+                .firstOrNull { it._id != character._id && !it.dead && !it.downed }
 
             if (target != null) {
                 combatService.setAttackMode(character._id!!, target._id!!)
@@ -51,7 +51,7 @@ class FeralBrain(
     }
 
     override suspend fun onPresence(character: EvenniaCharacter, event: JsonObject) {
-        if (character.dead) return
+        if (character.dead || character.downed) return
         if (character.combatId.isNotEmpty()) return
         if (event.getString("event") != "arrived") return
 

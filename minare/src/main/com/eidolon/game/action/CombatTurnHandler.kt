@@ -6,7 +6,10 @@ import com.eidolon.game.models.CombatEquilibrium
 import com.eidolon.game.models.CombatScores
 import com.eidolon.game.models.HardpointName
 import com.eidolon.game.models.HealthData
+import com.eidolon.game.models.HitLocationTable
+import com.eidolon.game.models.ItemTemplate
 import com.eidolon.game.commands.SkillEvent
+import com.eidolon.game.service.CombatMessageService
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
 import com.eidolon.game.service.ItemRegistry
@@ -30,7 +33,8 @@ class CombatTurnHandler @Inject constructor(
     private val evenniaCommUtils: EvenniaCommUtils,
     private val crossLinkRegistry: CrossLinkRegistry,
     private val itemRegistry: ItemRegistry,
-    private val skillEvent: SkillEvent
+    private val skillEvent: SkillEvent,
+    private val combatMessageService: CombatMessageService
 ) {
     private val log = LoggerFactory.getLogger(CombatTurnHandler::class.java)
 
@@ -57,8 +61,12 @@ class CombatTurnHandler @Inject constructor(
     private suspend fun handleBefore(combat: Combat) {
         val members = loadMembers(combat.members)
 
+        // Increment round
+        val newRound = combat.currentRound + 1
+        entityController.saveProperties(combat._id!!, JsonObject().put("currentRound", newRound))
+
         for ((id, character) in members) {
-            if (character.dead) continue
+            if (character.dead || character.downed) continue
             val scores = calculateScores(character)
             turnScores[id] = scores
         }
@@ -68,7 +76,7 @@ class CombatTurnHandler @Inject constructor(
         val members = loadMembers(combat.members)
 
         for ((id, character) in members) {
-            if (character.dead) continue
+            if (character.dead || character.downed) continue
 
             when (character.combatMode) {
                 "attack" -> resolveAttack(combat, id, character, members)
@@ -83,7 +91,7 @@ class CombatTurnHandler @Inject constructor(
 
         // Drift equilibrium toward center
         for ((id, character) in members) {
-            if (character.dead) continue
+            if (character.dead || character.downed) continue
 
             val eq = character.combatEquilibrium
             val newBalance = driftToward(eq.balance, 50.0, 2.0)
@@ -96,9 +104,39 @@ class CombatTurnHandler @Inject constructor(
             }
         }
 
+        // Second-strikes: defenders/avoiders with high position may counter
+        for ((id, character) in members) {
+            if (character.dead || character.downed) continue
+            if (character.combatMode !in listOf("defend", "avoid")) continue
+
+            val eq = character.combatEquilibrium
+            if (eq.position < 65.0) continue
+
+            val attackerTargetingMe = members.entries
+                .firstOrNull { it.value.targetId == id && it.key != id && !it.value.dead && !it.value.downed }
+            val targetEntry = attackerTargetingMe ?: continue
+            val targetId = targetEntry.key
+            val target = targetEntry.value
+
+            val scores = turnScores[id] ?: continue
+            val defScores = turnScores[targetId] ?: continue
+
+            val counterRoll = Random.nextInt(100) + scores.attack * 0.6
+            val dodgeRoll = defScores.defense * 0.5
+
+            if (counterRoll > dodgeRoll) {
+                val weapon = character.equipment["MAIN_HAND"]?.let { itemRegistry.get(it) }
+                val weaponType = weapon?.weaponType?.ifEmpty { null } ?: "hand-to-hand"
+                applyDamage(combat, id, character, targetId, target, weapon, 0.6, "second_strike")
+            }
+
+            // Spend position for the counter
+            shiftEquilibrium(id, character, positionShift = -15.0)
+        }
+
         // Send status feedback once per member
         for ((id, character) in members) {
-            if (character.dead) continue
+            if (character.dead || character.downed) continue
             val adversaryId = character.targetId
             if (adversaryId.isEmpty()) continue
             val adversary = members[adversaryId] ?: continue
@@ -106,9 +144,9 @@ class CombatTurnHandler @Inject constructor(
                 buildFeedback(character, adversary, adversary.health, "status"))
         }
 
-        // Remove dead members
+        // Remove dead and downed members
         for ((id, character) in members) {
-            if (character.dead && id in combat.members) {
+            if ((character.dead || character.downed) && id in combat.members) {
                 combatService.removeMember(combat._id!!, id)
             }
         }
@@ -128,7 +166,7 @@ class CombatTurnHandler @Inject constructor(
         if (targetId.isEmpty()) return
 
         val target = members[targetId]
-        if (target == null || target.dead) {
+        if (target == null || target.dead || target.downed) {
             entityController.saveProperties(attackerId, JsonObject().put("targetId", ""))
             return
         }
@@ -138,8 +176,19 @@ class CombatTurnHandler @Inject constructor(
         val attackerEq = attacker.combatEquilibrium
         val targetEq = target.combatEquilibrium
 
+        val weapon = attacker.equipment["MAIN_HAND"]?.let { itemRegistry.get(it) }
+        val weaponType = weapon?.weaponType?.ifEmpty { null } ?: "hand-to-hand"
+        val weaponSkillName = weapon?.skill?.ifEmpty { null } ?: "Hand-to-Hand"
+        val weaponSkill = attacker.skills.firstOrNull { it.name == weaponSkillName }?.level ?: 0.0
+
+        // Attack costs balance (weapon-specific)
+        val balanceCost = weapon?.balanceCost ?: 3
+        shiftEquilibrium(attackerId, attacker, balanceShift = -balanceCost.toDouble())
+        // Compute effective attacker equilibrium after balance cost
+        val effectiveBalance = (attackerEq.balance - balanceCost).coerceIn(0.0, 100.0)
+
         // Position affects to-hit
-        val toHitBonus = (targetEq.position - 50.0) * -0.3 // low target position = easier to hit
+        val toHitBonus = (targetEq.position - 50.0) * -0.3
 
         // Free block/dodge from defender's position
         val freeDefense = when (target.combatMode) {
@@ -159,22 +208,30 @@ class CombatTurnHandler @Inject constructor(
         val defenseRoll = defenseScores.defense + modeDefenseBonus + freeDefense
 
         if (attackRoll > defenseRoll) {
-            // Hit — balance affects damage output
-            val balanceMod = attackerEq.balance / 50.0 // 0.0 to 2.0 multiplier
+            // Hit — apply damage with crit check
+            val balanceMod = effectiveBalance / 50.0
 
-            // Weapon damage: equipped weapon adds base damage, otherwise hand-to-hand
-            val weapon = attacker.equipment["MAIN_HAND"]?.let { itemRegistry.get(it) }
+            val critChance = calculateCritChance(weaponSkill, weapon, attackerEq)
+            val isCrit = Random.nextInt(100) < critChance
+
+            // Unarmed untrained penalty: 0.5x without crit
+            var damageMod = 1.0
+            if (isCrit) {
+                damageMod = 1.5
+            } else if (weapon == null && weaponSkill < 2.0) {
+                damageMod = 0.5
+            }
+
             val weaponDamage = weapon?.damage ?: 0
-            val baseDamage = ((attacker.attributes.strength / 10.0 + weaponDamage) * balanceMod).toInt().coerceAtLeast(1)
+            val baseDamage = ((attacker.attributes.strength / 8.0 + weaponDamage + 2) * balanceMod * damageMod).toInt().coerceAtLeast(1)
 
-            // Pick hit location
-            val hitLocation = HardpointName.entries[Random.nextInt(HardpointName.entries.size)]
+            val hitLocation = HitLocationTable.roll()
 
             // Armor absorption on the hit location
             val armor = target.equipment[hitLocation.name]?.let { itemRegistry.get(it) }
             val absorption = armor?.absorption ?: 0
             val hardpointDamage = (baseDamage - absorption).coerceAtLeast(1)
-            val vitalityDamage = hardpointDamage / 2
+            val vitalityDamage = hardpointDamage * 2
 
             var updatedHealth = damageService.applyHardpointDamage(target.health, hitLocation, hardpointDamage)
             updatedHealth = damageService.applyVitalityDamage(updatedHealth, vitalityDamage)
@@ -190,44 +247,98 @@ class CombatTurnHandler @Inject constructor(
 
             entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
 
-            // Death check
-            if (updatedHealth.vitality <= 0) {
-                val deathResult = damageService.rollDeathSave(target)
-                if (!deathResult.passed) {
-                    entityController.saveState(targetId, JsonObject()
-                        .put("dead", true)
-                        .put("health", healthToJson(updatedHealth)))
-                    damageService.flagDead(target)
-                }
+            // Downed check (vitality <= 0)
+            if (updatedHealth.vitality <= 0 && !target.downed) {
+                entityController.saveState(targetId, JsonObject()
+                    .put("downed", true)
+                    .put("health", healthToJson(updatedHealth)))
+                damageService.flagDowned(target)
+                sendCombatMessage(combat.roomId, "|R${target.evenniaName} collapses!|n")
+
+                appendCombatLog(combat, JsonObject()
+                    .put("round", combat.currentRound)
+                    .put("phase", "DURING")
+                    .put("type", "downed")
+                    .put("targetId", targetId)
+                    .put("targetName", target.evenniaName)
+                    .put("timestamp", System.currentTimeMillis()))
             }
 
-            // Tempo drives position gain on attack
-            val positionGain = (attackerEq.tempo - 50.0) * 0.1
+            // Equilibrium shifts on hit
+            val tacticsSkill = attacker.skills.firstOrNull { it.name == "Tactics" }?.level ?: 0.0
+            val targetTactics = target.skills.firstOrNull { it.name == "Tactics" }?.level ?: 0.0
+            val rhythmSkill = attacker.skills.firstOrNull { it.name == "Rhythm" }?.level ?: 0.0
+            val targetRhythm = target.skills.firstOrNull { it.name == "Rhythm" }?.level ?: 0.0
+
+            val positionGain = (attackerEq.tempo - 50.0) * 0.1 + (tacticsSkill - targetTactics) * 0.3
+            val tempoGain = 5.0 + (rhythmSkill - targetRhythm) * 0.3
+
             shiftEquilibrium(attackerId, attacker,
-                tempoShift = 5.0,
+                tempoShift = tempoGain,
                 positionShift = positionGain)
 
-            // Target loses balance (staggered) — low balance risks falling
             shiftEquilibrium(targetId, target,
                 balanceShift = -5.0,
                 tempoShift = -2.0)
 
-            // Clash message
-            sendCombatMessage(combat.roomId,
-                "|R${attacker.evenniaName} lands a blow on ${target.evenniaName}!|n")
+            // Combat message
+            val msg = if (isCrit) {
+                combatMessageService.critHitMessage(weaponType, attacker.evenniaName, target.evenniaName, hitLocation)
+            } else {
+                combatMessageService.hitMessage(weaponType, attacker.evenniaName, target.evenniaName, hitLocation)
+            }
+            sendCombatMessage(combat.roomId, "|R$msg|n")
+
+            // Combat log
+            appendCombatLog(combat, JsonObject()
+                .put("round", combat.currentRound)
+                .put("phase", "DURING")
+                .put("type", if (isCrit) "crit_hit" else "attack_hit")
+                .put("attackerId", attackerId)
+                .put("targetId", targetId)
+                .put("attackerName", attacker.evenniaName)
+                .put("targetName", target.evenniaName)
+                .put("hitLocation", hitLocation.name)
+                .put("hardpointDamage", hardpointDamage)
+                .put("vitalityDamage", vitalityDamage)
+                .put("weaponType", weaponType)
+                .put("crit", isCrit)
+                .put("timestamp", System.currentTimeMillis()))
 
         } else {
-            // Miss — attacker loses balance from overcommitting
-            shiftEquilibrium(attackerId, attacker, balanceShift = -3.0)
+            // Miss
+            val isCritMiss = attackRoll < (defenseRoll - 30)
 
-            sendCombatMessage(combat.roomId,
-                "|y${attacker.evenniaName} swings at ${target.evenniaName} but misses.|n")
+            if (isCritMiss) {
+                // Critical miss: defender gets position/tempo boost, attacker loses extra balance
+                if (target.combatMode in listOf("defend", "avoid")) {
+                    shiftEquilibrium(targetId, target, positionShift = 8.0, tempoShift = 5.0)
+                }
+                shiftEquilibrium(attackerId, attacker, balanceShift = -8.0)
+
+                val msg = combatMessageService.critMissMessage(attacker.evenniaName, target.evenniaName)
+                sendCombatMessage(combat.roomId, "|y$msg|n")
+            } else {
+                val msg = combatMessageService.missMessage(weaponType, attacker.evenniaName, target.evenniaName)
+                sendCombatMessage(combat.roomId, "|y$msg|n")
+            }
+
+            // Combat log
+            appendCombatLog(combat, JsonObject()
+                .put("round", combat.currentRound)
+                .put("phase", "DURING")
+                .put("type", if (isCritMiss) "crit_miss" else "attack_miss")
+                .put("attackerId", attackerId)
+                .put("targetId", targetId)
+                .put("attackerName", attacker.evenniaName)
+                .put("targetName", target.evenniaName)
+                .put("weaponType", weaponType)
+                .put("crit", isCritMiss)
+                .put("timestamp", System.currentTimeMillis()))
         }
 
         // Weapon skill gain for attacker (hit = success, miss = failure)
         if (!attacker.isNpc) {
-            val weapon = attacker.equipment["MAIN_HAND"]?.let { itemRegistry.get(it) }
-            val weaponSkillName = weapon?.skill?.ifEmpty { null } ?: "Hand-to-Hand"
             val outcome = if (attackRoll > defenseRoll) "success" else "failure"
             skillEvent.execute(JsonObject()
                 .put("character_id", attackerId)
@@ -236,21 +347,84 @@ class CombatTurnHandler @Inject constructor(
         }
     }
 
+    /**
+     * Apply damage from a hit (used by both resolveAttack and second-strikes).
+     * damageMult scales the damage (1.0 for normal, 0.6 for counter-attacks).
+     */
+    private suspend fun applyDamage(
+        combat: Combat,
+        attackerId: String,
+        attacker: EvenniaCharacter,
+        targetId: String,
+        target: EvenniaCharacter,
+        weapon: ItemTemplate?,
+        damageMult: Double,
+        logType: String
+    ) {
+        val attackerEq = attacker.combatEquilibrium
+        val balanceMod = attackerEq.balance / 50.0
+        val weaponType = weapon?.weaponType?.ifEmpty { null } ?: "hand-to-hand"
+
+        val weaponDamage = weapon?.damage ?: 0
+        val baseDamage = ((attacker.attributes.strength / 8.0 + weaponDamage + 2) * balanceMod * damageMult).toInt().coerceAtLeast(1)
+
+        val hitLocation = HitLocationTable.roll()
+
+        val armor = target.equipment[hitLocation.name]?.let { itemRegistry.get(it) }
+        val absorption = armor?.absorption ?: 0
+        val hardpointDamage = (baseDamage - absorption).coerceAtLeast(1)
+        val vitalityDamage = hardpointDamage * 2
+
+        var updatedHealth = damageService.applyHardpointDamage(target.health, hitLocation, hardpointDamage)
+        updatedHealth = damageService.applyVitalityDamage(updatedHealth, vitalityDamage)
+
+        val staminaCost = hardpointDamage + if (hitLocation == HardpointName.TORSO) hardpointDamage / 2 else 0
+        updatedHealth = updatedHealth.copy(stamina = (updatedHealth.stamina - staminaCost).coerceAtLeast(0))
+
+        if (hitLocation == HardpointName.HEAD) {
+            updatedHealth = updatedHealth.copy(concentration = (updatedHealth.concentration - hardpointDamage).coerceAtLeast(0))
+        }
+
+        entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
+
+        if (updatedHealth.vitality <= 0 && !target.downed) {
+            entityController.saveState(targetId, JsonObject()
+                .put("downed", true)
+                .put("health", healthToJson(updatedHealth)))
+            damageService.flagDowned(target)
+            sendCombatMessage(combat.roomId, "|R${target.evenniaName} collapses!|n")
+        }
+
+        val msg = combatMessageService.hitMessage(weaponType, attacker.evenniaName, target.evenniaName, hitLocation)
+        sendCombatMessage(combat.roomId, "|M$msg|n")
+
+        appendCombatLog(combat, JsonObject()
+            .put("round", combat.currentRound)
+            .put("phase", "AFTER")
+            .put("type", logType)
+            .put("attackerId", attackerId)
+            .put("targetId", targetId)
+            .put("attackerName", attacker.evenniaName)
+            .put("targetName", target.evenniaName)
+            .put("hitLocation", hitLocation.name)
+            .put("hardpointDamage", hardpointDamage)
+            .put("vitalityDamage", vitalityDamage)
+            .put("weaponType", weaponType)
+            .put("timestamp", System.currentTimeMillis()))
+    }
+
     private suspend fun resolveDefend(
         combat: Combat,
         defenderId: String,
         defender: EvenniaCharacter
     ) {
         val eq = defender.combatEquilibrium
-
-        // Defending builds position (tactical advantage)
-        // Balance affects position gain on defense
         val balanceMod = eq.balance / 50.0
         val positionGain = 3.0 * balanceMod
 
         shiftEquilibrium(defenderId, defender,
             positionShift = positionGain,
-            balanceShift = 2.0) // defending also steadies balance
+            balanceShift = 2.0)
     }
 
     private suspend fun resolveAvoid(
@@ -258,8 +432,6 @@ class CombatTurnHandler @Inject constructor(
         avoiderId: String,
         avoider: EvenniaCharacter
     ) {
-        // Position affects escape odds — tracked for the escape skill check
-        // Avoiding builds position and steadies tempo
         shiftEquilibrium(avoiderId, avoider,
             positionShift = 3.0,
             tempoShift = 2.0,
@@ -268,25 +440,33 @@ class CombatTurnHandler @Inject constructor(
 
     // --- Score calculation ---
 
-    /**
-     * Equilibrium effects:
-     * - Balance: damage output, position gain on defense, save vs falling
-     * - Position: to-hit, free block/dodge, escape odds when avoiding
-     * - Tempo: position gain on attack, save vs disordered
-     */
     private fun calculateScores(character: EvenniaCharacter): CombatScores {
-        // Use weapon skill if equipped, otherwise Hand-to-Hand
         val weapon = character.equipment["MAIN_HAND"]?.let { itemRegistry.get(it) }
         val skillName = weapon?.skill?.ifEmpty { null } ?: "Hand-to-Hand"
         val skill = character.skills.firstOrNull { it.name == skillName }
         val weaponSkill = skill?.level ?: 0.0
         val eq = character.combatEquilibrium
 
+        val tacticsSkill = character.skills.firstOrNull { it.name == "Tactics" }?.level ?: 0.0
+
         val attack = weaponSkill + character.attributes.strength * 0.5 + eq.balance * 0.2
         val defense = weaponSkill + character.attributes.agility * 0.5 + eq.position * 0.2
-        val control = weaponSkill + character.attributes.wits * 0.5 + eq.tempo * 0.2
+        val mobility = weaponSkill * 0.3 + character.attributes.agility * 0.3 +
+                character.attributes.wits * 0.2 + eq.tempo * 0.2 + tacticsSkill * 0.2
 
-        return CombatScores(attack, defense, control)
+        return CombatScores(attack, defense, mobility)
+    }
+
+    private fun calculateCritChance(
+        weaponSkill: Double,
+        weapon: ItemTemplate?,
+        attackerEq: CombatEquilibrium
+    ): Double {
+        val base = 5.0
+        val skillBonus = weaponSkill * 0.5
+        val weaponBonus = weapon?.critModifier ?: 0.0
+        val tempoBonus = (attackerEq.tempo - 50.0) * 0.1
+        return (base + skillBonus + weaponBonus + tempoBonus).coerceIn(1.0, 40.0)
     }
 
     // --- Combat feedback messaging ---
@@ -336,9 +516,18 @@ class CombatTurnHandler @Inject constructor(
             vitality >= 70 -> "scratched up"
             vitality >= 50 -> "battered"
             vitality >= 30 -> "badly wounded"
-            vitality >= 10 -> "on the edge of death"
-            else -> "barely standing"
+            vitality >= 10 -> "on the edge"
+            vitality > 0 -> "barely standing"
+            else -> "down"
         }
+    }
+
+    // --- Combat log ---
+
+    private suspend fun appendCombatLog(combat: Combat, entry: JsonObject) {
+        val updatedLog = combat.combatLog + entry
+        entityController.saveProperties(combat._id!!, JsonObject()
+            .put("combatLog", JsonArray(updatedLog)))
     }
 
     // --- Equilibrium helpers ---

@@ -2,6 +2,7 @@ package eidolon.game.models.entity.agent
 
 import com.eidolon.game.models.Attributes
 import com.eidolon.game.models.CombatEquilibrium
+import com.eidolon.game.models.HardpointStatus
 import com.eidolon.game.models.HealthData
 import com.eidolon.game.models.Skill
 import com.eidolon.game.models.StatusEffect
@@ -81,6 +82,10 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Mutable
     var dead: Boolean = false
 
+    @State
+    @Mutable
+    var downed: Boolean = false
+
     /**
      * The Room entity _id the character is currently in.
      */
@@ -143,8 +148,10 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
         if (updated.vitality < max) {
             updated = updated.copy(vitality = (updated.vitality + regenRate).coerceAtMost(max))
         } else {
+            // Hardpoint hp regens but status never improves — cap hp at current status ceiling
             val updatedHardpoints = updated.hardpoints.map { hp ->
-                if (hp.hp < max) hp.copy(hp = (hp.hp + regenRate).coerceAtMost(max))
+                val statusCeiling = statusHpCeiling(hp.status)
+                if (hp.hp < statusCeiling) hp.copy(hp = (hp.hp + regenRate).coerceAtMost(statusCeiling))
                 else hp
             }
             updated = updated.copy(hardpoints = updatedHardpoints)
@@ -160,7 +167,31 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
         if (updated != health) {
             health = updated
             entityController.saveState(_id!!, JsonObject().put("health", healthToJson()))
+
+            // Recover from downed if vitality is back above 0
+            if (downed && updated.vitality > 0) {
+                downed = false
+                entityController.saveState(_id!!, JsonObject()
+                    .put("downed", false)
+                    .put("health", healthToJson()))
+                damageService.flagUndowned(this)
+            }
         }
+    }
+
+    /**
+     * Max hp a hardpoint can regen to without crossing into a better status tier.
+     * Matches the thresholds in DamageService.statusForHp().
+     */
+    private fun statusHpCeiling(status: HardpointStatus): Int = when (status) {
+        HardpointStatus.HEALTHY   -> 100
+        HardpointStatus.SCRATCHED -> 89
+        HardpointStatus.BRUISED   -> 74
+        HardpointStatus.WOUNDED   -> 59
+        HardpointStatus.INJURED   -> 39
+        HardpointStatus.BROKEN    -> 24
+        HardpointStatus.CRITICAL  -> 9
+        HardpointStatus.DESTROYED -> 0
     }
 
     // --- Status processing ---
@@ -185,19 +216,30 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
         // Prune expired effects
         val remaining = damageService.pruneExpired(statusEffects, now)
 
-        // Death save check
+        // Downed/death check
         if (updatedHealth.vitality <= 0) {
-            val result = damageService.rollDeathSave(this)
-            if (!result.passed) {
-                dead = true
+            if (downed) {
+                // Already downed, taking more damage — death save
+                val result = damageService.rollDeathSave(this)
+                if (!result.passed) {
+                    dead = true
+                    health = updatedHealth
+                    damageService.flagDead(this)
+                    entityController.saveState(_id!!, JsonObject()
+                        .put("dead", true)
+                        .put("health", healthToJson()))
+                    entityController.saveProperties(_id!!, JsonObject()
+                        .put("statusEffects", listOf<StatusEffect>()))
+                    return
+                }
+            } else {
+                // First time at 0 — downed
+                downed = true
                 health = updatedHealth
-                damageService.flagDead(this)
+                damageService.flagDowned(this)
                 entityController.saveState(_id!!, JsonObject()
-                    .put("dead", true)
+                    .put("downed", true)
                     .put("health", healthToJson()))
-                entityController.saveProperties(_id!!, JsonObject()
-                    .put("statusEffects", listOf<StatusEffect>()))
-                return
             }
         }
 

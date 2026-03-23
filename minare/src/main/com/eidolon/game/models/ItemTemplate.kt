@@ -16,5 +16,8 @@ data class ItemTemplate(
     val damage: Int = 0,         // weapon base damage
     val absorption: Int = 0,     // armor damage absorption
     val skill: String = "",      // weapon skill name (e.g. "Blades", "Firearms")
-    val price: ItemPrice = ItemPrice()
+    val price: ItemPrice = ItemPrice(),
+    val balanceCost: Int = 5,
+    val critModifier: Double = 0.0,
+    val weaponType: String = ""
 ) : Serializable

@@ -35,6 +35,12 @@ class Combat : Entity() {
     @Property
     var emptyAt: Long = 0L
 
+    @Property
+    var currentRound: Int = 0
+
+    @Property
+    var combatLog: List<JsonObject> = emptyList()
+
     companion object {
         const val EXPIRY_DELAY_MS = 5_000L
     }

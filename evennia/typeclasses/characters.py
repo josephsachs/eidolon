@@ -159,6 +159,8 @@ class AgentCharacter(Character):
         'hazard_msg': '_handle_hazard_msg',
         'hazard_damage': '_handle_hazard_damage',
         'flag_dead': '_handle_flag_dead',
+        'flag_downed': '_handle_flag_downed',
+        'flag_undowned': '_handle_flag_undowned',
         'combat_lock': '_handle_combat_lock',
         'combat_unlock': '_handle_combat_unlock',
         'combat_msg': '_handle_combat_msg',
@@ -417,6 +419,54 @@ class AgentCharacter(Character):
             )
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_flag_dead: {e}")
+
+    def _handle_flag_downed(self, command):
+        """Flag a character as downed (incapacitated but alive)."""
+        character_evennia_id = command.get('character_evennia_id')
+        if not character_evennia_id:
+            logger.log_err("_handle_flag_downed: missing character_evennia_id")
+            return
+
+        try:
+            from evennia.objects.models import ObjectDB
+            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
+            char_obj.db.is_downed = True
+            char_obj.locks.add("cmd:false()")
+            if char_obj.location:
+                char_obj.location.msg_contents(
+                    f"|R{char_obj.key} collapses!|n",
+                    exclude=[char_obj]
+                )
+                char_obj.msg("|RYou collapse, unable to continue.|n")
+            logger.log_info(
+                f"AgentCharacter: Flagged '{char_obj.key}' (id={character_evennia_id}) as downed"
+            )
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_flag_downed: {e}")
+
+    def _handle_flag_undowned(self, command):
+        """Clear downed state — character has recovered."""
+        character_evennia_id = command.get('character_evennia_id')
+        if not character_evennia_id:
+            logger.log_err("_handle_flag_undowned: missing character_evennia_id")
+            return
+
+        try:
+            from evennia.objects.models import ObjectDB
+            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
+            char_obj.db.is_downed = False
+            char_obj.locks.add("cmd:true()")
+            if char_obj.location:
+                char_obj.location.msg_contents(
+                    f"|G{char_obj.key} stirs and gets back up.|n",
+                    exclude=[char_obj]
+                )
+                char_obj.msg("|GYou pull yourself together and get back up.|n")
+            logger.log_info(
+                f"AgentCharacter: Cleared downed for '{char_obj.key}' (id={character_evennia_id})"
+            )
+        except (ObjectDB.DoesNotExist, ValueError) as e:
+            logger.log_err(f"_handle_flag_undowned: {e}")
 
     def _handle_combat_lock(self, command):
         """Lock a character's movement for combat."""

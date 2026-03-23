@@ -35,7 +35,10 @@ class ItemRegistry {
                 damage = obj.getInteger("damage", 0),
                 absorption = obj.getInteger("absorption", 0),
                 skill = obj.getString("skill", ""),
-                price = price
+                price = price,
+                balanceCost = obj.getInteger("balanceCost", 5),
+                critModifier = obj.getDouble("critModifier", 0.0),
+                weaponType = obj.getString("weaponType", "")
             )
             templates[template.id] = template
         }

@@ -102,7 +102,7 @@ class GameTurnHandler @Inject constructor(
         if (turnPhase !== null) properties.put("turnPhase", turnPhase.name)
         if (isProcessing !== null) properties.put("turnProcessing", isProcessing)
 
-        entityController.saveProperties(game._id!!, properties)
+        entityController.saveProperties(game._id, properties)
     }
 
     private suspend fun incrementGameTurn() {
@@ -111,7 +111,7 @@ class GameTurnHandler @Inject constructor(
         val properties = JsonObject().put("currentTurn", (game.currentTurn + 1))
 
         try {
-            entityController.saveProperties(game._id!!, properties)
+            entityController.saveProperties(game._id, properties)
         }
         finally {
             val gameTest = getGame()

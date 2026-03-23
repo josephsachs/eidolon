@@ -7,6 +7,9 @@
     "slot": "MAIN_HAND",
     "damage": 8,
     "skill": "Blades",
+    "weaponType": "blade",
+    "balanceCost": 4,
+    "critModifier": 2.0,
     "price": { "currency": "dollar", "amount": 5 }
   },
   {
@@ -17,6 +20,9 @@
     "slot": "MAIN_HAND",
     "damage": 15,
     "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 6,
+    "critModifier": 0.0,
     "price": { "currency": "dollar", "amount": 30 }
   },
   {
@@ -27,6 +33,9 @@
     "slot": "MAIN_HAND",
     "damage": 20,
     "skill": "Firearms",
+    "weaponType": "firearm",
+    "balanceCost": 3,
+    "critModifier": 5.0,
     "price": { "currency": "dollar", "amount": 50 }
   },
   {
@@ -37,6 +46,9 @@
     "slot": "MAIN_HAND",
     "damage": 35,
     "skill": "Firearms",
+    "weaponType": "firearm",
+    "balanceCost": 8,
+    "critModifier": 3.0,
     "price": { "currency": "dollar", "amount": 200 }
   },
   {
