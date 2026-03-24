@@ -60,10 +60,14 @@ class CombatTurnHandler @Inject constructor(
                 log.info("Combat $id DURING phase: ${combat.members.size} members in room ${combat.roomId}")
             }
 
-            when (turnPhase) {
-                GameTurnHandler.Companion.TurnPhase.BEFORE -> handleBefore(combat)
-                GameTurnHandler.Companion.TurnPhase.DURING -> handleDuring(combat)
-                GameTurnHandler.Companion.TurnPhase.AFTER -> handleAfter(combat)
+            try {
+                when (turnPhase) {
+                    GameTurnHandler.Companion.TurnPhase.BEFORE -> handleBefore(combat)
+                    GameTurnHandler.Companion.TurnPhase.DURING -> handleDuring(combat)
+                    GameTurnHandler.Companion.TurnPhase.AFTER -> handleAfter(combat)
+                }
+            } catch (e: Exception) {
+                log.error("CombatTurnHandler error for combat {} phase {}: {}", id, turnPhase, e.message, e)
             }
         }
 

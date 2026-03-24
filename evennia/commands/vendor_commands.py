@@ -97,9 +97,7 @@ class CmdBuy(Command):
             return
 
         def on_buy(response):
-            if response.get('success'):
-                caller.msg(f"|gYou purchase {response.get('item_name', item_name)} from {vendor.key}.|n")
-            else:
+            if not response.get('success'):
                 caller.msg(f"|r{response.get('reason', 'Purchase failed.')}|n")
 
         _get_client().send_with_callback(
@@ -197,11 +195,7 @@ class CmdSell(Command):
             return
 
         def on_sell(response):
-            if response.get('success'):
-                payout = response.get('payout', 0)
-                currency = response.get('currency', 'currency')
-                caller.msg(f"|gYou sell {item.key} to {vendor.key} for {payout} {currency}.|n")
-            else:
+            if not response.get('success'):
                 caller.msg(f"|r{response.get('reason', 'Sale failed.')}|n")
 
         _get_client().send_with_callback(

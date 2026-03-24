@@ -29,16 +29,20 @@ class CharacterTurnHandler @Inject constructor(
         for ((key, character) in evenniaCharacters) {
             character as EvenniaCharacter
 
-            when (turnPhase) {
-                GameTurnHandler.Companion.TurnPhase.BEFORE -> {
-                    characterSkillService.doSkillTurnCalcBefore(character)
+            try {
+                when (turnPhase) {
+                    GameTurnHandler.Companion.TurnPhase.BEFORE -> {
+                        characterSkillService.doSkillTurnCalcBefore(character)
+                    }
+                    GameTurnHandler.Companion.TurnPhase.DURING -> {
+                        characterSkillService.doSkillTurnCalcDuring(character)
+                    }
+                    GameTurnHandler.Companion.TurnPhase.AFTER -> {
+                        characterSkillService.doSkillTurnCalcAfter(character)
+                    }
                 }
-                GameTurnHandler.Companion.TurnPhase.DURING -> {
-                    characterSkillService.doSkillTurnCalcDuring(character)
-                }
-                GameTurnHandler.Companion.TurnPhase.AFTER -> {
-                    characterSkillService.doSkillTurnCalcAfter(character)
-                }
+            } catch (e: Exception) {
+                log.error("Skill turn calc error for ${character.evenniaName} phase $turnPhase: ${e.message}")
             }
 
             if (character.isNpc && character.brainType.isNotEmpty()) {

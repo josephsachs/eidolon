@@ -8,7 +8,6 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
 import com.minare.core.entity.factories.EntityFactory
-import com.minare.core.storage.interfaces.StateStore
 import eidolon.game.controller.GameChannelController
 import eidolon.game.models.entity.agent.EvenniaCharacter
 import io.vertx.core.json.JsonObject
@@ -18,13 +17,15 @@ import org.slf4j.LoggerFactory
 class CombatService @Inject constructor(
     private val entityController: EntityController,
     private val entityFactory: EntityFactory,
-    private val stateStore: StateStore,
     private val evenniaCommUtils: EvenniaCommUtils,
     private val crossLinkRegistry: CrossLinkRegistry,
     private val gameChannelController: GameChannelController,
     private val skillEvent: SkillEvent
 ) {
     private val log = LoggerFactory.getLogger(CombatService::class.java)
+
+    // roomId -> combatId index, maintained by createCombat/removeMember/cleanup
+    private val combatsByRoom = mutableMapOf<String, String>()
 
     suspend fun createCombat(roomId: String, attackerId: String, targetId: String): Combat {
         val combat = entityFactory.createEntity(Combat::class.java) as Combat
@@ -53,6 +54,7 @@ class CombatService @Inject constructor(
         val targetName = getCharacterName(targetId)
         sendCombatMessage(roomId, "|R** Combat breaks out! $attackerName attacks $targetName! **|n")
 
+        combatsByRoom[roomId] = combat._id
         log.info("Combat created: ${combat._id} in room $roomId, members: [$attackerId, $targetId]")
         return combat
     }
@@ -116,6 +118,7 @@ class CombatService @Inject constructor(
                 clearCombatProperties(lastMemberId)
             }
             entityController.saveState(combatId, JsonObject().put("members", emptyList<String>()))
+            combatsByRoom.remove(combat.roomId)
             sendCombatMessage(combat.roomId, "|wThe fighting subsides.|n")
         }
 
@@ -123,13 +126,17 @@ class CombatService @Inject constructor(
     }
 
     suspend fun findCombatInRoom(roomId: String): Combat? {
-        val combatKeys = stateStore.findAllKeysForType("Combat")
-        if (combatKeys.isEmpty()) return null
-        val combats = entityController.findByIds(combatKeys)
-        return combats.values
-            .filterIsInstance<Combat>()
-            .filter { it.roomId == roomId && it.members.isNotEmpty() }
-            .maxByOrNull { it.members.size }
+        val combatId = combatsByRoom[roomId] ?: return null
+        val combat = getCombat(combatId) ?: run {
+            // Stale index entry — combat was deleted externally
+            combatsByRoom.remove(roomId)
+            return null
+        }
+        if (combat.members.isEmpty()) {
+            combatsByRoom.remove(roomId)
+            return null
+        }
+        return combat
     }
 
     suspend fun findCombatForCharacter(characterId: String): Combat? {
@@ -143,6 +150,7 @@ class CombatService @Inject constructor(
         for (memberId in combat.members) {
             clearCombatProperties(memberId)
         }
+        combatsByRoom.remove(combat.roomId)
         entityController.delete(combatId)
         log.info("Combat $combatId cleaned up")
     }
