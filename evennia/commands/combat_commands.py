@@ -70,7 +70,7 @@ class CmdAttack(Command):
             return
 
         # Lock movement immediately so the player can't walk away before
-        # Minare's combat_lock agent command arrives
+        # Minare's combatId delta broadcast arrives
         caller.db.in_combat = True
 
         caller.msg(f"|RYou move to attack {target.key}!|n")

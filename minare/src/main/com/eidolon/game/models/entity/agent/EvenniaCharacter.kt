@@ -109,7 +109,8 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Property
     var targetId: String = ""
 
-    @Property
+    @State
+    @Mutable
     var combatId: String = ""
 
     @Property

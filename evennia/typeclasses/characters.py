@@ -164,8 +164,6 @@ class AgentCharacter(Character):
         'flag_dead': '_handle_flag_dead',
         'flag_downed': '_handle_flag_downed',
         'flag_undowned': '_handle_flag_undowned',
-        'combat_lock': '_handle_combat_lock',
-        'combat_unlock': '_handle_combat_unlock',
         'combat_msg': '_handle_combat_msg',
         'archive_object': '_handle_archive_object',
         'combat_feedback': '_handle_combat_feedback',
@@ -456,32 +454,6 @@ class AgentCharacter(Character):
                 _on_character_downed_changed(char_obj, True, False)
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_flag_undowned: {e}")
-
-    def _handle_combat_lock(self, command):
-        """Lock a character's movement for combat."""
-        character_evennia_id = command.get('character_evennia_id')
-        if not character_evennia_id:
-            logger.log_err("_handle_combat_lock: missing character_evennia_id")
-            return
-        try:
-            from evennia.objects.models import ObjectDB
-            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            char_obj.db.in_combat = True
-        except (ObjectDB.DoesNotExist, ValueError) as e:
-            logger.log_err(f"_handle_combat_lock: {e}")
-
-    def _handle_combat_unlock(self, command):
-        """Unlock a character's movement after combat."""
-        character_evennia_id = command.get('character_evennia_id')
-        if not character_evennia_id:
-            logger.log_err("_handle_combat_unlock: missing character_evennia_id")
-            return
-        try:
-            from evennia.objects.models import ObjectDB
-            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            char_obj.db.in_combat = False
-        except (ObjectDB.DoesNotExist, ValueError) as e:
-            logger.log_err(f"_handle_combat_unlock: {e}")
 
     def _handle_npc_move(self, command):
         """Move an NPC to a random connected room via a random exit."""
