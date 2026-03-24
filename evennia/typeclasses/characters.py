@@ -402,79 +402,58 @@ class AgentCharacter(Character):
                 logger.log_err(f"_handle_hazard_damage: failed to send apply_damage: {e}")
 
     def _handle_flag_dead(self, command):
-        """Flag a character as dead — apply death locks and notify the room."""
+        """Flag a character as dead.
+
+        Delegates to the same sync hooks used by entity delta updates,
+        so there is exactly one code path for dead/downed enforcement.
+        """
         character_evennia_id = command.get('character_evennia_id')
         if not character_evennia_id:
             logger.log_err("_handle_flag_dead: missing character_evennia_id")
             return
-
         try:
             from evennia.objects.models import ObjectDB
+            from server.conf.minare_client import _on_character_dead_changed
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            char_obj.db.is_dead = True
-            char_obj.locks.add("cmd:false();move:false()")
-            if char_obj.location:
-                char_obj.location.msg_contents(
-                    f"|R{char_obj.key} collapses, lifeless.|n",
-                    exclude=[char_obj]
-                )
-                char_obj.msg("|RDarkness closes in. You have died.|n")
-            logger.log_info(
-                f"AgentCharacter: Flagged '{char_obj.key}' (id={character_evennia_id}) as dead"
-            )
+            old_val = char_obj.db.is_dead
+            if not old_val:
+                _on_character_dead_changed(char_obj, old_val, True)
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_flag_dead: {e}")
 
     def _handle_flag_downed(self, command):
-        """Flag a character as downed (incapacitated but alive)."""
+        """Flag a character as downed (incapacitated but alive).
+
+        Delegates to the same sync hook used by entity delta updates.
+        """
         character_evennia_id = command.get('character_evennia_id')
         if not character_evennia_id:
             logger.log_err("_handle_flag_downed: missing character_evennia_id")
             return
-
         try:
             from evennia.objects.models import ObjectDB
+            from server.conf.minare_client import _on_character_downed_changed
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
             if not char_obj.db.is_downed:
-                # Only act if entity sync hasn't already handled this
-                char_obj.db.is_downed = True
-                char_obj.db.in_combat = False
-                char_obj.locks.add("cmd:false()")
-                if char_obj.location:
-                    char_obj.location.msg_contents(
-                        f"|R{char_obj.key} collapses!|n",
-                        exclude=[char_obj]
-                    )
-                    char_obj.msg("|RYou collapse, unable to continue.|n")
-            logger.log_info(
-                f"AgentCharacter: Flagged '{char_obj.key}' (id={character_evennia_id}) as downed"
-            )
+                _on_character_downed_changed(char_obj, False, True)
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_flag_downed: {e}")
 
     def _handle_flag_undowned(self, command):
-        """Clear downed state — character has recovered."""
+        """Clear downed state — character has recovered.
+
+        Delegates to the same sync hook used by entity delta updates.
+        """
         character_evennia_id = command.get('character_evennia_id')
         if not character_evennia_id:
             logger.log_err("_handle_flag_undowned: missing character_evennia_id")
             return
-
         try:
             from evennia.objects.models import ObjectDB
+            from server.conf.minare_client import _on_character_downed_changed
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
             if char_obj.db.is_downed:
-                # Only act if entity sync hasn't already handled this
-                char_obj.db.is_downed = False
-                char_obj.locks.add("cmd:true()")
-                if char_obj.location:
-                    char_obj.location.msg_contents(
-                        f"|G{char_obj.key} stirs and gets back up.|n",
-                        exclude=[char_obj]
-                    )
-                    char_obj.msg("|GYou pull yourself together and get back up.|n")
-            logger.log_info(
-                f"AgentCharacter: Cleared downed for '{char_obj.key}' (id={character_evennia_id})"
-            )
+                _on_character_downed_changed(char_obj, True, False)
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_flag_undowned: {e}")
 
