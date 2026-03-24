@@ -29,7 +29,6 @@ class Spawner : Entity() {
 
     @Property var lastSpawnedAt: Long = 0
 
-    @FixedTask
     suspend fun tick() {
         val start = System.currentTimeMillis()
         try {

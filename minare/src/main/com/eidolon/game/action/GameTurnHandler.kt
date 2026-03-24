@@ -22,6 +22,7 @@ class GameTurnHandler @Inject constructor(
     private val eventBusUtils: EventBusUtils,
     private val characterTurnHandler: CharacterTurnHandler,
     private val combatTurnHandler: CombatTurnHandler,
+    private val worldTurnHandler: WorldTurnHandler,
     private val ingameTimeController: IngameTimeController,
     private val sharedGameState: eidolon.game.action.cache.SharedGameState,
     private val vertx: Vertx
@@ -42,6 +43,7 @@ class GameTurnHandler @Inject constructor(
         setGameProperties(TurnPhase.BEFORE, true)
         characterTurnHandler.handleTurn(TurnPhase.BEFORE)
         combatTurnHandler.handleTurn(TurnPhase.BEFORE)
+        worldTurnHandler.handleTurn(TurnPhase.BEFORE)
         val elapsed = System.currentTimeMillis() - start
         if (elapsed > 100) log.warn("TURN_LOOP: ACT phase took ${elapsed}ms")
     }
@@ -51,6 +53,7 @@ class GameTurnHandler @Inject constructor(
         setGameProperties(TurnPhase.DURING, true)
         characterTurnHandler.handleTurn(TurnPhase.DURING)
         combatTurnHandler.handleTurn(TurnPhase.DURING)
+        worldTurnHandler.handleTurn(TurnPhase.DURING)
         val elapsed = System.currentTimeMillis() - start
         if (elapsed > 100) log.warn("TURN_LOOP: EXECUTE phase took ${elapsed}ms")
     }
@@ -60,6 +63,7 @@ class GameTurnHandler @Inject constructor(
         setGameProperties(TurnPhase.AFTER, true)
         characterTurnHandler.handleTurn(TurnPhase.AFTER)
         combatTurnHandler.handleTurn(TurnPhase.AFTER)
+        worldTurnHandler.handleTurn(TurnPhase.AFTER)
         val elapsed = System.currentTimeMillis() - start
         if (elapsed > 100) log.warn("TURN_LOOP: RESOLVE phase took ${elapsed}ms")
     }

@@ -30,6 +30,9 @@ class CharacterTurnHandler @Inject constructor(
             character as EvenniaCharacter
 
             try {
+                character.regenerate()
+                character.processStatuses()
+
                 when (turnPhase) {
                     GameTurnHandler.Companion.TurnPhase.BEFORE -> {
                         characterSkillService.doSkillTurnCalcBefore(character)
@@ -42,7 +45,7 @@ class CharacterTurnHandler @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                log.error("Skill turn calc error for ${character.evenniaName} phase $turnPhase: ${e.message}")
+                log.error("Character turn error for ${character.evenniaName} phase $turnPhase: ${e.message}")
             }
 
             if (character.isNpc && character.brainType.isNotEmpty()) {

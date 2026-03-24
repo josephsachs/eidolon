@@ -69,7 +69,6 @@ class ExplorableExit : Entity(), Serializable {
     @Mutable
     var contributions: JsonArray = JsonArray()
 
-    @FixedTask
     suspend fun progressExploration() {
         val start = System.currentTimeMillis()
         try {
@@ -87,9 +86,9 @@ class ExplorableExit : Entity(), Serializable {
             }
 
             if (validExplorers.isEmpty()) {
-                if (validExplorers.size != explorers.size) {
+                if (explorers.isNotEmpty()) {
                     entityController.saveState(_id, JsonObject()
-                        .put("explorers", validExplorers.toList()))
+                        .put("explorers", emptyList<String>()))
                 }
                 return
             }

@@ -42,6 +42,8 @@ class CombatTurnHandler @Inject constructor(
     private val turnScores = mutableMapOf<String, CombatScores>()
     private val downedThisRound = mutableSetOf<String>()
     private val pendingEquilibrium = mutableMapOf<String, CombatEquilibrium>()
+    // Batched combat log entries: combatId -> list of entries to flush at end of phase
+    private val pendingCombatLog = mutableMapOf<String, MutableList<JsonObject>>()
 
     suspend fun handleTurn(turnPhase: GameTurnHandler.Companion.TurnPhase) {
         if (turnPhase == GameTurnHandler.Companion.TurnPhase.DURING) {
@@ -105,7 +107,7 @@ class CombatTurnHandler @Inject constructor(
             }
         }
 
-        flushEquilibrium()
+        flushCombatLog(combat)
     }
 
     private suspend fun handleAfter(combat: Combat) {
@@ -115,7 +117,7 @@ class CombatTurnHandler @Inject constructor(
         for ((id, character) in members) {
             if (character.dead || character.downed) continue
 
-            val eq = character.combatEquilibrium
+            val eq = pendingEquilibrium[id] ?: character.combatEquilibrium
             val newBalance = driftToward(eq.balance, 50.0, 2.0)
             val newPosition = driftToward(eq.position, 50.0, 2.0)
             val newTempo = driftToward(eq.tempo, 50.0, 2.0)
@@ -191,6 +193,7 @@ class CombatTurnHandler @Inject constructor(
             }
         }
 
+        flushCombatLog(combat)
         turnScores.clear()
     }
 
@@ -299,10 +302,9 @@ class CombatTurnHandler @Inject constructor(
                 updatedHealth = updatedHealth.copy(concentration = (updatedHealth.concentration - hardpointDamage).coerceAtLeast(0))
             }
 
-            entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
-
             // Downed check (vitality <= 0)
-            if (updatedHealth.vitality <= 0 && !target.downed && targetId !in downedThisRound) {
+            val isDowned = updatedHealth.vitality <= 0 && !target.downed && targetId !in downedThisRound
+            if (isDowned) {
                 downedThisRound.add(targetId)
                 entityController.saveState(targetId, JsonObject()
                     .put("downed", true)
@@ -316,6 +318,8 @@ class CombatTurnHandler @Inject constructor(
                     .put("targetId", targetId)
                     .put("targetName", target.evenniaName)
                     .put("timestamp", System.currentTimeMillis()))
+            } else {
+                entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
             }
 
             // Equilibrium shifts on hit
@@ -439,14 +443,14 @@ class CombatTurnHandler @Inject constructor(
             updatedHealth = updatedHealth.copy(concentration = (updatedHealth.concentration - hardpointDamage).coerceAtLeast(0))
         }
 
-        entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
-
         if (updatedHealth.vitality <= 0 && !target.downed && targetId !in downedThisRound) {
             downedThisRound.add(targetId)
             entityController.saveState(targetId, JsonObject()
                 .put("downed", true)
                 .put("health", healthToJson(updatedHealth)))
             damageService.flagDowned(target)
+        } else {
+            entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
         }
 
         val msg = combatMessageService.hitMessage(weaponType, attacker.evenniaName, target.evenniaName, hitLocation)
@@ -578,8 +582,14 @@ class CombatTurnHandler @Inject constructor(
 
     // --- Combat log ---
 
-    private suspend fun appendCombatLog(combat: Combat, entry: JsonObject) {
-        val updatedLog = combat.combatLog + entry
+    private fun appendCombatLog(combat: Combat, entry: JsonObject) {
+        pendingCombatLog.getOrPut(combat._id) { mutableListOf() }.add(entry)
+    }
+
+    private suspend fun flushCombatLog(combat: Combat) {
+        val entries = pendingCombatLog.remove(combat._id) ?: return
+        if (entries.isEmpty()) return
+        val updatedLog = combat.combatLog + entries
         entityController.saveProperties(combat._id, JsonObject()
             .put("combatLog", JsonArray(updatedLog)))
     }

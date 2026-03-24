@@ -60,7 +60,6 @@ class Room : Entity(), Serializable, Viewable {
         const val ECHO_TTL_MS: Long = 300_000L
     }
 
-    @FixedTask
     suspend fun forgetEchoes() {
         val start = System.currentTimeMillis()
         try {

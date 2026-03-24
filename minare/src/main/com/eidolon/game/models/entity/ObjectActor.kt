@@ -86,7 +86,6 @@ class ObjectActor : Entity() {
 
     // --- Behavior tasks ---
 
-    @FixedTask
     suspend fun act() {
         val start = System.currentTimeMillis()
         try {

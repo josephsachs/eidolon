@@ -133,7 +133,6 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     // --- Regeneration ---
 
-    @FixedTask
     suspend fun regenerate() {
         val start = System.currentTimeMillis()
         try {
@@ -212,7 +211,6 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     // --- Status processing ---
 
-    @FixedTask
     suspend fun processStatuses() {
         val start = System.currentTimeMillis()
         try {
