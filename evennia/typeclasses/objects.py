@@ -53,6 +53,8 @@ class ObjectParent:
         minare_id = response.get("minare_id", "")
         if minare_id:
             self.db.minare_eo_id = minare_id
+            from server.conf.minare_client import _minare_id_cache
+            _minare_id_cache[minare_id] = self
             # If a domain link was queued before the EO was registered, send it now
             pending = self.ndb._pending_domain_link
             if pending:
@@ -67,6 +69,8 @@ class ObjectParent:
         """
         self.db.minare_domain_id = domain_id
         self.db.minare_domain_type = domain_type
+        from server.conf.minare_client import _minare_id_cache
+        _minare_id_cache[domain_id] = self
         if self.db.minare_eo_id:
             self._send_domain_link(domain_id, domain_type)
         else:

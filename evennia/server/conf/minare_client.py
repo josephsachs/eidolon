@@ -300,11 +300,14 @@ class MinareDownSocketFactory(ReconnectingClientFactory, WebSocketClientFactory)
 # decision itself.
 # ---------------------------------------------------------------------------
 
+# minare_id -> Evennia object cache.  Populated during init sync and updated
+# on cross-link registration.  Avoids O(n) table scans on every delta.
+_minare_id_cache = {}
+
 def _on_character_downed_changed(obj, old_val, new_val):
     """Enforce downed state: lock/unlock commands, notify room."""
     if new_val and not old_val:
         obj.db.is_downed = True
-        obj.db.in_combat = False
         obj.locks.add("cmd:false()")
         if obj.location:
             obj.location.msg_contents(
@@ -329,7 +332,6 @@ def _on_character_dead_changed(obj, old_val, new_val):
     """Enforce dead state: hard-lock commands and movement."""
     if new_val and not old_val:
         obj.db.is_dead = True
-        obj.db.in_combat = False
         obj.locks.add("cmd:false();move:false()")
         if obj.location:
             obj.location.msg_contents(
@@ -478,6 +480,7 @@ def _handle_set_domain_link(msg):
         obj = ObjectDB.objects.get(id=int(evennia_id))
         obj.db.minare_domain_id = domain_entity_id
         obj.db.minare_domain_type = domain_entity_type
+        _minare_id_cache[domain_entity_id] = obj
         logger.log_info(
             f"Minare sync: Set domain link on '{obj.key}' "
             f"(evennia_id={evennia_id}): {domain_entity_type}={domain_entity_id}"
@@ -487,14 +490,21 @@ def _handle_set_domain_link(msg):
 
 
 def find_evennia_object_by_minare_id_cached(typeclass_path, minare_id):
-    """Find an Evennia object by minare_id, importing the typeclass by path."""
+    """Find an Evennia object by minare_id, using the in-memory cache."""
+    obj = _minare_id_cache.get(minare_id)
+    if obj is not None:
+        return obj
+    # Cache miss — fall back to DB scan and populate cache
     from django.utils.module_loading import import_string
     try:
         typeclass = import_string(typeclass_path)
     except ImportError:
         logger.log_err(f"Minare sync: Could not import {typeclass_path}")
         return None
-    return find_evennia_object_by_minare_id(typeclass, minare_id)
+    obj = find_evennia_object_by_minare_id(typeclass, minare_id)
+    if obj:
+        _minare_id_cache[minare_id] = obj
+    return obj
 
 
 def _sync_rooms(minare_entities, protocol):
@@ -516,33 +526,29 @@ def _sync_rooms(minare_entities, protocol):
         logger.log_info("Minare sync: No Room entities in sync data (rooms created via agent commands)")
         return
 
-    # Build lookup: minare_id attribute -> Evennia Room
+    # Build lookup: minare_id attribute -> Evennia Room (also populates cache)
     evennia_rooms_by_minare_id = {}
     for room in EvenniaRoom.objects.all():
         mid = room.db.minare_eo_id
         if mid:
             evennia_rooms_by_minare_id[mid] = room
+            _minare_id_cache[mid] = room
 
-    # Log cross-link status — do NOT create or modify Evennia rooms
+    # Log cross-link status, register cross-links, and populate cache
+    client = get_minare_client()
     for minare_id, entity in minare_rooms.items():
         if minare_id in evennia_rooms_by_minare_id:
             room = evennia_rooms_by_minare_id[minare_id]
-            logger.log_info(f"Minare sync: Room '{room.key}' cross-linked to minare_id={minare_id}")
-        else:
-            logger.log_info(f"Minare sync: Room minare_id={minare_id} has no Evennia counterpart yet")
-
-    # Register cross-links for all synced rooms
-    client = get_minare_client()
-    # Rebuild lookup to include newly created rooms
-    for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_eo_id
-        if mid and mid in minare_rooms:
+            _minare_id_cache[minare_id] = room
             client.send_message({
                 "type": "register_cross_link",
                 "entity_type": "Room",
-                "minare_id": mid,
+                "minare_id": minare_id,
                 "evennia_id": str(room.id),
             })
+            logger.log_info(f"Minare sync: Room '{room.key}' cross-linked to minare_id={minare_id}")
+        else:
+            logger.log_info(f"Minare sync: Room minare_id={minare_id} has no Evennia counterpart yet")
 
 
 def _sync_exits(minare_entities, protocol):
@@ -567,19 +573,21 @@ def _sync_exits(minare_entities, protocol):
         if e.get('type') == 'Room'
     }
 
-    # Map minare_id -> Evennia Room
+    # Map minare_id -> Evennia Room (also populates cache)
     evennia_rooms_by_minare_id = {}
     for room in EvenniaRoom.objects.all():
         mid = room.db.minare_eo_id
         if mid:
             evennia_rooms_by_minare_id[mid] = room
+            _minare_id_cache[mid] = room
 
-    # Map minare_id -> Evennia Exit (existing)
+    # Map minare_id -> Evennia Exit (existing, also populates cache)
     evennia_exits_by_minare_id = {}
     for exit_obj in EvenniaExit.objects.all():
         mid = exit_obj.db.minare_eo_id
         if mid:
             evennia_exits_by_minare_id[mid] = exit_obj
+            _minare_id_cache[mid] = exit_obj
 
     # For each Room, look at its exits state to find source->exit mappings
     for room_minare_id, room_entity in minare_rooms.items():
@@ -613,6 +621,7 @@ def _sync_exits(minare_entities, protocol):
                 )
                 new_exit.db.minare_eo_id = exit_minare_id
                 new_exit.db.desc = exit_state.get('description', '')
+                evennia_exits_by_minare_id[exit_minare_id] = new_exit
                 logger.log_info(
                     f"Minare sync: Created Exit '{direction}' in '{source_evennia_room.key}' "
                     f"-> '{dest_evennia_room.key}'"
@@ -635,11 +644,11 @@ def _sync_exits(minare_entities, protocol):
             exit_obj.db.minare_eo_id = None
             exit_obj.db.minare_archived = True
 
-    # Register cross-links for all synced exits
+    # Register cross-links and populate cache from already-built dict
     client = get_minare_client()
-    for exit_obj in EvenniaExit.objects.all():
-        mid = exit_obj.db.minare_eo_id
-        if mid and mid in minare_exits:
+    for mid, exit_obj in evennia_exits_by_minare_id.items():
+        if mid in minare_exits:
+            _minare_id_cache[mid] = exit_obj
             client.send_message({
                 "type": "register_cross_link",
                 "entity_type": "Exit",

@@ -161,9 +161,6 @@ class AgentCharacter(Character):
         'unlock_exit': '_handle_unlock_exit',
         'hazard_msg': '_handle_hazard_msg',
         'hazard_damage': '_handle_hazard_damage',
-        'flag_dead': '_handle_flag_dead',
-        'flag_downed': '_handle_flag_downed',
-        'flag_undowned': '_handle_flag_undowned',
         'combat_msg': '_handle_combat_msg',
         'archive_object': '_handle_archive_object',
         'combat_feedback': '_handle_combat_feedback',
@@ -398,62 +395,6 @@ class AgentCharacter(Character):
                 })
             except Exception as e:
                 logger.log_err(f"_handle_hazard_damage: failed to send apply_damage: {e}")
-
-    def _handle_flag_dead(self, command):
-        """Flag a character as dead.
-
-        Delegates to the same sync hooks used by entity delta updates,
-        so there is exactly one code path for dead/downed enforcement.
-        """
-        character_evennia_id = command.get('character_evennia_id')
-        if not character_evennia_id:
-            logger.log_err("_handle_flag_dead: missing character_evennia_id")
-            return
-        try:
-            from evennia.objects.models import ObjectDB
-            from server.conf.minare_client import _on_character_dead_changed
-            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            old_val = char_obj.db.is_dead
-            if not old_val:
-                _on_character_dead_changed(char_obj, old_val, True)
-        except (ObjectDB.DoesNotExist, ValueError) as e:
-            logger.log_err(f"_handle_flag_dead: {e}")
-
-    def _handle_flag_downed(self, command):
-        """Flag a character as downed (incapacitated but alive).
-
-        Delegates to the same sync hook used by entity delta updates.
-        """
-        character_evennia_id = command.get('character_evennia_id')
-        if not character_evennia_id:
-            logger.log_err("_handle_flag_downed: missing character_evennia_id")
-            return
-        try:
-            from evennia.objects.models import ObjectDB
-            from server.conf.minare_client import _on_character_downed_changed
-            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            if not char_obj.db.is_downed:
-                _on_character_downed_changed(char_obj, False, True)
-        except (ObjectDB.DoesNotExist, ValueError) as e:
-            logger.log_err(f"_handle_flag_downed: {e}")
-
-    def _handle_flag_undowned(self, command):
-        """Clear downed state — character has recovered.
-
-        Delegates to the same sync hook used by entity delta updates.
-        """
-        character_evennia_id = command.get('character_evennia_id')
-        if not character_evennia_id:
-            logger.log_err("_handle_flag_undowned: missing character_evennia_id")
-            return
-        try:
-            from evennia.objects.models import ObjectDB
-            from server.conf.minare_client import _on_character_downed_changed
-            char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
-            if char_obj.db.is_downed:
-                _on_character_downed_changed(char_obj, True, False)
-        except (ObjectDB.DoesNotExist, ValueError) as e:
-            logger.log_err(f"_handle_flag_undowned: {e}")
 
     def _handle_npc_move(self, command):
         """Move an NPC to a random connected room via a random exit."""

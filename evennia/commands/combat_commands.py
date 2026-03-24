@@ -163,7 +163,7 @@ class CmdEscape(Command):
         def on_escape(response):
             success = response.get('success', False)
             if success:
-                caller.db.in_combat = False
+                # combatId delta broadcast will clear db.in_combat via sync hook
                 caller.msg("|GYou break free and escape!|n")
             else:
                 caller.msg("|rYou try to escape but can't break free!|n")
