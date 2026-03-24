@@ -1,17 +1,17 @@
 [
   {
     "name": "copy machine",
-    "room": "exam-room-1",
-    "description": "A beige office copy machine, circa 1987. Its power light blinks green. A sheet of paper sits in the output tray."
+    "room": "logistix-manager-office",
+    "description": "A beige office copy machine, circa 1987. Its power light blinks green. A sheet of paper sits in the output tray. What this is doing in a logistics warehouse is anyone's guess."
   },
   {
     "name": "sheet of paper",
-    "room": "exam-room-1",
+    "room": "logistix-manager-office",
     "description": "A single sheet of white paper, still warm from the copy machine. It reads: 'MEMORANDUM: All staff must dispose of documents properly. Failure to comply will result in disciplinary action.'"
   },
   {
     "name": "trash can",
-    "room": "garden",
-    "description": "A dented metal trash can with 'THERAPY GARDEN' stenciled on the side. It's mostly empty except for some wilted herb trimmings."
+    "room": "generous-mart",
+    "description": "A plastic trash can with a swinging lid and a Generous Mart bear sticker. Someone has wedged a coffee cup into the lid so it won't close."
   }
 ]

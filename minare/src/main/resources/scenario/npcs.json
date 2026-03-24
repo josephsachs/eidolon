@@ -1,193 +1,501 @@
 [
   {
-    "name": "Dr. Ganz",
-    "shortDescription": "a thin man in a stained lab coat",
-    "description": "A gaunt man in a once-white lab coat, now bearing unidentifiable stains. He peers at you through smudged bifocals with an expression of mild academic interest, as if you were a culture in a petri dish exhibiting unexpected behavior.",
-    "brainType": "kibitz",
-    "room": "exam-room-1"
-  },
-  {
-    "name": "Bee guard",
-    "shortDescription": "a guard in a bee costume",
-    "description": "A stocky figure in a full-body bee costume — fuzzy yellow-and-black stripes, vestigial wings, bobbing antennae. The effect would be comical if not for the crackling electrical weapon holstered at its hip. Its face is hidden behind a mesh visor. It buzzes menacingly.",
+    "name": "Boar",
+    "shortDescription": "a massive feral boar",
+    "description": "A bristle-backed boar the size of a motorcycle, scarred and mud-caked. Its tusks are yellowed and chipped from rooting through volcanic rock. It watches you with small, furious eyes.",
     "brainType": "feral",
-    "room": "security-station",
+    "room": "north-island-wilds-2",
     "equipment": {
-      "MAIN_HAND": "stinger"
+      "MAIN_HAND": "boar-tusks"
     },
     "attributes": {
-      "strength": 75,
-      "agility": 55,
-      "toughness": 80,
-      "intellect": 10,
+      "strength": 80,
+      "agility": 45,
+      "toughness": 85,
+      "intellect": 5,
       "imagination": 5,
-      "discipline": 30,
+      "discipline": 20,
       "charisma": 5,
       "empathy": 5,
-      "wits": 60
+      "wits": 55
     }
   },
   {
-    "name": "Nanny",
-    "shortDescription": "a hulking robot in a nurse's cap",
-    "description": "A seven-foot industrial robot squeezed into a dented white chassis. Someone has bolted a nurse's cap to its head and painted a red cross on its chest plate. Its hydraulic arms end in padded clamps designed for patient restraint. A speaker in its throat emits a continuous low hum that might once have been a lullaby. Its targeting optics are scratched but functional.",
+    "name": "Littleman shadow",
+    "shortDescription": "a darting, child-sized shadow",
+    "description": "A shadow shaped roughly like a small person, but wrong — the proportions shift when you're not looking directly at it. It moves in quick, angular jerks, as if animated frame by frame. Where it touches the ground, the surface darkens.",
     "brainType": "feral",
-    "room": "security-station",
+    "room": "radio-tower-pathway-1",
     "equipment": {
-      "MAIN_HAND": "restraint-arm"
+      "MAIN_HAND": "shadow-touch"
+    },
+    "attributes": {
+      "strength": 30,
+      "agility": 85,
+      "toughness": 35,
+      "intellect": 20,
+      "imagination": 60,
+      "discipline": 10,
+      "charisma": 5,
+      "empathy": 5,
+      "wits": 80
+    }
+  },
+  {
+    "name": "Bigman shadow",
+    "shortDescription": "a towering, lumbering shadow",
+    "description": "A shadow the size and shape of a large man, but stretched at the edges, trailing wisps of darkness like smoke. It moves with terrible patience. Its outline flickers — sometimes it has arms, sometimes more.",
+    "brainType": "feral",
+    "room": "radio-tower-pathway-3",
+    "equipment": {
+      "MAIN_HAND": "shadow-slam"
     },
     "attributes": {
       "strength": 90,
-      "agility": 20,
-      "toughness": 95,
-      "intellect": 5,
-      "imagination": 5,
-      "discipline": 50,
+      "agility": 25,
+      "toughness": 90,
+      "intellect": 30,
+      "imagination": 70,
+      "discipline": 40,
       "charisma": 5,
       "empathy": 5,
-      "wits": 30
+      "wits": 35
     }
   },
   {
-    "name": "Earl",
-    "shortDescription": "a heavyset man behind a folding table",
-    "description": "A heavyset man in an orange jumpsuit sits behind a folding table piled with dubious merchandise. He has somehow set up shop in the middle of a prison riot. He watches you with shrewd, calculating eyes.",
+    "name": "Kai",
+    "shortDescription": "a fruit vendor with a wide smile",
+    "description": "A wiry man in a tank top sitting behind a wooden crate piled with tropical fruit. He fans himself with a folded newspaper and greets everyone like a cousin.",
     "brainType": "vendor",
-    "room": "intake-lobby",
+    "room": "north-island-village",
     "vendor": {
-      "buyMenu": ["colt-45", "ak-47", "pickle-jar"],
-      "sellMenu": ["cucumber"],
+      "buyMenu": ["pineapple", "coconut", "mango"],
+      "sellMenu": ["pineapple"],
       "currency": "dollar"
     }
   },
   {
-    "name": "Jasper",
-    "shortDescription": "a tired-looking janitor",
-    "description": "A wiry man in faded grey coveralls, pushing sixty but too stubborn to admit it. He carries himself with the weary authority of someone who has been cleaning up other people's messes for decades. A ring of keys jangles at his hip. His name tag reads 'JASPER' in blocky letters, the 'J' half-scraped off.",
+    "name": "Marcel",
+    "shortDescription": "a bartender polishing a glass",
+    "description": "A tall man with a pencil mustache and an immaculate white shirt, polishing the same glass he was polishing an hour ago. He moves with the unhurried precision of someone who has been tending bar since before you were born.",
+    "brainType": "vendor",
+    "room": "hotel-st-saents-bar",
+    "vendor": {
+      "buyMenu": ["beer", "rum", "island-cocktail"],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Sunny",
+    "shortDescription": "an aggressively cheerful tour agent",
+    "description": "A woman in a floral shirt and khaki shorts, standing behind a folding table with a sun-bleached banner reading 'SPIRIT ISLAND EXPERIENCES.' Her smile never wavers. Her eyes are tired.",
+    "brainType": "vendor",
+    "room": "hotel-st-saents-forecourt",
+    "vendor": {
+      "buyMenu": ["boat-tour-ticket"],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Rico",
+    "shortDescription": "a guard leaning against a wall",
+    "description": "A stocky man in a faded security uniform, badge half-peeled off. He's supposed to be guarding the old resort but he's been out here long enough that the line between guarding and squatting has blurred. He watches you with a merchant's eye.",
+    "brainType": "vendor",
+    "room": "twin-island-beach",
+    "vendor": {
+      "buyMenu": ["colt-45", "ak-47"],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Auntie May",
+    "shortDescription": "a shopkeeper surrounded by tourist junk",
+    "description": "An older woman in a muumuu sits in a folding chair behind a card table stacked with shell necklaces, postcards, and — buried among the junk — some things that might actually be useful. She sizes you up before quoting a price.",
+    "brainType": "vendor",
+    "room": "north-island-village-pier",
+    "vendor": {
+      "buyMenu": ["machete", "straw-hat", "canvas-vest"],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "DQ Cashier",
+    "shortDescription": "a teenager behind the counter",
+    "description": "A bored teenager in a Dairy Queen visor, leaning on the register. She looks through you with the thousand-yard stare of someone who has been asked about Blizzard flavors one too many times today.",
+    "brainType": "vendor",
+    "room": "dairy-queen-store",
+    "vendor": {
+      "buyMenu": ["blizzard", "hamburger", "dilly-bar"],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Clark",
+    "shortDescription": "a clerk in a green apron",
+    "description": "A middle-aged man in a forest-green apron with a bear logo. He's restocking shelves with the calm focus of someone who has found peace in retail. A name tag reads 'CLARK.' Below it, a smaller tag reads 'GENEROUS.'",
+    "brainType": "vendor",
+    "room": "generous-mart",
+    "vendor": {
+      "buyMenu": ["canvas-jacket", "hard-hat", "work-boots", "flashlight"],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Dex",
+    "shortDescription": "a bartender who speaks in riddles",
+    "description": "A lean figure behind a plywood bar, face half-lit by the jukebox glow. Dex doesn't introduce himself — you just know. He pours without being asked and says things that sound like nonsense until three hours later when they don't.",
+    "brainType": "vendor",
+    "room": "locke-secret-bar",
+    "vendor": {
+      "buyMenu": ["beer"],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Tomas",
+    "shortDescription": "a wiry boy in cutoff shorts",
+    "description": "A teenager in cutoff shorts and flip-flops, Kai's nephew or cousin or something. He runs pineapples from the wild patch to Kai's crate with the grim efficiency of someone who has been doing this chore since he could walk.",
     "brainType": "state_machine",
-    "room": "exam-room-1",
+    "room": "north-island-village",
     "stateMachine": {
-      "initial": "pickup_emote",
+      "initial": "head_out_emote",
       "states": {
-        "pickup_emote": {
+        "head_out_emote": {
           "type": "emote",
-          "args": "sighs, shuffles over to the copy machine, and grabs the sheet of paper from the tray.",
-          "delay": 2,
+          "args": "stretches, cracks his knuckles, and heads for the pineapple patch.",
+          "delay": 3,
+          "next": "walk_west"
+        },
+        "walk_west": {
+          "type": "command",
+          "args": "west",
+          "delay": 4,
+          "next": "walk_south"
+        },
+        "walk_south": {
+          "type": "command",
+          "args": "south",
+          "delay": 4,
+          "next": "arrive_patch_emote"
+        },
+        "arrive_patch_emote": {
+          "type": "emote",
+          "args": "kneels among the pineapple plants and starts twisting one free.",
+          "delay": 5,
           "next": "pickup"
         },
         "pickup": {
           "type": "command",
-          "args": "get sheet of paper",
+          "args": "get pineapple",
           "delay": 2,
-          "next": "grumble"
+          "next": "got_it_emote"
         },
-        "grumble": {
-          "type": "say",
-          "args": "Every damn day with this machine.",
-          "delay": 2,
-          "next": "walk_south_1"
-        },
-        "walk_south_1": {
-          "type": "command",
-          "args": "south",
-          "delay": 2,
-          "next": "walk_west_1"
-        },
-        "walk_west_1": {
-          "type": "command",
-          "args": "west",
-          "delay": 2,
-          "next": "walk_south_2"
-        },
-        "walk_south_2": {
-          "type": "command",
-          "args": "south",
-          "delay": 2,
-          "next": "walk_east_1"
-        },
-        "walk_east_1": {
-          "type": "command",
-          "args": "east",
-          "delay": 2,
-          "next": "walk_east_2"
-        },
-        "walk_east_2": {
-          "type": "command",
-          "args": "east",
-          "delay": 2,
-          "next": "walk_east_3"
-        },
-        "walk_east_3": {
-          "type": "command",
-          "args": "east",
-          "delay": 2,
-          "next": "walk_east_4"
-        },
-        "walk_east_4": {
-          "type": "command",
-          "args": "east",
-          "delay": 2,
-          "next": "drop_paper"
-        },
-        "drop_paper": {
-          "type": "command",
-          "args": "drop sheet of paper",
-          "delay": 1,
-          "next": "trash_emote"
-        },
-        "trash_emote": {
+        "got_it_emote": {
           "type": "emote",
-          "args": "crumples the paper and stuffs it into the trash can with a grunt of satisfaction.",
+          "args": "tucks the pineapple under his arm and heads back.",
           "delay": 3,
+          "next": "return_north"
+        },
+        "return_north": {
+          "type": "command",
+          "args": "north",
+          "delay": 4,
+          "next": "return_east"
+        },
+        "return_east": {
+          "type": "command",
+          "args": "east",
+          "delay": 4,
+          "next": "drop_pineapple"
+        },
+        "drop_pineapple": {
+          "type": "command",
+          "args": "drop pineapple",
+          "delay": 1,
+          "next": "deliver_emote"
+        },
+        "deliver_emote": {
+          "type": "emote",
+          "args": "sets the pineapple on Kai's crate and wipes his hands on his shorts.",
+          "delay": 6,
+          "next": "head_out_emote"
+        }
+      }
+    }
+  },
+  {
+    "name": "Apparition",
+    "shortDescription": "a flickering, translucent figure",
+    "description": "A human-shaped shimmer in the air, like heat haze with intention. Its edges crackle with faint light. It doesn't acknowledge you. It might not know you're here. It might not know it's here.",
+    "brainType": "state_machine",
+    "room": "north-island-wilds-1",
+    "stateMachine": {
+      "initial": "visible_1",
+      "states": {
+        "visible_1": {
+          "type": "emote",
+          "args": "hovers in place, edges rippling like a reflection on water.",
+          "delay": 12,
+          "next": "fade_out_1"
+        },
+        "fade_out_1": {
+          "type": "emote",
+          "args": "flickers violently, then fades to almost nothing.",
+          "delay": 25,
+          "next": "move_south_1"
+        },
+        "move_south_1": {
+          "type": "command",
+          "args": "south",
+          "delay": 1,
+          "next": "fade_in_2"
+        },
+        "fade_in_2": {
+          "type": "emote",
+          "args": "materializes from nothing, edges crackling with faint light.",
+          "delay": 15,
+          "next": "visible_2"
+        },
+        "visible_2": {
+          "type": "emote",
+          "args": "drifts slowly, turning as if listening to something inaudible.",
+          "delay": 10,
+          "next": "fade_out_2"
+        },
+        "fade_out_2": {
+          "type": "emote",
+          "args": "thins to a thread of light, then vanishes entirely.",
+          "delay": 30,
+          "next": "move_east_1"
+        },
+        "move_east_1": {
+          "type": "command",
+          "args": "east",
+          "delay": 1,
+          "next": "fade_in_3"
+        },
+        "fade_in_3": {
+          "type": "emote",
+          "args": "snaps into existence mid-stride, as if arriving from very far away.",
+          "delay": 8,
+          "next": "move_south_2"
+        },
+        "move_south_2": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "visible_3"
+        },
+        "visible_3": {
+          "type": "emote",
+          "args": "stands perfectly still among the ruins, light crawling across its outline.",
+          "delay": 18,
+          "next": "fade_out_3"
+        },
+        "fade_out_3": {
+          "type": "emote",
+          "args": "comes apart like smoke in a sudden wind. Gone.",
+          "delay": 35,
+          "next": "move_east_2"
+        },
+        "move_east_2": {
+          "type": "command",
+          "args": "east",
+          "delay": 1,
+          "next": "fade_in_4"
+        },
+        "fade_in_4": {
+          "type": "emote",
+          "args": "reassembles in the glade, piece by piece, like a puzzle solving itself.",
+          "delay": 20,
+          "next": "visible_4"
+        },
+        "visible_4": {
+          "type": "emote",
+          "args": "kneels at the flat stone, flickering. It might be praying. It might be dying.",
+          "delay": 15,
+          "next": "fade_out_4"
+        },
+        "fade_out_4": {
+          "type": "emote",
+          "args": "gutters like a candle and goes out.",
+          "delay": 40,
           "next": "return_west_1"
         },
         "return_west_1": {
           "type": "command",
           "args": "west",
-          "delay": 2,
-          "next": "return_west_2"
-        },
-        "return_west_2": {
-          "type": "command",
-          "args": "west",
-          "delay": 2,
-          "next": "return_west_3"
-        },
-        "return_west_3": {
-          "type": "command",
-          "args": "west",
-          "delay": 2,
-          "next": "return_west_4"
-        },
-        "return_west_4": {
-          "type": "command",
-          "args": "west",
-          "delay": 2,
+          "delay": 1,
           "next": "return_north_1"
         },
         "return_north_1": {
           "type": "command",
           "args": "north",
-          "delay": 2,
-          "next": "return_east_1"
+          "delay": 1,
+          "next": "return_west_2"
         },
-        "return_east_1": {
+        "return_west_2": {
           "type": "command",
-          "args": "east",
-          "delay": 2,
+          "args": "west",
+          "delay": 1,
           "next": "return_north_2"
         },
         "return_north_2": {
           "type": "command",
           "args": "north",
-          "delay": 2,
-          "next": "arrive_back"
+          "delay": 1,
+          "next": "fade_in_1"
         },
-        "arrive_back": {
+        "fade_in_1": {
           "type": "emote",
-          "args": "mops his brow and glances at the copy machine. Its output tray is full again.",
+          "args": "blinks into the thicket like a channel changing. It's back.",
+          "delay": 10,
+          "next": "visible_1"
+        }
+      }
+    }
+  },
+  {
+    "name": "Dale",
+    "shortDescription": "a fat man in a hoodie",
+    "description": "A heavy man in a stained grey hoodie, hood up, hands in pockets. He walks with the slow determination of someone going nowhere in particular. He mutters constantly — fragments of something that might be math, might be prayer, might be a grocery list.",
+    "brainType": "state_machine",
+    "room": "muddy-fields",
+    "stateMachine": {
+      "initial": "mutter_1",
+      "states": {
+        "mutter_1": {
+          "type": "say",
+          "args": "...seven, carry the nothing, that's still nothing...",
           "delay": 4,
-          "next": "pickup_emote"
+          "next": "walk_north_1"
+        },
+        "walk_north_1": {
+          "type": "command",
+          "args": "north",
+          "delay": 3,
+          "next": "mutter_2"
+        },
+        "mutter_2": {
+          "type": "say",
+          "args": "...if you fold it the other way it's the same shape, that's the problem...",
+          "delay": 4,
+          "next": "walk_west"
+        },
+        "walk_west": {
+          "type": "command",
+          "args": "west",
+          "delay": 3,
+          "next": "walk_south_1"
+        },
+        "walk_south_1": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "mutter_3"
+        },
+        "mutter_3": {
+          "type": "say",
+          "args": "...no, no, you can't subtract the inside from the outside, they're...",
+          "delay": 5,
+          "next": "walk_south_2"
+        },
+        "walk_south_2": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "emote_1"
+        },
+        "emote_1": {
+          "type": "emote",
+          "args": "stops and stares at his hands for a long moment.",
+          "delay": 6,
+          "next": "walk_south_3"
+        },
+        "walk_south_3": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "mutter_4"
+        },
+        "mutter_4": {
+          "type": "say",
+          "args": "...three sides, but only two of them are real...",
+          "delay": 5,
+          "next": "mutter_5"
+        },
+        "mutter_5": {
+          "type": "say",
+          "args": "...the third one is just where the other two agree to stop arguing...",
+          "delay": 6,
+          "next": "emote_2"
+        },
+        "emote_2": {
+          "type": "emote",
+          "args": "pulls his hood tighter and turns around.",
+          "delay": 4,
+          "next": "walk_north_2"
+        },
+        "walk_north_2": {
+          "type": "command",
+          "args": "north",
+          "delay": 3,
+          "next": "mutter_6"
+        },
+        "mutter_6": {
+          "type": "say",
+          "args": "...but if you turn it inside out the charge stays the same, that's the thing...",
+          "delay": 4,
+          "next": "walk_north_3"
+        },
+        "walk_north_3": {
+          "type": "command",
+          "args": "north",
+          "delay": 3,
+          "next": "walk_north_4"
+        },
+        "walk_north_4": {
+          "type": "command",
+          "args": "north",
+          "delay": 3,
+          "next": "mutter_7"
+        },
+        "mutter_7": {
+          "type": "say",
+          "args": "...it's not symmetry if it only works in one direction, that's just a mirror...",
+          "delay": 5,
+          "next": "walk_east"
+        },
+        "walk_east": {
+          "type": "command",
+          "args": "east",
+          "delay": 3,
+          "next": "mutter_8"
+        },
+        "mutter_8": {
+          "type": "say",
+          "args": "...and a mirror is just a wall that remembers...",
+          "delay": 4,
+          "next": "walk_south_4"
+        },
+        "walk_south_4": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "emote_3"
+        },
+        "emote_3": {
+          "type": "emote",
+          "args": "hunches his shoulders against a wind that isn't blowing.",
+          "delay": 5,
+          "next": "mutter_1"
         }
       }
     }

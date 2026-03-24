@@ -106,6 +106,168 @@
     "price": { "currency": "dollar", "amount": 1 }
   },
   {
+    "id": "pineapple",
+    "name": "Pineapple",
+    "description": "A small, fierce tropical pineapple. More sour than sweet. The leaves could cut you.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 2 }
+  },
+  {
+    "id": "boar-tusks",
+    "name": "Boar tusks",
+    "description": "Yellowed tusks chipped from rooting through volcanic rock. They gore with animal conviction.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 18,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 5,
+    "critModifier": 3.0,
+    "price": { "currency": "dollar", "amount": 0 }
+  },
+  {
+    "id": "shadow-touch",
+    "name": "Shadow touch",
+    "description": "Not a weapon so much as a contact. Where the shadow grazes you, warmth leaves.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 8,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 2,
+    "critModifier": 6.0,
+    "price": { "currency": "dollar", "amount": 0 }
+  },
+  {
+    "id": "shadow-slam",
+    "name": "Shadow slam",
+    "description": "The full weight of something that shouldn't have weight. The impact feels like being forgotten.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 28,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 9,
+    "critModifier": -1.0,
+    "price": { "currency": "dollar", "amount": 0 }
+  },
+  {
+    "id": "coconut",
+    "name": "Coconut",
+    "description": "A green coconut, heavy with water. You could drink it or throw it.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 2 }
+  },
+  {
+    "id": "mango",
+    "name": "Mango",
+    "description": "A ripe mango, soft and fragrant. Juice runs down your wrist the moment you touch it.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 2 }
+  },
+  {
+    "id": "beer",
+    "name": "Beer",
+    "description": "A can of cheap lager, lukewarm. The label is in a language you don't recognize.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 3 }
+  },
+  {
+    "id": "rum",
+    "name": "Rum",
+    "description": "A pour of dark rum in a heavy glass. It smells like burnt sugar and bad decisions.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 5 }
+  },
+  {
+    "id": "island-cocktail",
+    "name": "Island cocktail",
+    "description": "Something pink with a paper umbrella. It tastes like sunscreen and pineapple. It's perfect.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 8 }
+  },
+  {
+    "id": "boat-tour-ticket",
+    "name": "Boat tour ticket",
+    "description": "A laminated ticket for a 'Sunset Lagoon Experience' boat tour. The departure time is listed as 'TBD.' The fine print says no refunds.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 15 }
+  },
+  {
+    "id": "machete",
+    "name": "Machete",
+    "description": "A broad-bladed machete with a wooden handle wrapped in electrical tape. Good for jungle and for trouble.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 14,
+    "skill": "Blades",
+    "weaponType": "blade",
+    "balanceCost": 5,
+    "critModifier": 2.5,
+    "price": { "currency": "dollar", "amount": 25 }
+  },
+  {
+    "id": "straw-hat",
+    "name": "Straw hat",
+    "description": "A wide-brimmed straw hat. Keeps the sun off and a boar tusk out of your skull, barely.",
+    "type": "armor",
+    "slot": "HEAD",
+    "absorption": 2,
+    "price": { "currency": "dollar", "amount": 8 }
+  },
+  {
+    "id": "canvas-vest",
+    "name": "Canvas vest",
+    "description": "A heavy canvas vest with brass snaps. Tourist gear, but it'll stop a graze.",
+    "type": "armor",
+    "slot": "TORSO",
+    "absorption": 4,
+    "price": { "currency": "dollar", "amount": 20 }
+  },
+  {
+    "id": "blizzard",
+    "name": "Blizzard",
+    "description": "A Dairy Queen Blizzard, served upside-down per company policy. Cookie dough. It's already melting.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 4 }
+  },
+  {
+    "id": "hamburger",
+    "name": "Hamburger",
+    "description": "A Dairy Queen hamburger in a foil wrapper. The cheese has fused with the bun. It's delicious.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 5 }
+  },
+  {
+    "id": "dilly-bar",
+    "name": "Dilly Bar",
+    "description": "A chocolate-dipped ice cream bar on a stick. The coating cracks when you bite it. An American classic.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 2 }
+  },
+  {
+    "id": "canvas-jacket",
+    "name": "Canvas jacket",
+    "description": "A forest-green canvas jacket with a Generous Mart bear patch on the breast. Stiff but warm. Surprisingly tough.",
+    "type": "armor",
+    "slot": "TORSO",
+    "absorption": 6,
+    "price": { "currency": "dollar", "amount": 25 }
+  },
+  {
+    "id": "flashlight",
+    "name": "Flashlight",
+    "description": "A heavy-duty rubber flashlight, the kind that doubles as a club. Batteries included.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 6,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 3,
+    "critModifier": 1.0,
+    "price": { "currency": "dollar", "amount": 12 }
+  },
+  {
     "id": "dollar",
     "name": "Dollar",
     "description": "A crumpled greenback. Still spends.",

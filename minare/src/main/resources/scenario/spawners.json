@@ -1,22 +1,12 @@
 [
   {
     "templateId": "rusty-knife",
-    "room": "ward-c",
-    "intervalMs": 60000
-  },
-  {
-    "templateId": "colt-45",
-    "room": "ward-c",
-    "intervalMs": 60000
-  },
-  {
-    "templateId": "hard-hat",
-    "room": "ward-c",
+    "room": "north-island-wilds-1",
     "intervalMs": 60000
   },
   {
     "templateId": "leather-vest",
-    "room": "ward-c",
+    "room": "north-island-wilds-2",
     "intervalMs": 60000
   }
 ]
