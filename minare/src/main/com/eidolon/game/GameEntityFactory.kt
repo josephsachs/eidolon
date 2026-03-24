@@ -1,10 +1,14 @@
 package com.eidolon.game
 
 import com.eidolon.game.models.entity.Account
+import com.eidolon.game.models.entity.Combat
 import com.eidolon.game.models.entity.EvenniaObject
 import com.eidolon.game.models.entity.Exit
+import com.eidolon.game.models.entity.ExplorableExit
+import com.eidolon.game.models.entity.ObjectActor
 import com.eidolon.game.models.entity.Room
-import com.eidolon.game.models.entity.RoomMemory
+import com.eidolon.game.models.entity.Spawner
+import com.eidolon.game.models.entity.WorkSite
 import eidolon.game.models.entity.Game
 import com.minare.core.entity.factories.EntityFactory
 import eidolon.game.models.entity.agent.EvenniaCharacter
@@ -14,11 +18,15 @@ import javax.inject.Singleton
 class GameEntityFactory : EntityFactory() {
     override val entityTypes = mapOf(
         "Game" to Game::class.java,
+        "Combat" to Combat::class.java,
         "Room" to Room::class.java,
-        "RoomMemory" to RoomMemory::class.java,
         "Exit" to Exit::class.java,
+        "ExplorableExit" to ExplorableExit::class.java,
+        "ObjectActor" to ObjectActor::class.java,
         "EvenniaCharacter" to EvenniaCharacter::class.java,
         "EvenniaObject" to EvenniaObject::class.java,
         "Account" to Account::class.java,
+        "Spawner" to Spawner::class.java,
+        "WorkSite" to WorkSite::class.java,
     )
 }

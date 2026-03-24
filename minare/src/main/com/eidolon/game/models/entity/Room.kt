@@ -1,16 +1,22 @@
 package com.eidolon.game.models.entity
 
 import com.eidolon.game.evennia.Viewable
-import com.minare.core.entity.annotations.EntityType
-import com.minare.core.entity.annotations.Mutable
-import com.minare.core.entity.annotations.Parent
-import com.minare.core.entity.annotations.State
+import com.google.inject.Inject
+import com.minare.controller.EntityController
+import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.slf4j.LoggerFactory
 import java.io.Serializable
 
 @EntityType("Room")
 class Room : Entity(), Serializable, Viewable {
+    @Inject
+    lateinit var entityController: EntityController
+
+    private val log = LoggerFactory.getLogger(Room::class.java)
+
     init {
         type = "Room"
     }
@@ -31,17 +37,60 @@ class Room : Entity(), Serializable, Viewable {
     var exits: JsonObject = JsonObject()
 
     /**
-     * RoomMemory entity _id — child that stores echoes and room history.
+     * Accumulated room echoes: say, pose, and other observable events.
+     * Each entry: {character, characterName, message, type, timestamp}
+     * Property rather than State — not synced to Evennia.
      */
-    @Parent
+    @Property
+    var echoes: JsonArray = JsonArray()
+
     @State
     @Mutable
-    var roomMemoryId: String = ""
+    var dayDesc: String = ""
+
+    @State
+    @Mutable
+    var nightDesc: String = ""
+
+    @State
+    @Mutable
+    var concealment: Double = 0.0
+
+    companion object {
+        const val ECHO_TTL_MS: Long = 300_000L
+    }
+
+    @FixedTask
+    suspend fun forgetEchoes() {
+        val start = System.currentTimeMillis()
+        try {
+            if (echoes.isEmpty) return
+            val cutoff = System.currentTimeMillis() - ECHO_TTL_MS
+            val filtered = JsonArray()
+            for (i in 0 until echoes.size()) {
+                val echo = echoes.getJsonObject(i)
+                if (echo.getLong("timestamp", 0L) >= cutoff) {
+                    filtered.add(echo)
+                }
+            }
+            if (filtered.size() < echoes.size()) {
+                entityController.saveProperties(_id, JsonObject().put("echoes", filtered))
+            }
+        } catch (e: Exception) {
+            log.error("forgetEchoes failed for room {}: {}", _id, e.message)
+        } finally {
+            val elapsed = System.currentTimeMillis() - start
+            if (elapsed > 200) log.warn("SLOW forgetEchoes for room {}: {}ms", _id, elapsed)
+        }
+    }
 
     override fun project(viewName: String): JsonObject? = when (viewName) {
         "default" -> JsonObject()
             .put("description", description)
             .put("shortDescription", shortDescription)
+        "sync" -> JsonObject()
+            .put("description", description)
+            .put("concealment", concealment)
         else -> null
     }
 }

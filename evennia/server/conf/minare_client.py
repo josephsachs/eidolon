@@ -36,6 +36,12 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
         # Store reference in factory so we can send messages later
         self.factory.active_protocol = self
 
+        # Send connect with hardcoded connection ID
+        self.sendMessage(json.dumps({
+            'type': 'connect',
+            'meta': {'connection_id': 'evennia-system'}
+        }).encode('utf8'))
+
     def onMessage(self, payload, isBinary):
         if isBinary:
             logger.log_warn("Minare UpSocket: Received unexpected binary message")
@@ -152,6 +158,10 @@ class MinareDownSocketProtocol(WebSocketClientProtocol):
             if msg_type == 'down_socket_confirm':
                 logger.log_info("Minare DownSocket: Subscription confirmed")
 
+            elif msg_type == 'update':
+                logger.log_info(f"Minare DownSocket: Received entity update: {msg}")
+                _handle_entity_updates(msg.get('updates', {}))
+
             elif msg_type == 'sync':
                 # Initial sync data
                 logger.log_info("Minare DownSocket: Received sync data")
@@ -174,6 +184,9 @@ class MinareDownSocketProtocol(WebSocketClientProtocol):
                 # Broadcast to all connected players
                 broadcast_msg = f"[Minare] Response: {original}"
                 evennia.SESSION_HANDLER.announce_all(broadcast_msg)
+
+            elif msg_type == 'set_domain_link':
+                _handle_set_domain_link(msg)
 
             elif msg_type == 'agent_command':
                 command = msg.get('command', {})
@@ -253,6 +266,111 @@ class MinareDownSocketFactory(ReconnectingClientFactory, WebSocketClientFactory)
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
 
+# Entity types that should sync state to their Evennia counterpart
+_SYNC_TYPE_MAP = {
+    "Room": ["typeclasses.rooms.Room"],
+    "EvenniaCharacter": [
+        "typeclasses.characters.PlayerCharacter",
+        "typeclasses.characters.NonplayerCharacter",
+    ],
+}
+
+
+def _handle_entity_updates(updates):
+    """
+    Handle entity update messages from Minare DownSocket.
+    For entity types in _SYNC_TYPE_MAP, looks up the Evennia object
+    by minare_id and writes the delta into db.sim_state.
+    """
+    for entity_id, update in updates.items():
+        entity_type = update.get('type')
+        logger.log_info(f"Minare sync: entity_id={entity_id}, type={entity_type}")
+        if entity_type not in _SYNC_TYPE_MAP:
+            logger.log_info(f"Minare sync: type '{entity_type}' not in _SYNC_TYPE_MAP, skipping")
+            continue
+
+        delta = update.get('delta', {})
+        if not delta:
+            logger.log_info(f"Minare sync: empty delta for {entity_id}, skipping")
+            continue
+
+        module_paths = _SYNC_TYPE_MAP[entity_type]
+        evennia_obj = None
+        for module_path in module_paths:
+            evennia_obj = find_evennia_object_by_minare_id_cached(module_path, entity_id)
+            if evennia_obj:
+                break
+        if not evennia_obj:
+            logger.log_info(f"Minare sync: no Evennia object found for minare_id={entity_id}")
+            continue
+
+        sim_state = evennia_obj.db.sim_state or {}
+        old_downed = sim_state.get('downed', False)
+        sim_state.update(delta)
+        evennia_obj.db.sim_state = sim_state
+        logger.log_info(f"Minare sync: updated sim_state for {evennia_obj.key}: {sim_state}")
+
+        # Sync downed state to Evennia's is_downed flag when it changes
+        if 'downed' in delta and entity_type == 'EvenniaCharacter':
+            new_downed = delta['downed']
+            if new_downed and not old_downed:
+                evennia_obj.db.is_downed = True
+                evennia_obj.db.in_combat = False
+                evennia_obj.locks.add("cmd:false()")
+                if evennia_obj.location:
+                    evennia_obj.location.msg_contents(
+                        f"|R{evennia_obj.key} collapses!|n",
+                        exclude=[evennia_obj]
+                    )
+                    evennia_obj.msg("|RYou collapse, unable to continue.|n")
+                logger.log_info(f"Minare sync: {evennia_obj.key} downed via entity sync")
+            elif not new_downed and old_downed:
+                evennia_obj.db.is_downed = False
+                evennia_obj.locks.add("cmd:true()")
+                if evennia_obj.location:
+                    evennia_obj.location.msg_contents(
+                        f"|G{evennia_obj.key} stirs and gets back up.|n",
+                        exclude=[evennia_obj]
+                    )
+                    evennia_obj.msg("|GYou pull yourself together and get back up.|n")
+                logger.log_info(f"Minare sync: {evennia_obj.key} recovered via entity sync")
+
+
+def _handle_set_domain_link(msg):
+    """
+    Store a domain entity's Minare ID on the corresponding Evennia object.
+    This lets _handle_entity_updates match incoming domain entity updates
+    to the correct Evennia object.
+    """
+    evennia_id = msg.get('evennia_id')
+    domain_entity_id = msg.get('domain_entity_id')
+    domain_entity_type = msg.get('domain_entity_type')
+    if not evennia_id or not domain_entity_id:
+        return
+    try:
+        from evennia.objects.models import ObjectDB
+        obj = ObjectDB.objects.get(id=int(evennia_id))
+        obj.db.minare_domain_id = domain_entity_id
+        obj.db.minare_domain_type = domain_entity_type
+        logger.log_info(
+            f"Minare sync: Set domain link on '{obj.key}' "
+            f"(evennia_id={evennia_id}): {domain_entity_type}={domain_entity_id}"
+        )
+    except Exception as e:
+        logger.log_err(f"Minare sync: Failed to set domain link: {e}")
+
+
+def find_evennia_object_by_minare_id_cached(typeclass_path, minare_id):
+    """Find an Evennia object by minare_id, importing the typeclass by path."""
+    from django.utils.module_loading import import_string
+    try:
+        typeclass = import_string(typeclass_path)
+    except ImportError:
+        logger.log_err(f"Minare sync: Could not import {typeclass_path}")
+        return None
+    return find_evennia_object_by_minare_id(typeclass, minare_id)
+
+
 def _sync_rooms(minare_entities, protocol):
     """
     Reconcile Evennia Room objects with Minare Room entities.
@@ -275,7 +393,7 @@ def _sync_rooms(minare_entities, protocol):
     # Build lookup: minare_id attribute -> Evennia Room
     evennia_rooms_by_minare_id = {}
     for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_id
+        mid = room.db.minare_eo_id
         if mid:
             evennia_rooms_by_minare_id[mid] = room
 
@@ -291,7 +409,7 @@ def _sync_rooms(minare_entities, protocol):
     client = get_minare_client()
     # Rebuild lookup to include newly created rooms
     for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_id
+        mid = room.db.minare_eo_id
         if mid and mid in minare_rooms:
             client.send_message({
                 "type": "register_cross_link",
@@ -326,14 +444,14 @@ def _sync_exits(minare_entities, protocol):
     # Map minare_id -> Evennia Room
     evennia_rooms_by_minare_id = {}
     for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_id
+        mid = room.db.minare_eo_id
         if mid:
             evennia_rooms_by_minare_id[mid] = room
 
     # Map minare_id -> Evennia Exit (existing)
     evennia_exits_by_minare_id = {}
     for exit_obj in EvenniaExit.objects.all():
-        mid = exit_obj.db.minare_id
+        mid = exit_obj.db.minare_eo_id
         if mid:
             evennia_exits_by_minare_id[mid] = exit_obj
 
@@ -367,7 +485,7 @@ def _sync_exits(minare_entities, protocol):
                     location=source_evennia_room,
                     destination=dest_evennia_room,
                 )
-                new_exit.db.minare_id = exit_minare_id
+                new_exit.db.minare_eo_id = exit_minare_id
                 new_exit.db.desc = exit_state.get('description', '')
                 logger.log_info(
                     f"Minare sync: Created Exit '{direction}' in '{source_evennia_room.key}' "
@@ -388,13 +506,13 @@ def _sync_exits(minare_entities, protocol):
                 f"Minare sync: Archiving Exit '{exit_obj.key}' "
                 f"(minare_id={minare_id} not found in Minare)"
             )
-            exit_obj.db.minare_id = None
+            exit_obj.db.minare_eo_id = None
             exit_obj.db.minare_archived = True
 
     # Register cross-links for all synced exits
     client = get_minare_client()
     for exit_obj in EvenniaExit.objects.all():
-        mid = exit_obj.db.minare_id
+        mid = exit_obj.db.minare_eo_id
         if mid and mid in minare_exits:
             client.send_message({
                 "type": "register_cross_link",
@@ -405,17 +523,28 @@ def _sync_exits(minare_entities, protocol):
 
 
 def find_evennia_object_by_minare_id(typeclass, minare_id):
-    """Find an Evennia object by its minare_id attribute."""
+    """Find an Evennia object by minare_domain_id (domain entity) or minare_eo_id (EvenniaObject)."""
     for obj in typeclass.objects.all():
-        if obj.db.minare_id == minare_id:
+        if obj.db.minare_domain_id == minare_id or obj.db.minare_eo_id == minare_id:
             return obj
     return None
 
 
 def _dispatch_agent_command(command):
-    """Route an agent_command to the appropriate AgentCharacter.
-    If no agent_evennia_id is specified, defaults to the first available system agent."""
-    from typeclasses.characters import AgentCharacter
+    """Route an agent_command to the appropriate AgentCharacter or NonplayerCharacter.
+    If npc_evennia_id is present, routes to that NPC.
+    Otherwise routes to AgentCharacter by agent_evennia_id or the default system agent."""
+    from typeclasses.characters import AgentCharacter, NonplayerCharacter
+
+    npc_evennia_id = command.get('npc_evennia_id')
+    if npc_evennia_id:
+        try:
+            npc = NonplayerCharacter.objects.get(id=int(npc_evennia_id))
+            npc.handle_agent_command(command)
+            return
+        except (NonplayerCharacter.DoesNotExist, ValueError):
+            logger.log_err(f"NonplayerCharacter not found: evennia_id={npc_evennia_id}")
+            return
 
     agent_evennia_id = command.get('agent_evennia_id')
     if agent_evennia_id:

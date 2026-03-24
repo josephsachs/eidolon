@@ -28,7 +28,21 @@ class SharedGameState @Inject constructor(
         _gameClockState.set(GameClockState.RUNNING)
     }
 
+    private val _ticksPerTurn = pushVar.create(
+        address = "game.ticks.per.turn",
+        initialValue = DEFAULT_TICKS_PER_TURN,
+        serializer = { it.toString() },
+        deserializer = { (it as String).toInt() }
+    )
+
+    fun getTicksPerTurn(): Int = _ticksPerTurn.get()
+
+    fun setTicksPerTurn(ticks: Int) {
+        _ticksPerTurn.set(ticks.coerceAtLeast(1))
+    }
+
     companion object {
+        const val DEFAULT_TICKS_PER_TURN = 16
         enum class GameClockState {
             RUNNING,
             PAUSED

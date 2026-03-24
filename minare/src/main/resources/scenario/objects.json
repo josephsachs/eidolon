@@ -1,0 +1,17 @@
+[
+  {
+    "name": "copy machine",
+    "room": "exam-room-1",
+    "description": "A beige office copy machine, circa 1987. Its power light blinks green. A sheet of paper sits in the output tray."
+  },
+  {
+    "name": "sheet of paper",
+    "room": "exam-room-1",
+    "description": "A single sheet of white paper, still warm from the copy machine. It reads: 'MEMORANDUM: All staff must dispose of documents properly. Failure to comply will result in disciplinary action.'"
+  },
+  {
+    "name": "trash can",
+    "room": "garden",
+    "description": "A dented metal trash can with 'THERAPY GARDEN' stenciled on the side. It's mostly empty except for some wilted herb trimmings."
+  }
+]

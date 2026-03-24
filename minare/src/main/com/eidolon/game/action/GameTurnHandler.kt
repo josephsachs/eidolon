@@ -1,5 +1,6 @@
 package eidolon.game.action
 
+import chieftain.game.action.CharacterTurnHandler
 import eidolon.game.models.entity.Game
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -19,9 +20,15 @@ class GameTurnHandler @Inject constructor(
     private val stateStore: StateStore,
     private val scope: CoroutineScope,
     private val eventBusUtils: EventBusUtils,
+    private val characterTurnHandler: CharacterTurnHandler,
+    private val combatTurnHandler: CombatTurnHandler,
+    private val ingameTimeController: IngameTimeController,
+    private val sharedGameState: eidolon.game.action.cache.SharedGameState,
     private val vertx: Vertx
 ) {
     private var log = LoggerFactory.getLogger(GameTurnHandler::class.java)
+
+    private var frameCounter: Int = 0
 
     private val turnStateMachine: EventStateFlow = EventStateFlow(
         eventKey = "GAME_TURN_LOOP",
@@ -31,33 +38,43 @@ class GameTurnHandler @Inject constructor(
     )
 
     private val actAction: suspend (StateFlowContext) -> Unit = { context ->
-        //log.info("TURN_LOOP: ACT Phase Start")
-        setGameProperties(TurnPhase.ACT, true)
-        //characterTurnHandler.handleTurn(TurnPhase.ACT)
+        val start = System.currentTimeMillis()
+        setGameProperties(TurnPhase.BEFORE, true)
+        characterTurnHandler.handleTurn(TurnPhase.BEFORE)
+        combatTurnHandler.handleTurn(TurnPhase.BEFORE)
+        val elapsed = System.currentTimeMillis() - start
+        if (elapsed > 100) log.warn("TURN_LOOP: ACT phase took ${elapsed}ms")
     }
 
     private val executeAction: suspend (StateFlowContext) -> Unit = { context ->
-        //log.info("TURN_LOOP: EXECUTE Phase Start")
-        setGameProperties(TurnPhase.EXECUTE, true)
-        //characterTurnHandler.handleTurn(TurnPhase.EXECUTE)
+        val start = System.currentTimeMillis()
+        setGameProperties(TurnPhase.DURING, true)
+        characterTurnHandler.handleTurn(TurnPhase.DURING)
+        combatTurnHandler.handleTurn(TurnPhase.DURING)
+        val elapsed = System.currentTimeMillis() - start
+        if (elapsed > 100) log.warn("TURN_LOOP: EXECUTE phase took ${elapsed}ms")
     }
 
     private val resolveAction: suspend (StateFlowContext) -> Unit = { context ->
-        //log.info("TURN_LOOP: RESOLVE Phase Start")
-        setGameProperties(TurnPhase.RESOLVE, true)
-        //characterTurnHandler.handleTurn(TurnPhase.RESOLVE)
+        val start = System.currentTimeMillis()
+        setGameProperties(TurnPhase.AFTER, true)
+        characterTurnHandler.handleTurn(TurnPhase.AFTER)
+        combatTurnHandler.handleTurn(TurnPhase.AFTER)
+        val elapsed = System.currentTimeMillis() - start
+        if (elapsed > 100) log.warn("TURN_LOOP: RESOLVE phase took ${elapsed}ms")
     }
 
     private val turnEndAction: suspend (StateFlowContext) -> Unit = { _ ->
-        //log.info("TURN_LOOP: Turn End Start (Cleanup)")
-
+        val start = System.currentTimeMillis()
         setGameProperties(null, false)
         incrementGameTurn()
 
-        eventBusUtils.sendWithTracing(ADDRESS_TURN_COMPLETE, JsonObject())
+        val game = getGame()
+        ingameTimeController.onTurn(game.currentTurn)
 
-        // Since the state machine is looping=true, the next tryNext() call
-        // will cycle back to ACT_PHASE.
+        eventBusUtils.sendWithTracing(ADDRESS_TURN_COMPLETE, JsonObject())
+        val elapsed = System.currentTimeMillis() - start
+        if (elapsed > 100) log.warn("TURN_LOOP: TURN_END phase took ${elapsed}ms")
     }
 
     init {
@@ -72,9 +89,12 @@ class GameTurnHandler @Inject constructor(
     }
 
     /**
-     * Called each frame/tick. It attempts to advance the state ONLY if the previous state is finished.
+     * Called each frame/tick. Advances the turn state only after enough frames have elapsed.
      */
     suspend fun handleFrame() {
+        frameCounter++
+        if (frameCounter < sharedGameState.getTicksPerTurn()) return
+        frameCounter = 0
         turnStateMachine.tryNext()
     }
 
@@ -86,7 +106,7 @@ class GameTurnHandler @Inject constructor(
         if (turnPhase !== null) properties.put("turnPhase", turnPhase.name)
         if (isProcessing !== null) properties.put("turnProcessing", isProcessing)
 
-        entityController.saveProperties(game._id!!, properties)
+        entityController.saveProperties(game._id, properties)
     }
 
     private suspend fun incrementGameTurn() {
@@ -95,7 +115,7 @@ class GameTurnHandler @Inject constructor(
         val properties = JsonObject().put("currentTurn", (game.currentTurn + 1))
 
         try {
-            entityController.saveProperties(game._id!!, properties)
+            entityController.saveProperties(game._id, properties)
         }
         finally {
             val gameTest = getGame()
@@ -112,6 +132,6 @@ class GameTurnHandler @Inject constructor(
     companion object {
         const val ADDRESS_TURN_COMPLETE = "turn.handler.turn.complete"
 
-        enum class TurnPhase { ACT, EXECUTE, RESOLVE }
+        enum class TurnPhase { BEFORE, DURING, AFTER }
     }
 }

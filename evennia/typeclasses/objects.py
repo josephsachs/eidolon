@@ -53,6 +53,55 @@ class ObjectParent:
         minare_id = response.get("minare_id", "")
         if minare_id:
             self.db.minare_eo_id = minare_id
+            # If a domain link was queued before the EO was registered, send it now
+            pending = self.ndb._pending_domain_link
+            if pending:
+                self.ndb._pending_domain_link = None
+                self._send_domain_link(pending["domain_id"], pending["domain_type"])
+
+    def link_domain_entity(self, domain_id, domain_type):
+        """
+        Link this Evennia object to a Minare domain entity.
+        Stores the domain entity ID locally and notifies Minare to back-link
+        the EvenniaObject stub.
+        """
+        self.db.minare_domain_id = domain_id
+        self.db.minare_domain_type = domain_type
+        if self.db.minare_eo_id:
+            self._send_domain_link(domain_id, domain_type)
+        else:
+            # EO registration callback hasn't fired yet; queue for later
+            self.ndb._pending_domain_link = {
+                "domain_id": domain_id,
+                "domain_type": domain_type,
+            }
+
+    def _send_domain_link(self, domain_id, domain_type):
+        """Send the link_domain_entity message to Minare."""
+        try:
+            from server.conf.minare_client import get_minare_client
+            client = get_minare_client()
+            client.send_message({
+                "type": "link_domain_entity",
+                "evennia_id": str(self.id),
+                "eo_minare_id": self.db.minare_eo_id,
+                "domain_entity_id": domain_id,
+                "domain_entity_type": domain_type,
+            })
+        except Exception:
+            pass
+
+
+    def archive(self):
+        """Soft-delete: hide from players, stop scripts, make untargetable."""
+        self.db.archived = True
+        self.locks.add("view:false();get:false()")
+        self.scripts.stop()
+
+    def unarchive(self):
+        """Reverse a soft-delete: restore visibility and interactability."""
+        self.db.archived = False
+        self.locks.add("view:all();get:all()")
 
 
 class Object(ObjectParent, DefaultObject):

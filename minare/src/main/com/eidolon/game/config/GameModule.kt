@@ -14,6 +14,18 @@ import com.eidolon.game.controller.GameMessageController
 import com.eidolon.game.controller.GameOperationController
 import com.eidolon.clients.ModelAPI
 import com.google.inject.AbstractModule
+import com.google.inject.Provides
+import com.minare.controller.EntityController
+import com.eidolon.game.evennia.CrossLinkRegistry
+import com.eidolon.game.evennia.EvenniaCommUtils
+import com.eidolon.game.service.CombatService
+import com.eidolon.game.service.ItemRegistry
+import eidolon.game.models.entity.agent.BrainRegistry
+import eidolon.game.models.entity.agent.FeralBrain
+import eidolon.game.models.entity.agent.IdleBrain
+import eidolon.game.models.entity.agent.KibitzBrain
+import eidolon.game.models.entity.agent.StateMachineBrain
+import eidolon.game.models.entity.agent.VendorBrain
 import org.slf4j.LoggerFactory
 
 /**
@@ -51,5 +63,32 @@ class GameModule : AbstractModule() {
             .`in`(Singleton::class.java)
 
         log.info("GameModule configured with custom EntityFactory and controllers")
+    }
+
+    @Provides
+    @Singleton
+    fun provideItemRegistry(): ItemRegistry {
+        val registry = ItemRegistry()
+        registry.load()
+        return registry
+    }
+
+    @Provides
+    @Singleton
+    fun provideBrainRegistry(
+        entityController: EntityController,
+        modelAPI: ModelAPI,
+        combatService: CombatService,
+        itemRegistry: ItemRegistry,
+        evenniaCommUtils: EvenniaCommUtils,
+        crossLinkRegistry: CrossLinkRegistry
+    ): BrainRegistry {
+        val registry = BrainRegistry()
+        registry.register(IdleBrain())
+        registry.register(KibitzBrain(entityController, modelAPI))
+        registry.register(FeralBrain(entityController, combatService, evenniaCommUtils, crossLinkRegistry))
+        registry.register(VendorBrain(entityController, itemRegistry))
+        registry.register(StateMachineBrain(evenniaCommUtils, crossLinkRegistry))
+        return registry
     }
 }

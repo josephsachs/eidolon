@@ -26,7 +26,7 @@ class Game: Entity() {
     var currentTurn: Int = 0
 
     @Property
-    var turnPhase: TurnPhase = TurnPhase.ACT
+    var turnPhase: TurnPhase = TurnPhase.BEFORE
 
     @Property
     var turnProcessing: Boolean = false

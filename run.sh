@@ -34,6 +34,7 @@ build_minare() {
   mvn clean package -DskipTests
   cd ../docker
 
+  docker compose down haproxy app-coordinator infra worker mongodb redis kafka kafka-ui
   docker compose build --no-cache haproxy app-coordinator infra worker mongodb redis kafka kafka-ui
 }
 start_minare() {
@@ -56,6 +57,7 @@ build_evennia() {
   if $BUILD_BASE || ! docker image inspect eidolon-evennia-base >/dev/null 2>&1; then
     build_evennia_base
   fi
+  docker compose down evennia
   docker compose build evennia
 }
 start_evennia() {
@@ -83,4 +85,4 @@ else
   exit 1
 fi
 
-docker compose logs -f
+docker compose logs -f app-coordinator infra worker evennia

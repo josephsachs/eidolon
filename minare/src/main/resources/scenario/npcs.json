@@ -1,0 +1,195 @@
+[
+  {
+    "name": "Dr. Ganz",
+    "shortDescription": "a thin man in a stained lab coat",
+    "description": "A gaunt man in a once-white lab coat, now bearing unidentifiable stains. He peers at you through smudged bifocals with an expression of mild academic interest, as if you were a culture in a petri dish exhibiting unexpected behavior.",
+    "brainType": "kibitz",
+    "room": "exam-room-1"
+  },
+  {
+    "name": "Bee guard",
+    "shortDescription": "a guard in a bee costume",
+    "description": "A stocky figure in a full-body bee costume — fuzzy yellow-and-black stripes, vestigial wings, bobbing antennae. The effect would be comical if not for the crackling electrical weapon holstered at its hip. Its face is hidden behind a mesh visor. It buzzes menacingly.",
+    "brainType": "feral",
+    "room": "security-station",
+    "equipment": {
+      "MAIN_HAND": "stinger"
+    },
+    "attributes": {
+      "strength": 75,
+      "agility": 55,
+      "toughness": 80,
+      "intellect": 10,
+      "imagination": 5,
+      "discipline": 30,
+      "charisma": 5,
+      "empathy": 5,
+      "wits": 60
+    }
+  },
+  {
+    "name": "Nanny",
+    "shortDescription": "a hulking robot in a nurse's cap",
+    "description": "A seven-foot industrial robot squeezed into a dented white chassis. Someone has bolted a nurse's cap to its head and painted a red cross on its chest plate. Its hydraulic arms end in padded clamps designed for patient restraint. A speaker in its throat emits a continuous low hum that might once have been a lullaby. Its targeting optics are scratched but functional.",
+    "brainType": "feral",
+    "room": "security-station",
+    "equipment": {
+      "MAIN_HAND": "restraint-arm"
+    },
+    "attributes": {
+      "strength": 90,
+      "agility": 20,
+      "toughness": 95,
+      "intellect": 5,
+      "imagination": 5,
+      "discipline": 50,
+      "charisma": 5,
+      "empathy": 5,
+      "wits": 30
+    }
+  },
+  {
+    "name": "Earl",
+    "shortDescription": "a heavyset man behind a folding table",
+    "description": "A heavyset man in an orange jumpsuit sits behind a folding table piled with dubious merchandise. He has somehow set up shop in the middle of a prison riot. He watches you with shrewd, calculating eyes.",
+    "brainType": "vendor",
+    "room": "intake-lobby",
+    "vendor": {
+      "buyMenu": ["colt-45", "ak-47", "pickle-jar"],
+      "sellMenu": ["cucumber"],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Jasper",
+    "shortDescription": "a tired-looking janitor",
+    "description": "A wiry man in faded grey coveralls, pushing sixty but too stubborn to admit it. He carries himself with the weary authority of someone who has been cleaning up other people's messes for decades. A ring of keys jangles at his hip. His name tag reads 'JASPER' in blocky letters, the 'J' half-scraped off.",
+    "brainType": "state_machine",
+    "room": "exam-room-1",
+    "stateMachine": {
+      "initial": "pickup_emote",
+      "states": {
+        "pickup_emote": {
+          "type": "emote",
+          "args": "sighs, shuffles over to the copy machine, and grabs the sheet of paper from the tray.",
+          "delay": 2,
+          "next": "pickup"
+        },
+        "pickup": {
+          "type": "command",
+          "args": "get sheet of paper",
+          "delay": 2,
+          "next": "grumble"
+        },
+        "grumble": {
+          "type": "say",
+          "args": "Every damn day with this machine.",
+          "delay": 2,
+          "next": "walk_south_1"
+        },
+        "walk_south_1": {
+          "type": "command",
+          "args": "south",
+          "delay": 2,
+          "next": "walk_west_1"
+        },
+        "walk_west_1": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "walk_south_2"
+        },
+        "walk_south_2": {
+          "type": "command",
+          "args": "south",
+          "delay": 2,
+          "next": "walk_east_1"
+        },
+        "walk_east_1": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "walk_east_2"
+        },
+        "walk_east_2": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "walk_east_3"
+        },
+        "walk_east_3": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "walk_east_4"
+        },
+        "walk_east_4": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "drop_paper"
+        },
+        "drop_paper": {
+          "type": "command",
+          "args": "drop sheet of paper",
+          "delay": 1,
+          "next": "trash_emote"
+        },
+        "trash_emote": {
+          "type": "emote",
+          "args": "crumples the paper and stuffs it into the trash can with a grunt of satisfaction.",
+          "delay": 3,
+          "next": "return_west_1"
+        },
+        "return_west_1": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "return_west_2"
+        },
+        "return_west_2": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "return_west_3"
+        },
+        "return_west_3": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "return_west_4"
+        },
+        "return_west_4": {
+          "type": "command",
+          "args": "west",
+          "delay": 2,
+          "next": "return_north_1"
+        },
+        "return_north_1": {
+          "type": "command",
+          "args": "north",
+          "delay": 2,
+          "next": "return_east_1"
+        },
+        "return_east_1": {
+          "type": "command",
+          "args": "east",
+          "delay": 2,
+          "next": "return_north_2"
+        },
+        "return_north_2": {
+          "type": "command",
+          "args": "north",
+          "delay": 2,
+          "next": "arrive_back"
+        },
+        "arrive_back": {
+          "type": "emote",
+          "args": "mops his brow and glances at the copy machine. Its output tray is full again.",
+          "delay": 4,
+          "next": "pickup_emote"
+        }
+      }
+    }
+  }
+]

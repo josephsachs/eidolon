@@ -16,8 +16,17 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 from evennia import default_cmds, CmdSet
 from commands.player_commands import (
-    CmdSay, CmdPose, CmdSkills,
-    CmdNoHome, CmdNoAccess,
+    CmdSay, CmdPose, CmdSkills, CmdHealth, CmdHide, CmdSearch, CmdReveal,
+    CmdExplore, CmdNoHome, CmdNoAccess, CmdInfo, CmdWork, CmdStopWorking,
+)
+from commands.combat_commands import (
+    CmdAttack, CmdDefend, CmdAvoid, CmdEscape, CmdStance, CmdTactic,
+)
+from commands.equipment_commands import (
+    CmdEquip, CmdUnequip, CmdInventory,
+)
+from commands.vendor_commands import (
+    CmdBuy, CmdSell,
 )
 
 
@@ -34,8 +43,27 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdSay())
         self.add(CmdPose())
         self.add(CmdSkills())
+        self.add(CmdHealth())
+        self.add(CmdHide())
+        self.add(CmdSearch())
+        self.add(CmdReveal())
+        self.add(CmdExplore())
         self.add(CmdNoHome())
         self.add(CmdNoAccess())
+        self.add(CmdAttack())
+        self.add(CmdDefend())
+        self.add(CmdAvoid())
+        self.add(CmdEscape())
+        self.add(CmdStance())
+        self.add(CmdTactic())
+        self.add(CmdEquip())
+        self.add(CmdUnequip())
+        self.add(CmdInventory())
+        self.add(CmdBuy())
+        self.add(CmdSell())
+        self.add(CmdInfo())
+        self.add(CmdWork())
+        self.add(CmdStopWorking())
 
 
 class AgentCharacterCmdSet(CmdSet):
@@ -59,6 +87,20 @@ class AgentCharacterCmdSet(CmdSet):
         self.add(CmdTeleport())
         self.add(CmdOpen())
         self.add(CmdDestroy())
+
+
+class NpcCmdSet(CmdSet):
+    """
+    Commands available when a player is in the same room as an NPC.
+    Adds interaction verbs like 'talk'.
+    """
+
+    key = "NpcCmdSet"
+    priority = 1
+
+    def at_cmdset_creation(self):
+        from commands.npc_commands import CmdTalk
+        self.add(CmdTalk())
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):

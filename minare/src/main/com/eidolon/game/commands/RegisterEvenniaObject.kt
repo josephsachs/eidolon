@@ -63,7 +63,7 @@ class RegisterEvenniaObject @Inject constructor(
         }
 
         // Register cross-link
-        crossLinkRegistry.link("EvenniaObject", eo._id!!, evenniaId)
+        crossLinkRegistry.link("EvenniaObject", eo._id, evenniaId)
 
         log.info("Created EvenniaObject for evennia_id={}: {} (typeclass={})", evenniaId, eo._id, typeclassPath)
         return JsonObject()

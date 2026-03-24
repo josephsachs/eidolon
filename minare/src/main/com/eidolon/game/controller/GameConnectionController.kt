@@ -1,6 +1,7 @@
 package com.eidolon.game.controller
 
 import com.minare.controller.ConnectionController
+import com.minare.core.storage.interfaces.ConnectionStore
 import com.minare.core.transport.models.Connection
 import com.minare.core.transport.upsocket.handlers.SyncCommandHandler
 import eidolon.game.controller.GameChannelController
@@ -17,15 +18,28 @@ import javax.inject.Singleton
 class GameConnectionController @Inject constructor(
     private val channelController: GameChannelController,
     private val syncCommandHandler: SyncCommandHandler,
+    private val connectionStore: ConnectionStore,
 ) : ConnectionController() {
     private val log = LoggerFactory.getLogger(GameConnectionController::class.java)
+
+    /**
+     * If meta contains a connection_id, use it as the connection's ID.
+     */
+    override suspend fun createConnection(meta: Map<String, String>?): Connection {
+        val id = meta?.get("connection_id")
+        return if (id != null) {
+            connectionStore.create(meta, id)
+        } else {
+            super.createConnection(meta)
+        }
+    }
 
     /**
      * Called when a client becomes fully connected.
      * Subscribes the client to the default channel and initiates sync.
      */
     override suspend fun onConnected(connection: Connection) {
-        log.info("Test client {} is now fully connected", connection.id)
+        log.info("Client {} connected", connection.id)
 
         val defaultChannelId = channelController.getDefaultChannel()
 
@@ -45,6 +59,7 @@ class GameConnectionController @Inject constructor(
     }
 
     companion object {
+        const val EVENNIA_CONNECTION_ID = "evennia-system"
         const val ADDRESS_EVENNIA_READY = "eidolon.evennia.ready"
     }
 }

@@ -59,7 +59,7 @@ class GameOperationController @Inject constructor(
                     .meta(JsonObject().put("connectionId", connectionId).encode())
 
                 log.debug("Created CREATE operation for new {} from connection {}", entityType, connectionId)
-                operation
+                operation.build()
             }
 
             "mutate" -> {
@@ -89,6 +89,7 @@ class GameOperationController @Inject constructor(
                 operation.value("entityType", entityObject.getString("type"))
 
                 log.debug("Created MUTATE operation for entity {} from connection {}", entityId, connectionId)
+                operation.build()
             }
 
             "delete" -> {
@@ -114,7 +115,7 @@ class GameOperationController @Inject constructor(
                     .meta(JsonObject().put("connectionId", connectionId).encode())
 
                 log.debug("Created DELETE operation for entity {} from connection {}", entityId, connectionId)
-                operation
+                operation.build()
             }
 
             else -> {

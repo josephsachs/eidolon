@@ -14,6 +14,11 @@ import io.vertx.core.json.JsonObject
 @Singleton
 class GameInitializer @Inject constructor(
     private val mapInitializer: RoomInitializer,
+    private val npcInitializer: NpcInitializer,
+    private val objectInitializer: ObjectInitializer,
+    private val hazardInitializer: HazardInitializer,
+    private val spawnerInitializer: SpawnerInitializer,
+    private val workSiteInitializer: WorkSiteInitializer,
     private val entityController: EntityController,
     private val entityFactory: GameEntityFactory,
     private val channelController: GameChannelController,
@@ -40,7 +45,7 @@ class GameInitializer @Inject constructor(
         verticleLogger.logInfo("Created default channel: $defaultChannelId")
 
         var startupOptions = JsonObject()
-            .put("turnPhase", TurnPhase.ACT)
+            .put("turnPhase", TurnPhase.BEFORE)
             .put("turnProcessing", false)
 
         entityController.saveProperties(gameEntity._id!!,startupOptions)
@@ -48,6 +53,11 @@ class GameInitializer @Inject constructor(
         verticleLogger.logInfo("Initial settings: $startupOptions")
 
         mapInitializer.initialize()
+        npcInitializer.initialize()
+        objectInitializer.initialize()
+        hazardInitializer.initialize()
+        spawnerInitializer.initialize()
+        workSiteInitializer.initialize()
 
         vertx.eventBus().publish(ADDRESS_INITIALIZE_GAME_COMPLETE, JsonObject())
 
@@ -57,6 +67,6 @@ class GameInitializer @Inject constructor(
     companion object {
         const val ADDRESS_INITIALIZE_GAME_COMPLETE = "eidolon.initialize.game.complete"
 
-        const val GAME_TITLE = "Eidolon; Minare 0.4.0"
+        const val GAME_TITLE = "Eidolon; Minare 0.5.0"
     }
 }

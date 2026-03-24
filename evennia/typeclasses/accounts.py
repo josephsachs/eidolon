@@ -18,6 +18,13 @@ class Account(DefaultAccount):
     instead of auto-puppeting a character.
     """
 
+    def at_account_creation(self):
+        """
+        Override to prevent Evennia's default character auto-creation.
+        Characters are created explicitly through the EvMenu flow.
+        """
+        pass
+
     def at_post_login(self, session=None, **kwargs):
         """
         Called after login. Registers account with Minare, then
