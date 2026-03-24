@@ -184,15 +184,28 @@ class CmdSell(Command):
                        else f"Can't find '{vendor_name}' here.")
             return
 
-        # Find the item in inventory
-        item = caller.search(item_name, location=caller)
-        if not item:
-            return
-
-        template_id = getattr(item.db, 'template_id', None)
-        if not template_id:
-            caller.msg("You can't sell that.")
-            return
+        # Try physical item first, then check resources
+        item = caller.search(item_name, location=caller, quiet=True)
+        if item:
+            item = item[0] if isinstance(item, list) else item
+            template_id = getattr(item.db, 'template_id', None)
+            if not template_id:
+                caller.msg("You can't sell that.")
+                return
+        else:
+            # Check resources by name match
+            template_id = None
+            sim_state = caller.db.sim_state or {}
+            resources = sim_state.get('resources', {})
+            query = item_name.lower()
+            for tid, count in resources.items():
+                name = tid.replace("-", " ").lower()
+                if query == tid or query == name or name.startswith(query):
+                    template_id = tid
+                    break
+            if not template_id:
+                caller.msg(f"You don't have '{item_name}' to sell.")
+                return
 
         def on_sell(response):
             if not response.get('success'):

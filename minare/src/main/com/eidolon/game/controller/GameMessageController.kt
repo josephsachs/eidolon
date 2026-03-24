@@ -109,6 +109,19 @@ class GameMessageController @Inject constructor(
             result
         }
 
+        registerRequestResponse("resource_info") { msg ->
+            val templateId = msg.getString("template_id", "")
+            val template = itemRegistry.get(templateId)
+            if (template != null) {
+                JsonObject()
+                    .put("success", true)
+                    .put("name", template.name)
+                    .put("description", template.description)
+            } else {
+                JsonObject().put("success", false).put("reason", "unknown resource")
+            }
+        }
+
         registerRequestResponse("equip_item") { msg -> handleEquip(msg) }
         registerRequestResponse("unequip_item") { msg -> handleUnequip(msg) }
         registerRequestResponse("work_site_join") { msg -> handleWorkSiteJoin(msg) }

@@ -92,21 +92,21 @@ class WorkSite : Entity() {
             return
         }
 
-        // Spawn the item
         val template = itemRegistry.get(templateId) ?: return
-        val roomEvenniaId = crossLinkRegistry.getEvenniaId("Room", roomId) ?: return
 
         lastSpawnedAt = now
         entityController.saveProperties(_id!!, JsonObject().put("lastSpawnedAt", now))
 
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "create_item")
-            .put("room_evennia_id", roomEvenniaId)
-            .put("template_id", templateId)
-            .put("item_name", template.name)
-            .put("item_description", template.description))
+        // Grant resource to each present worker
+        for (worker in presentWorkers) {
+            val updatedResources = worker.resources.toMutableMap()
+            updatedResources[templateId] = (updatedResources[templateId] ?: 0) + 1
+            worker.resources = updatedResources
+            entityController.saveState(worker._id, JsonObject()
+                .put("resources", worker.resourcesToJson()))
+        }
 
-        log.info("WorkSite '$name' spawned '${template.name}' with ${presentWorkers.size} workers")
+        log.info("WorkSite '$name' granted '${template.name}' to ${presentWorkers.size} workers")
 
         // Skill check for each present worker
         for (worker in presentWorkers) {

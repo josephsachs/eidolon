@@ -131,6 +131,14 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Mutable
     var equipment: Map<String, String> = emptyMap()
 
+    /**
+     * Resource collections: template ID -> count.
+     * Tracks currencies, consumables, and other stackable non-object items.
+     */
+    @State
+    @Mutable
+    var resources: Map<String, Int> = emptyMap()
+
     // --- Regeneration ---
 
     suspend fun regenerate() {
@@ -289,10 +297,12 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("health", healthToJson())
             .put("attributes", attributesToJson())
             .put("equipment", equipmentToJson())
+            .put("resources", resourcesToJson())
         "skills" -> skillsToJson()
         "health" -> healthToJson()
         "attributes" -> attributesToJson()
         "equipment" -> equipmentToJson()
+        "resources" -> resourcesToJson()
         else -> null
     }
 
@@ -340,6 +350,14 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
         val obj = JsonObject()
         equipment.forEach { (slot, templateId) ->
             obj.put(slot, templateId)
+        }
+        return obj
+    }
+
+    fun resourcesToJson(): JsonObject {
+        val obj = JsonObject()
+        resources.forEach { (templateId, count) ->
+            obj.put(templateId, count)
         }
         return obj
     }

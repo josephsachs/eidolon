@@ -363,7 +363,7 @@ _SYNC_TYPE_MAP = {
         ],
         "fields": {
             "downed", "dead", "equipment", "health",
-            "currentRoomId", "combatId",
+            "currentRoomId", "combatId", "resources",
         },
         "hooks": {
             "downed": _on_character_downed_changed,

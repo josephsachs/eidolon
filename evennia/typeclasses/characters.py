@@ -494,17 +494,14 @@ class AgentCharacter(Character):
             logger.log_err(f"_handle_combat_feedback: {e}")
 
     def _handle_vendor_buy(self, command):
-        """Handle a vendor purchase: check currency stack, deduct, create/stack the item."""
+        """Handle a vendor purchase: create the purchased item. Currency already deducted by Minare."""
         from evennia import create_object
-        from typeclasses.items import Item, find_item_stack
+        from typeclasses.items import Item
 
         character_evennia_id = command.get('character_evennia_id')
         item_name = command.get('item_name', '')
         item_description = command.get('item_description', '')
         template_id = command.get('template_id', '')
-        currency_template_id = command.get('currency_template_id', '')
-        currency_name = command.get('currency_name', '')
-        price = command.get('price', 0)
 
         if not character_evennia_id:
             logger.log_err("_handle_vendor_buy: missing character_evennia_id")
@@ -514,42 +511,23 @@ class AgentCharacter(Character):
             from evennia.objects.models import ObjectDB
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
 
-            # Find currency stack
-            currency_stack = find_item_stack(char_obj, currency_template_id) if currency_template_id else None
-            currency_count = (currency_stack.db.stack_count or 1) if currency_stack else 0
-
-            if currency_count < price:
-                char_obj.msg(f"|rYou don't have enough {currency_name} (need {price}, have {currency_count}).|n")
-                return
-
-            # Deduct currency
-            if currency_stack.remove_from_stack(price):
-                currency_stack.delete()
-
-            # Create or stack purchased item
-            existing = find_item_stack(char_obj, template_id)
-            if existing:
-                existing.add_to_stack(1)
-            else:
-                new_item = create_object(Item, key=item_name, location=char_obj)
-                new_item.db.template_id = template_id
-                new_item.db.desc = item_description
+            new_item = create_object(Item, key=item_name, location=char_obj)
+            new_item.db.template_id = template_id
+            new_item.db.desc = item_description
 
             char_obj.msg(f"|gYou receive {item_name}.|n")
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_vendor_buy: {e}")
 
     def _handle_vendor_sell(self, command):
-        """Handle a vendor sale: remove from stack, create/stack currency."""
-        from evennia import create_object
-        from typeclasses.items import Item, find_item_stack
+        """Handle a vendor sale: remove the item. Currency already added by Minare."""
+        from typeclasses.items import find_item_stack
 
         character_evennia_id = command.get('character_evennia_id')
         template_id = command.get('template_id', '')
         item_name = command.get('item_name', '')
-        currency_template_id = command.get('currency_template_id', '')
-        currency_name = command.get('currency_name', '')
         payout = command.get('payout', 0)
+        currency_name = command.get('currency_name', '')
 
         if not character_evennia_id:
             logger.log_err("_handle_vendor_sell: missing character_evennia_id")
@@ -559,26 +537,13 @@ class AgentCharacter(Character):
             from evennia.objects.models import ObjectDB
             char_obj = ObjectDB.objects.get(id=int(character_evennia_id))
 
-            # Find item stack
-            sell_stack = find_item_stack(char_obj, template_id)
-            if not sell_stack:
+            sell_item = find_item_stack(char_obj, template_id)
+            if not sell_item:
                 char_obj.msg(f"|rYou don't have a {item_name} to sell.|n")
                 return
 
-            # Remove one from stack
-            if sell_stack.remove_from_stack(1):
-                sell_stack.delete()
-
-            # Add currency to existing stack or create new
-            currency_stack = find_item_stack(char_obj, currency_template_id) if currency_template_id else None
-            if currency_stack:
-                currency_stack.add_to_stack(payout)
-            else:
-                currency = create_object(Item, key=currency_name, location=char_obj)
-                currency.db.template_id = currency_template_id
-                currency.db.stack_count = payout
-
-            char_obj.msg(f"|gYou receive {payout} {currency_name}.|n")
+            sell_item.delete()
+            char_obj.msg(f"|gYou sell {item_name} for {payout} {currency_name}.|n")
         except (ObjectDB.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_vendor_sell: {e}")
 

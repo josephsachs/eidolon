@@ -98,20 +98,51 @@ class VendorService @Inject constructor(
         val template = itemRegistry.get(templateId)
             ?: return JsonObject().put("success", false).put("reason", "unknown item")
 
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("success", false).put("reason", "character not found")
+
         val characterEvenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", characterId)
             ?: return JsonObject().put("success", false).put("reason", "character not found")
 
         val currencyTemplate = itemRegistry.get(config.currency)
+        val currencyName = currencyTemplate?.name ?: config.currency
+        val price = template.price.amount
+        val currentCurrency = character.resources[config.currency] ?: 0
 
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "vendor_buy")
-            .put("character_evennia_id", characterEvenniaId)
-            .put("template_id", templateId)
-            .put("item_name", template.name)
-            .put("item_description", template.description)
-            .put("currency_template_id", config.currency)
-            .put("currency_name", currencyTemplate?.name ?: config.currency)
-            .put("price", template.price.amount))
+        if (currentCurrency < price)
+            return JsonObject().put("success", false)
+                .put("reason", "You don't have enough $currencyName (need $price, have $currentCurrency).")
+
+        // Deduct currency
+        val updatedResources = character.resources.toMutableMap()
+        val remaining = currentCurrency - price
+        if (remaining <= 0) updatedResources.remove(config.currency)
+        else updatedResources[config.currency] = remaining
+        character.resources = updatedResources
+        entityController.saveState(characterId, JsonObject()
+            .put("resources", character.resourcesToJson()))
+
+        if (template.type == "resource" || template.type == "currency") {
+            // Add resource to character
+            updatedResources[templateId] = (updatedResources[templateId] ?: 0) + 1
+            character.resources = updatedResources
+            entityController.saveState(characterId, JsonObject()
+                .put("resources", character.resourcesToJson()))
+
+            evenniaCommUtils.sendAgentCommand(JsonObject()
+                .put("action", "combat_feedback")
+                .put("character_evennia_id", characterEvenniaId)
+                .put("message", "You receive ${template.name}."))
+        } else {
+            // Create the real item in Evennia
+            evenniaCommUtils.sendAgentCommand(JsonObject()
+                .put("action", "vendor_buy")
+                .put("character_evennia_id", characterEvenniaId)
+                .put("template_id", templateId)
+                .put("item_name", template.name)
+                .put("item_description", template.description))
+        }
 
         return JsonObject().put("success", true).put("item_name", template.name)
     }
@@ -130,23 +161,56 @@ class VendorService @Inject constructor(
         val template = itemRegistry.get(templateId)
             ?: return JsonObject().put("success", false).put("reason", "unknown item")
 
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("success", false).put("reason", "character not found")
+
         val characterEvenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", characterId)
             ?: return JsonObject().put("success", false).put("reason", "character not found")
 
         val currencyTemplate = itemRegistry.get(config.currency)
+        val currencyName = currencyTemplate?.name ?: config.currency
+        val payout = template.price.amount
 
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "vendor_sell")
-            .put("character_evennia_id", characterEvenniaId)
-            .put("template_id", templateId)
-            .put("item_name", template.name)
-            .put("currency_template_id", config.currency)
-            .put("currency_name", currencyTemplate?.name ?: config.currency)
-            .put("payout", template.price.amount))
+        // Add currency to resources
+        val updatedResources = character.resources.toMutableMap()
+        updatedResources[config.currency] = (updatedResources[config.currency] ?: 0) + payout
+
+        if (template.type == "resource" || template.type == "currency") {
+            // Remove resource from character
+            val current = updatedResources[templateId] ?: 0
+            if (current <= 0)
+                return JsonObject().put("success", false)
+                    .put("reason", "You don't have any ${template.name} to sell.")
+            if (current <= 1) updatedResources.remove(templateId)
+            else updatedResources[templateId] = current - 1
+
+            character.resources = updatedResources
+            entityController.saveState(characterId, JsonObject()
+                .put("resources", character.resourcesToJson()))
+
+            evenniaCommUtils.sendAgentCommand(JsonObject()
+                .put("action", "combat_feedback")
+                .put("character_evennia_id", characterEvenniaId)
+                .put("message", "You sell ${template.name} for $payout $currencyName."))
+        } else {
+            // Remove the real item from Evennia
+            character.resources = updatedResources
+            entityController.saveState(characterId, JsonObject()
+                .put("resources", character.resourcesToJson()))
+
+            evenniaCommUtils.sendAgentCommand(JsonObject()
+                .put("action", "vendor_sell")
+                .put("character_evennia_id", characterEvenniaId)
+                .put("template_id", templateId)
+                .put("item_name", template.name)
+                .put("payout", payout)
+                .put("currency_name", currencyName))
+        }
 
         return JsonObject().put("success", true)
             .put("item_name", template.name)
-            .put("payout", template.price.amount)
-            .put("currency", currencyTemplate?.name ?: config.currency)
+            .put("payout", payout)
+            .put("currency", currencyName)
     }
 }
