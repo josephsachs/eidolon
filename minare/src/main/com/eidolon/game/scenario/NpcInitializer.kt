@@ -218,7 +218,7 @@ class NpcInitializer @Inject constructor(
                 state.put("equipment", equipmentJson)
             }
 
-            entityController.saveState(character._id!!, state)
+            entityController.saveState(character._id, state)
 
             // Link EvenniaObject stub <-> EvenniaCharacter domain entity
             linkDomainEntity.link(evenniaId, character._id!!, "EvenniaCharacter")
@@ -229,7 +229,7 @@ class NpcInitializer @Inject constructor(
                 val buyMenu = vendorJson.getJsonArray("buyMenu")?.map { it as String } ?: emptyList()
                 val sellMenu = vendorJson.getJsonArray("sellMenu")?.map { it as String } ?: emptyList()
                 val currency = vendorJson.getString("currency", "dollar")
-                vendorService.registerVendor(character._id!!, VendorService.VendorConfig(buyMenu, sellMenu, currency))
+                vendorService.registerVendor(character._id, VendorService.VendorConfig(buyMenu, sellMenu, currency))
             }
 
             // Register state machine config if applicable
@@ -238,7 +238,7 @@ class NpcInitializer @Inject constructor(
                 val smBrain = brainRegistry.get("state_machine") as? StateMachineBrain
                 if (smBrain != null) {
                     val config = parseStateMachineConfig(smJson)
-                    smBrain.registerConfig(character._id!!, config)
+                    smBrain.registerConfig(character._id, config)
                 }
             }
 

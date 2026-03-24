@@ -31,10 +31,10 @@ class CombatService @Inject constructor(
         entityController.create(combat)
 
         val now = System.currentTimeMillis()
-        entityController.saveState(combat._id!!, JsonObject()
+        entityController.saveState(combat._id, JsonObject()
             .put("members", listOf(attackerId, targetId))
             .put("roomId", roomId))
-        entityController.saveProperties(combat._id!!, JsonObject()
+        entityController.saveProperties(combat._id, JsonObject()
             .put("createdAt", now)
             .put("lastActivity", now))
 
@@ -45,8 +45,8 @@ class CombatService @Inject constructor(
         }
 
         // Set combatId on both characters
-        setCombatProperties(attackerId, combat._id!!, "attack", targetId)
-        setCombatProperties(targetId, combat._id!!, "", "")
+        setCombatProperties(attackerId, combat._id, "attack", targetId)
+        setCombatProperties(targetId, combat._id, "", "")
 
         // Lock movement for both
         sendCombatLock(attackerId)

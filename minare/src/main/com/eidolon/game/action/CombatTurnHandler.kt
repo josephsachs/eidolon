@@ -172,7 +172,7 @@ class CombatTurnHandler @Inject constructor(
         }
 
         // Remove members with no target and no one targeting them
-        val refreshedCombat = entityController.findByIds(listOf(combat._id!!))
+        val refreshedCombat = entityController.findByIds(listOf(combat._id))
             .values.firstOrNull() as? Combat
         if (refreshedCombat != null && refreshedCombat.members.size > 1) {
             val refreshedMembers = loadMembers(refreshedCombat.members)

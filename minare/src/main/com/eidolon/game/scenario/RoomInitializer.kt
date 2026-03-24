@@ -236,7 +236,7 @@ class RoomInitializer @Inject constructor(
             entityController.create(room)
 
             // Link EvenniaObject stub <-> Room domain entity
-            linkDomainEntity.link(evenniaId, room._id!!, "Room")
+            linkDomainEntity.link(evenniaId, room._id, "Room")
 
             rooms.add(room)
             log.info("Created Minare Room '${room.shortDescription}' (id=${room._id}, evenniaId=$evenniaId)")
@@ -260,7 +260,7 @@ class RoomInitializer @Inject constructor(
 
                 val explorableExit = entityFactory.createEntity(ExplorableExit::class.java) as ExplorableExit
                 entityController.create(explorableExit)
-                entityController.saveState(explorableExit._id!!, JsonObject()
+                entityController.saveState(explorableExit._id, JsonObject()
                     .put("direction", direction)
                     .put("destination", destRoom._id)
                     .put("description", exitObj.getString("description", ""))
@@ -270,7 +270,7 @@ class RoomInitializer @Inject constructor(
 
                 // Add to room's exits map
                 val updatedExits = sourceRoom.exits.copy().put(direction, explorableExit._id)
-                entityController.saveState(sourceRoom._id!!, JsonObject().put("exits", updatedExits))
+                entityController.saveState(sourceRoom._id, JsonObject().put("exits", updatedExits))
 
                 explorableExits.add(explorableExit)
                 log.info("Created ExplorableExit '${direction}' in '${sourceRoom.shortDescription}' (id=${explorableExit._id})")

@@ -32,7 +32,7 @@ class GameInitializer @Inject constructor(
             entityFactory.createEntity(Game::class.java)
         ) as Game
 
-        entityController.saveState(gameEntity._id!!,
+        entityController.saveState(gameEntity._id,
             JsonObject()
                 .put("name", GAME_TITLE)
         )
@@ -48,7 +48,7 @@ class GameInitializer @Inject constructor(
             .put("turnPhase", TurnPhase.BEFORE)
             .put("turnProcessing", false)
 
-        entityController.saveProperties(gameEntity._id!!,startupOptions)
+        entityController.saveProperties(gameEntity._id,startupOptions)
         verticleLogger.logInfo("Chieftain: Initializing entities")
         verticleLogger.logInfo("Initial settings: $startupOptions")
 
