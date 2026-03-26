@@ -347,14 +347,38 @@ def _on_character_combat_changed(obj, old_val, new_val):
     obj.db.in_combat = bool(new_val)
 
 
+def _on_eo_description_changed(obj, old_val, new_val):
+    """Push EvenniaObject description directly to the Evennia object's db.desc."""
+    if new_val:
+        obj.db.desc = new_val
+
+
+def _on_eo_short_description_changed(obj, old_val, new_val):
+    """Push EvenniaObject shortDescription to the Evennia object's key (name)."""
+    pass  # shortDescription is informational; Evennia key is set at creation
+
+
 _SYNC_TYPE_MAP = {
     "Room": {
         "typeclasses": ["typeclasses.rooms.Room"],
         "fields": {
-            "description", "shortDescription", "concealment",
-            "dayDesc", "nightDesc",
+            "concealment", "dayDesc", "nightDesc",
         },
         "hooks": {},
+    },
+    "EvenniaObject": {
+        "typeclasses": [
+            "typeclasses.rooms.Room",
+            "typeclasses.objects.Object",
+            "typeclasses.characters.PlayerCharacter",
+            "typeclasses.characters.NonplayerCharacter",
+        ],
+        "fields": {
+            "description", "shortDescription",
+        },
+        "hooks": {
+            "description": _on_eo_description_changed,
+        },
     },
     "EvenniaCharacter": {
         "typeclasses": [
@@ -374,7 +398,7 @@ _SYNC_TYPE_MAP = {
     "ObjectActor": {
         "typeclasses": ["typeclasses.objects.Object"],
         "fields": {
-            "description", "actorType",
+            "actorType",
         },
         "hooks": {},
     },

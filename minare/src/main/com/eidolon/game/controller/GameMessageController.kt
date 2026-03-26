@@ -175,6 +175,17 @@ class GameMessageController @Inject constructor(
         register("player_disconnect") { _, msg, _ -> playerDisconnect.execute(msg) }
         register("apply_damage") { _, msg, _ -> damageService.applyDamageFromEvennia(msg) }
         register("link_domain_entity") { _, msg, _ -> linkDomainEntity.execute(msg) }
+        register("update_eo_description") { _, msg, _ ->
+            val eoMinareId = msg.getString("eo_minare_id", "")
+            if (eoMinareId.isNotEmpty()) {
+                val updates = io.vertx.core.json.JsonObject()
+                val desc = msg.getString("description", "")
+                val shortDesc = msg.getString("short_description", "")
+                if (desc.isNotEmpty()) updates.put("description", desc)
+                if (shortDesc.isNotEmpty()) updates.put("shortDescription", shortDesc)
+                if (!updates.isEmpty) entityController.saveState(eoMinareId, updates)
+            }
+        }
         register("presence") { _, msg, _ -> handlePresence(msg) }
 
         register("character_moved") { _, msg, _ ->

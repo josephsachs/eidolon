@@ -13,5 +13,15 @@
     "name": "trash can",
     "room": "generous-mart",
     "description": "A plastic trash can with a swinging lid and a Generous Mart bear sticker. Someone has wedged a coffee cup into the lid so it won't close."
+  },
+  {
+    "name": "a dead human body",
+    "room": "radio-tower-pathway-3",
+    "description": "The body of a man in his thirties, wearing an Izod polo and khaki board shorts. He is badly bloodied by slashes across the torso."
+  },
+  {
+    "name": "a dead human body",
+    "room": "radio-tower-pathway-2",
+    "description": "The body of a woman in her late twenties, wearing a blue Anthropologie dress and a now crumpled hat. The cause of her death is not apparent."
   }
 ]

@@ -85,7 +85,7 @@ class GameModule : AbstractModule() {
     ): BrainRegistry {
         val registry = BrainRegistry()
         registry.register(IdleBrain())
-        registry.register(KibitzBrain(entityController, modelAPI))
+        registry.register(KibitzBrain(entityController, modelAPI, crossLinkRegistry))
         registry.register(FeralBrain(entityController, combatService, evenniaCommUtils, crossLinkRegistry))
         registry.register(VendorBrain(entityController, itemRegistry))
         registry.register(StateMachineBrain(evenniaCommUtils, crossLinkRegistry))

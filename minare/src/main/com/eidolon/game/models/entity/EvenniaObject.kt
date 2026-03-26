@@ -44,11 +44,25 @@ class EvenniaObject : Entity(), Serializable, Viewable {
     @Mutable
     var domainEntityType: String = ""
 
+    @State
+    @Mutable
+    var description: String = ""
+
+    @State
+    @Mutable
+    var shortDescription: String = ""
+
     override fun project(viewName: String): JsonObject? = when (viewName) {
         "default" -> JsonObject()
             .put("evenniaId", evenniaId)
             .put("key", key)
             .put("typeclassPath", typeclassPath)
+            .put("description", description)
+            .put("shortDescription", shortDescription)
+        "sync" -> JsonObject()
+            .put("evenniaId", evenniaId)
+            .put("description", description)
+            .put("shortDescription", shortDescription)
         else -> null
     }
 }

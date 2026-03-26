@@ -26,13 +26,13 @@ entity:
   update:
     collect_changes: true
     interval: 200
-  graphing:
-    store: mongo
+  # graphing:
+  #  store: mongo
 
 
 frames:
-  threads: 10
-  frame_duration: 400
+  threads: 30
+  frame_duration: 800
   lookahead: 25
   session:
     auto_session: frames_per_session
@@ -45,8 +45,8 @@ frames:
       assign_on_resume: false
     replay:
       buffer_while_replay: true
-  snapshot:
-    store: mongo
+  # snapshot:
+  #  store: mongo
 
 
 tasks:

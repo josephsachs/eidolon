@@ -31,14 +31,6 @@ class Room(ObjectParent, DefaultRoom):
         sim_state = self.db.sim_state or {}
         return sim_state.get("concealment", 0)
 
-    def get_display_desc(self, looker, **kwargs):
-        """Use sim-synced description if available, otherwise fall back to default."""
-        sim_state = self.db.sim_state or {}
-        sim_desc = sim_state.get("description")
-        if sim_desc:
-            return sim_desc
-        return super().get_display_desc(looker, **kwargs) or ""
-
     def at_object_receive(self, obj, source_location, move_type="move", **kwargs):
         super().at_object_receive(obj, source_location, move_type=move_type, **kwargs)
         self._notify_presence(obj, "arrived")

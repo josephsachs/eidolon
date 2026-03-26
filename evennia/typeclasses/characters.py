@@ -330,6 +330,7 @@ class AgentCharacter(Character):
             )
             if description:
                 obj.db.desc = description
+                obj.update_eo_description(description=description)
             logger.log_info(
                 f"AgentCharacter: Created object '{object_name}' "
                 f"(id={obj.id}) in room '{room.key}'"
@@ -514,6 +515,8 @@ class AgentCharacter(Character):
             new_item = create_object(Item, key=item_name, location=char_obj)
             new_item.db.template_id = template_id
             new_item.db.desc = item_description
+            if item_description:
+                new_item.update_eo_description(description=item_description)
 
             char_obj.msg(f"|gYou receive {item_name}.|n")
         except (ObjectDB.DoesNotExist, ValueError) as e:
@@ -572,6 +575,8 @@ class AgentCharacter(Character):
                 new_item = create_object(Item, key=item_name, location=room)
                 new_item.db.template_id = template_id
                 new_item.db.desc = item_description
+                if item_description:
+                    new_item.update_eo_description(description=item_description)
                 logger.log_info(f"AgentCharacter: Created item '{item_name}' in '{room.key}'")
         except (Room.DoesNotExist, ValueError) as e:
             logger.log_err(f"_handle_create_item: {e}")

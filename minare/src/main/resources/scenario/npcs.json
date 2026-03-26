@@ -63,7 +63,7 @@
     }
   },
   {
-    "name": "Kai",
+    "name": "Gaspar",
     "shortDescription": "a fruit vendor with a wide smile",
     "description": "A wiry man in a tank top sitting behind a wooden crate piled with tropical fruit. He fans himself with a folded newspaper and greets everyone like a cousin.",
     "brainType": "vendor",
@@ -75,9 +75,9 @@
     }
   },
   {
-    "name": "Marcel",
+    "name": "Brandreth",
     "shortDescription": "a bartender polishing a glass",
-    "description": "A tall man with a pencil mustache and an immaculate white shirt, polishing the same glass he was polishing an hour ago. He moves with the unhurried precision of someone who has been tending bar since before you were born.",
+    "description": "A tall man with a broad, silvery face and an immaculate white shirt, polishing the same glass he was polishing an hour ago. He moves with the unhurried precision of someone who has been tending bar since before you were born.",
     "brainType": "vendor",
     "room": "hotel-st-saents-bar",
     "vendor": {
@@ -87,7 +87,43 @@
     }
   },
   {
-    "name": "Sunny",
+    "name": "Peter Hoffs",
+    "shortDescription": "an old man in a courduroy blazer",
+    "description": "A late-middle-aged man. He has a white hair describable as a 'shock'. He wears a corduroy blazer and a Tyrolean hat with two pins.",
+    "brainType": "state_machine",
+    "room": "hotel-st-saents-bar",
+    "stateMachine": {
+      "initial": "chitchat_1",
+      "states": {
+        "chitchat_1": {
+          "type": "say",
+          "args": "It's quite good actually, because Spirit Island is quite cheap compared to the taxes you'd pay elsewhere.",
+          "delay": 10,
+          "next": "chitchat_2"
+        },
+        "chitchat_2": {
+          "type": "say",
+          "args": "It's good to know that there are places in the Pacific where you still pay in pounds.",
+          "delay": 10,
+          "next": "chitchat_3"
+        },
+        "chitchat_3": {
+          "type": "say",
+          "args": "I'm looking for someone to write my memoirs. I would quite like for a woman to do write them.",
+          "delay": 10,
+          "next": "chitchat_4"
+        },
+        "chitchat_4": {
+          "type": "say",
+          "args": "Well, it's not ",
+          "delay": 10,
+          "next": "chitchat_1"
+        }
+      }
+    }
+  },
+  {
+    "name": "Lizzy",
     "shortDescription": "an aggressively cheerful tour agent",
     "description": "A woman in a floral shirt and khaki shorts, standing behind a folding table with a sun-bleached banner reading 'SPIRIT ISLAND EXPERIENCES.' Her smile never wavers. Her eyes are tired.",
     "brainType": "vendor",
@@ -99,7 +135,7 @@
     }
   },
   {
-    "name": "Rico",
+    "name": "Baltasar",
     "shortDescription": "a guard leaning against a wall",
     "description": "A stocky man in a faded security uniform, badge half-peeled off. He's supposed to be guarding the old resort but he's been out here long enough that the line between guarding and squatting has blurred. He watches you with a merchant's eye.",
     "brainType": "vendor",
@@ -111,7 +147,7 @@
     }
   },
   {
-    "name": "Auntie May",
+    "name": "Margarida",
     "shortDescription": "a shopkeeper surrounded by tourist junk",
     "description": "An older woman in a muumuu sits in a folding chair behind a card table stacked with shell necklaces, postcards, and — buried among the junk — some things that might actually be useful. She sizes you up before quoting a price.",
     "brainType": "vendor",
@@ -125,7 +161,7 @@
   {
     "name": "DQ Cashier",
     "shortDescription": "a teenager behind the counter",
-    "description": "A bored teenager in a Dairy Queen visor, leaning on the register. She looks through you with the thousand-yard stare of someone who has been asked about Blizzard flavors one too many times today.",
+    "description": "A teenager in a Dairy Queen visor, leaning on the register. She looks through you with a thousand-yard stare.",
     "brainType": "vendor",
     "room": "dairy-queen-store",
     "vendor": {
@@ -135,7 +171,7 @@
     }
   },
   {
-    "name": "Clark",
+    "name": "Chase",
     "shortDescription": "a clerk in a green apron",
     "description": "A middle-aged man in a forest-green apron with a bear logo. He's restocking shelves with the calm focus of someone who has found peace in retail. A name tag reads 'CLARK.' Below it, a smaller tag reads 'GENEROUS.'",
     "brainType": "vendor",
@@ -147,9 +183,9 @@
     }
   },
   {
-    "name": "Dex",
-    "shortDescription": "a bartender who speaks in riddles",
-    "description": "A lean figure behind a plywood bar, face half-lit by the jukebox glow. Dex doesn't introduce himself — you just know. He pours without being asked and says things that sound like nonsense until three hours later when they don't.",
+    "name": "Riggs",
+    "shortDescription": "a bartender who speaks in enigmatic statements about blood and insects",
+    "description": "A lean figure behind a plywood bar, face half-lit by the jukebox glow.",
     "brainType": "vendor",
     "room": "locke-secret-bar",
     "vendor": {
@@ -159,7 +195,7 @@
     }
   },
   {
-    "name": "Tomas",
+    "name": "Tomé",
     "shortDescription": "a wiry boy in cutoff shorts",
     "description": "A teenager in cutoff shorts and flip-flops, Kai's nephew or cousin or something. He runs pineapples from the wild patch to Kai's crate with the grim efficiency of someone who has been doing this chore since he could walk.",
     "brainType": "state_machine",
@@ -231,9 +267,9 @@
     }
   },
   {
-    "name": "Apparition",
-    "shortDescription": "a flickering, translucent figure",
-    "description": "A human-shaped shimmer in the air, like heat haze with intention. Its edges crackle with faint light. It doesn't acknowledge you. It might not know you're here. It might not know it's here.",
+    "name": "Fireflies",
+    "shortDescription": "a flickering cloud of fireflies",
+    "description": "A shimmer in the air, like heat haze with intention.",
     "brainType": "state_machine",
     "room": "north-island-wilds-1",
     "stateMachine": {
@@ -363,9 +399,9 @@
     }
   },
   {
-    "name": "Dale",
+    "name": "Bearman",
     "shortDescription": "a fat man in a hoodie",
-    "description": "A heavy man in a stained grey hoodie, hood up, hands in pockets. He walks with the slow determination of someone going nowhere in particular. He mutters constantly — fragments of something that might be math, might be prayer, might be a grocery list.",
+    "description": "A heavy man in a stained grey hoodie, hood up, hands in pockets. He walks, stands, ponders, walks back, locomoting up and down the frontage road to a stretch of dusty fields. ",
     "brainType": "state_machine",
     "room": "muddy-fields",
     "stateMachine": {
@@ -373,7 +409,7 @@
       "states": {
         "mutter_1": {
           "type": "say",
-          "args": "...seven, carry the nothing, that's still nothing...",
+          "args": "...seven, carry the nothing. Still nothing.",
           "delay": 4,
           "next": "walk_north_1"
         },
@@ -385,7 +421,7 @@
         },
         "mutter_2": {
           "type": "say",
-          "args": "...if you fold it the other way it's the same shape, that's the problem...",
+          "args": "What I will say is this: I no longer consider myself, in any way, countercultural.",
           "delay": 4,
           "next": "walk_west"
         },
@@ -403,7 +439,7 @@
         },
         "mutter_3": {
           "type": "say",
-          "args": "...no, no, you can't subtract the inside from the outside, they're...",
+          "args": "The conclusion is around here somewhere, to the whole entire universe. These people are all in on it somehow.",
           "delay": 5,
           "next": "walk_south_2"
         },
@@ -427,13 +463,13 @@
         },
         "mutter_4": {
           "type": "say",
-          "args": "...three sides, but only two of them are real...",
+          "args": "...four equilateral sides, but only two of them are real... You must keep in mind the unreal, Arthur.",
           "delay": 5,
           "next": "mutter_5"
         },
         "mutter_5": {
           "type": "say",
-          "args": "...the third one is just where the other two agree to stop arguing...",
+          "args": "There has to be another one... and mathematically, it has to be around here.",
           "delay": 6,
           "next": "emote_2"
         },
@@ -451,7 +487,7 @@
         },
         "mutter_6": {
           "type": "say",
-          "args": "...but if you turn it inside out the charge stays the same, that's the thing...",
+          "args": "",
           "delay": 4,
           "next": "walk_north_3"
         },
@@ -469,7 +505,7 @@
         },
         "mutter_7": {
           "type": "say",
-          "args": "...it's not symmetry if it only works in one direction, that's just a mirror...",
+          "args": "...it's not symmetry if it only works in one direction, that's just chirality...",
           "delay": 5,
           "next": "walk_east"
         },
@@ -481,7 +517,7 @@
         },
         "mutter_8": {
           "type": "say",
-          "args": "...and a mirror is just a wall that remembers...",
+          "args": ".",
           "delay": 4,
           "next": "walk_south_4"
         },

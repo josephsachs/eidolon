@@ -47,14 +47,6 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @State
     @Mutable
-    var description: String = ""
-
-    @State
-    @Mutable
-    var shortDescription: String = ""
-
-    @State
-    @Mutable
     var isNpc: Boolean = false
 
     @State

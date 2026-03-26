@@ -60,6 +60,36 @@ class ObjectParent:
             if pending:
                 self.ndb._pending_domain_link = None
                 self._send_domain_link(pending["domain_id"], pending["domain_type"])
+            # If a description was queued before the EO was registered, push it now
+            pending_desc = self.ndb._pending_eo_description
+            if pending_desc:
+                self.ndb._pending_eo_description = None
+                self.update_eo_description(pending_desc.get("description", ""),
+                                           pending_desc.get("short_description", ""))
+
+    def update_eo_description(self, description="", short_description=""):
+        """Push description to the linked EvenniaObject in Minare."""
+        if not description and not short_description:
+            return
+        eo_id = self.db.minare_eo_id
+        if not eo_id:
+            # EO not registered yet — queue for later
+            self.ndb._pending_eo_description = {
+                "description": description,
+                "short_description": short_description,
+            }
+            return
+        try:
+            from server.conf.minare_client import get_minare_client
+            client = get_minare_client()
+            update = {"type": "update_eo_description", "eo_minare_id": eo_id}
+            if description:
+                update["description"] = description
+            if short_description:
+                update["short_description"] = short_description
+            client.send_message(update)
+        except Exception:
+            pass
 
     def link_domain_entity(self, domain_id, domain_type):
         """

@@ -202,8 +202,6 @@ class NpcInitializer @Inject constructor(
             val state = JsonObject()
                 .put("evenniaId", evenniaId)
                 .put("evenniaName", name)
-                .put("description", npc.getString("description", ""))
-                .put("shortDescription", npc.getString("shortDescription", ""))
                 .put("isNpc", true)
                 .put("brainType", brainType)
                 .put("currentRoomId", roomMinareId)
@@ -222,6 +220,19 @@ class NpcInitializer @Inject constructor(
 
             // Link EvenniaObject stub <-> EvenniaCharacter domain entity
             linkDomainEntity.link(evenniaId, character._id!!, "EvenniaCharacter")
+
+            // Set description on the linked EvenniaObject so it syncs to Evennia
+            val npcDescription = npc.getString("description", "")
+            val npcShortDescription = npc.getString("shortDescription", "")
+            if (npcDescription.isNotEmpty() || npcShortDescription.isNotEmpty()) {
+                val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId)
+                if (eoMinareId != null) {
+                    val eoState = JsonObject()
+                    if (npcDescription.isNotEmpty()) eoState.put("description", npcDescription)
+                    if (npcShortDescription.isNotEmpty()) eoState.put("shortDescription", npcShortDescription)
+                    entityController.saveState(eoMinareId, eoState)
+                }
+            }
 
             // Register vendor config if applicable
             val vendorJson = npc.getJsonObject("vendor")

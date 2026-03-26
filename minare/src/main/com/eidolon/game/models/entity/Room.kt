@@ -23,10 +23,6 @@ class Room : Entity(), Serializable, Viewable {
 
     @State
     @Mutable
-    var description: String = ""
-
-    @State
-    @Mutable
     var shortDescription: String = ""
 
     /**
@@ -85,10 +81,8 @@ class Room : Entity(), Serializable, Viewable {
 
     override fun project(viewName: String): JsonObject? = when (viewName) {
         "default" -> JsonObject()
-            .put("description", description)
             .put("shortDescription", shortDescription)
         "sync" -> JsonObject()
-            .put("description", description)
             .put("concealment", concealment)
         else -> null
     }

@@ -79,7 +79,7 @@
   {
     "id": "lakeland-crossing",
     "shortDescription": "Lakeland crossing",
-    "description": "The crossroads of Lakeland, Ohio: a stoplight, a post office, and a dollar store. Locke Street runs north-south. A side street heads east toward what passes for downtown.",
+    "description": "The crossroads of Lakeland: a stoplight, a post office, and a dollar store. Locke Street runs north-south. A side street heads east toward what passes for downtown.",
     "dayDesc": "The crossroads of Lakeland. The dollar store is open. An elderly man sits on a bench outside the post office reading a newspaper from last week.",
     "nightDesc": "The crossroads of Lakeland. The stoplight blinks yellow. The dollar store's sign buzzes, half its letters dark.",
     "exits": [
@@ -218,9 +218,9 @@
   {
     "id": "hotel-st-saents-hallway",
     "shortDescription": "Hotel hallway",
-    "description": "A carpeted hallway on an upper floor. The room numbers skip: 3, 5, 8, 13. The wallpaper pattern doesn't quite repeat. At the far end, a window looks out on water that shouldn't be this high up.",
-    "dayDesc": "A carpeted hallway. Sunlight from the far window makes the dust visible. The room numbers skip: 3, 5, 8, 13.",
-    "nightDesc": "A carpeted hallway lit by sconces that flicker like candles but are electric. The window at the end shows only black water.",
+    "description": "A carpeted hallway on an upper floor. The room numbers skip: 3, 5, 8, 13. At the far end, a window looks out on a strip of gleaming apartment complexes on a hillside.",
+    "dayDesc": "A carpeted hallway on an upper floor. The room numbers skip: 3, 5, 8, 13. At the far end, a window looks out on a strip of gleaming condos on a hillside.",
+    "nightDesc": "A carpeted hallway on an upper floor. The room numbers skip: 3, 5, 8, 13. At the far end, a window looks out on a mosaic of glowing lights from the buildings a hillside.",
     "exits": [
       {"direction": "elevator", "destination": "hotel-st-saents-elevators-ground", "description": "The elevator alcove is here."}
     ]
@@ -228,7 +228,7 @@
   {
     "id": "north-island-village",
     "shortDescription": "Unnamed village",
-    "description": "A collection of simple, cement houses cluster around the meeting of two semi-paved roads.",
+    "description": "A collection of cement houses painted blue and salmon-pink cluster around the meeting of two semi-paved roads. The houses have strips of white ceramic tile with a green diamond pattern.",
     "dayDesc": "A collection of simple, cement houses cluster around the meeting of two semi-paved roads. Motorbikes drone somewhere nearby.",
     "nightDesc": "A collection of simple, cement houses cluster around the meeting of two semi-paved roads. Cold glare from an overhead halogen lights the intersection.",
     "exits": [
