@@ -49,7 +49,20 @@
     "weaponType": "firearm",
     "balanceCost": 8,
     "critModifier": 3.0,
-    "price": { "currency": "dollar", "amount": 200 }
+    "price": { "currency": "pound", "amount": 200 }
+  },
+  {
+    "id": "double-barreled-shotgun",
+    "name": "double-barreled shotgun",
+    "description": "A pump-action shotgun intended for use on large animals.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 50,
+    "skill": "Firearms",
+    "weaponType": "firearm",
+    "balanceCost": 15,
+    "critModifier": 7.0,
+    "price": { "currency": "pound", "amount": 700 }
   },
   {
     "id": "plastic-body-armor",
@@ -62,7 +75,7 @@
   },
   {
     "id": "hard-hat",
-    "name": "Hard hat",
+    "name": "hard hat",
     "description": "A scuffed yellow hard hat.",
     "type": "armor",
     "slot": "HEAD",
@@ -71,7 +84,7 @@
   },
   {
     "id": "work-boots",
-    "name": "Work boots",
+    "name": "work boots",
     "description": "Heavy steel-toed boots, well worn.",
     "type": "armor",
     "slot": "RIGHT_LEG",
@@ -87,21 +100,21 @@
   },
   {
     "id": "cucumber",
-    "name": "Cucumber",
+    "name": "cucumber",
     "description": "A fresh cucumber. Where it came from in this desert is anyone's guess.",
     "type": "resource",
-    "price": { "currency": "dollar", "amount": 1 }
+    "price": { "currency": "pound", "amount": 1 }
   },
   {
     "id": "pineapple",
-    "name": "Pineapple",
+    "name": "pineapple",
     "description": "A small, fierce tropical pineapple. More sour than sweet. The leaves could cut you.",
     "type": "resource",
-    "price": { "currency": "dollar", "amount": 2 }
+    "price": { "currency": "pound", "amount": 2 }
   },
   {
     "id": "boar-tusks",
-    "name": "Boar tusks",
+    "name": "boar tusks",
     "description": "Yellowed tusks chipped from rooting through volcanic rock. They gore with animal conviction.",
     "type": "weapon",
     "slot": "MAIN_HAND",
@@ -110,11 +123,24 @@
     "weaponType": "blunt",
     "balanceCost": 5,
     "critModifier": 3.0,
-    "price": { "currency": "dollar", "amount": 0 }
+    "price": { "currency": "pound", "amount": 0 }
+  },
+  {
+    "id": "lizard-jaws",
+    "name": "lizard jaws",
+    "description": "Strong jaws and serrated teeth made to remove flesh from bones.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 18,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 2,
+    "critModifier": 1.5,
+    "price": { "currency": "pound", "amount": 0 }
   },
   {
     "id": "shadow-touch",
-    "name": "Shadow touch",
+    "name": "shadow touch",
     "description": "Not a weapon so much as a contact. Where the shadow grazes you, warmth leaves.",
     "type": "weapon",
     "slot": "MAIN_HAND",
@@ -127,7 +153,7 @@
   },
   {
     "id": "shadow-slam",
-    "name": "Shadow slam",
+    "name": "shadow slam",
     "description": "The full weight of something that shouldn't have weight. The impact feels like being forgotten.",
     "type": "weapon",
     "slot": "MAIN_HAND",
@@ -140,45 +166,80 @@
   },
   {
     "id": "coconut",
-    "name": "Coconut",
+    "name": "coconut",
     "description": "A green coconut, heavy with water. You could drink it or throw it.",
     "type": "resource",
     "price": { "currency": "dollar", "amount": 2 }
   },
   {
     "id": "mango",
-    "name": "Mango",
+    "name": "mango",
     "description": "A ripe mango, soft and fragrant. Juice runs down your wrist the moment you touch it.",
     "type": "resource",
     "price": { "currency": "dollar", "amount": 2 }
   },
   {
     "id": "beer",
-    "name": "Beer",
-    "description": "A can of cheap lager, lukewarm. The label is in a language you don't recognize.",
+    "name": "beer bottle",
+    "description": "A can of cheap lager, lukewarm. The label is an American brand, Budweiser, known for consistency at the expense of other qualities.",
     "type": "resource",
     "price": { "currency": "dollar", "amount": 3 }
   },
   {
-    "id": "rum",
-    "name": "Rum",
-    "description": "A pour of dark rum in a heavy glass. It smells like burnt sugar and bad decisions.",
+    "id": "lager",
+    "name": "lager bottle",
+    "description": "A can of cheap lager, lukewarm. The label is a British micro-brand, Yarmouth Arms, known for its sour, hoppy tang, often described as 'metallic'.",
     "type": "resource",
-    "price": { "currency": "dollar", "amount": 5 }
+    "price": { "currency": "pound", "amount": 3 }
+  },
+  {
+    "id": "aged-rum",
+    "name": "glass of aged rum",
+    "description": "A pour of dark rum in a heavy glass. It smells like burnt sugar.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "red-wine",
+    "name": "glass of red wine",
+    "description": "A glass of dark red wine.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "white-wine",
+    "name": "glass of white wine",
+    "description": "A glass of pink-gold white wine.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "cider",
+    "name": "pint of cider",
+    "description": "A glass of cloudy hard cider.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "scotch",
+    "name": "glass of scotch",
+    "description": "A glass of watery icy scotch.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
   },
   {
     "id": "island-cocktail",
     "name": "Island cocktail",
-    "description": "Something pink with a paper umbrella. It tastes like sunscreen and pineapple. It's perfect.",
+    "description": "Something pink with a paper umbrella. You have to make an island cocktail, if you're on an island.",
     "type": "resource",
-    "price": { "currency": "dollar", "amount": 8 }
+    "price": { "currency": "pound", "amount": 8 }
   },
   {
     "id": "boat-tour-ticket",
     "name": "Boat tour ticket",
     "description": "A laminated ticket for a 'Sunset Lagoon Experience' boat tour. The departure time is listed as 'TBD.' The fine print says no refunds.",
     "type": "resource",
-    "price": { "currency": "dollar", "amount": 15 }
+    "price": { "currency": "pound", "amount": 15 }
   },
   {
     "id": "machete",
@@ -220,7 +281,7 @@
   },
   {
     "id": "hamburger",
-    "name": "Hamburger",
+    "name": "hamburger",
     "description": "A Dairy Queen hamburger in a foil wrapper. The cheese has fused with the bun. It's delicious.",
     "type": "resource",
     "price": { "currency": "dollar", "amount": 5 }
@@ -234,7 +295,7 @@
   },
   {
     "id": "canvas-jacket",
-    "name": "Canvas jacket",
+    "name": "canvas jacket",
     "description": "A forest-green canvas jacket with a Generous Mart bear patch on the breast. Stiff but warm. Surprisingly tough.",
     "type": "armor",
     "slot": "TORSO",
@@ -243,7 +304,7 @@
   },
   {
     "id": "flashlight",
-    "name": "Flashlight",
+    "name": "flashlight",
     "description": "A heavy-duty rubber flashlight, the kind that doubles as a club. Batteries included.",
     "type": "weapon",
     "slot": "MAIN_HAND",
@@ -256,8 +317,14 @@
   },
   {
     "id": "dollar",
-    "name": "Dollar",
-    "description": "A crumpled greenback. Still spends.",
+    "name": "dollar",
+    "description": "United States currency. Green, displays eagles and pyramids.",
+    "type": "currency"
+  },
+  {
+    "id": "pound",
+    "name": "pound",
+    "description": "British currency. Gold and silver, displays King Charles III.",
     "type": "currency"
   }
 ]

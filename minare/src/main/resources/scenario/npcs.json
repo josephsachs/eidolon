@@ -1,6 +1,6 @@
 [
   {
-    "name": "Boar",
+    "name": "boar",
     "shortDescription": "a massive feral boar",
     "description": "A bristle-backed boar the size of a motorcycle, scarred and mud-caked. Its tusks are yellowed and chipped from rooting through volcanic rock. It watches you with small, furious eyes.",
     "brainType": "feral",
@@ -17,6 +17,27 @@
       "discipline": 20,
       "charisma": 5,
       "empathy": 5,
+      "wits": 55
+    }
+  },
+  {
+    "name": "large-tailed monitor",
+    "shortDescription": "a large-tailed lizard with black-green coloring and a hyperactive forked tongue",
+    "description": "A large-tailed lizard bounds about, sniffing the air for opportune food. Parker's monitors are notoriously short-sighted.",
+    "brainType": "feral",
+    "room": "twin-island-lagoon-2",
+    "equipment": {
+      "MAIN_HAND": "lizard-jaws"
+    },
+    "attributes": {
+      "strength": 80,
+      "agility": 45,
+      "toughness": 30,
+      "intellect": 1,
+      "imagination": 3,
+      "discipline": 20,
+      "charisma": 5,
+      "empathy": 1,
       "wits": 55
     }
   },
@@ -71,7 +92,7 @@
     "vendor": {
       "buyMenu": ["pineapple", "coconut", "mango"],
       "sellMenu": ["pineapple"],
-      "currency": "dollar"
+      "currency": "pound"
     }
   },
   {
@@ -81,9 +102,9 @@
     "brainType": "vendor",
     "room": "hotel-st-saents-bar",
     "vendor": {
-      "buyMenu": ["beer", "rum", "island-cocktail"],
+      "buyMenu": ["lager", "ale", "red-wine", "white-wine", "aged-rum", "cider", "scotch", "island-cocktail"],
       "sellMenu": [],
-      "currency": "dollar"
+      "currency": "pound"
     }
   },
   {
@@ -109,13 +130,13 @@
         },
         "chitchat_3": {
           "type": "say",
-          "args": "I'm looking for someone to write my memoirs. I would quite like for a woman to do write them.",
+          "args": "Well, in point of fact I am, erm, shall we say encouraging input. If some, er, brilliant writers were to WORK on my memoirs, to actually write them with me. Some fantastic young female up-and-comer, if I'm honest. I would of course PAY you for that. It's far less than creative talent deserves— all creative talent! And I realize that, but it does buy quite a lot at Tesco, and perhaps in the grand scheme of things, maybe that's the more important thing, so...",
           "delay": 10,
           "next": "chitchat_4"
         },
         "chitchat_4": {
           "type": "say",
-          "args": "Well, it's not ",
+          "args": "Well, it's not quite Director's Bitter, but the surroundings are beautiful.",
           "delay": 10,
           "next": "chitchat_1"
         }
@@ -125,25 +146,25 @@
   {
     "name": "Lizzy",
     "shortDescription": "an aggressively cheerful tour agent",
-    "description": "A woman in a floral shirt and khaki shorts, standing behind a folding table with a sun-bleached banner reading 'SPIRIT ISLAND EXPERIENCES.' Her smile never wavers. Her eyes are tired.",
+    "description": "A thirtyish white woman in a floral tank and capri shorts, standing behind a folding table with a sun-bleached banner reading 'SPIRIT ISLAND EXPERIENCES.' Her smile never wavers. Her eyes are tired.",
     "brainType": "vendor",
     "room": "hotel-st-saents-forecourt",
     "vendor": {
       "buyMenu": ["boat-tour-ticket"],
       "sellMenu": [],
-      "currency": "dollar"
+      "currency": "pound"
     }
   },
   {
     "name": "Baltasar",
     "shortDescription": "a guard leaning against a wall",
-    "description": "A stocky man in a faded security uniform, badge half-peeled off. He's supposed to be guarding the old resort but he's been out here long enough that the line between guarding and squatting has blurred. He watches you with a merchant's eye.",
+    "description": "A stocky man in a faded security uniform, badge half-peeled off. He is the last remaining employee of the shuttered Lovesea resort.",
     "brainType": "vendor",
-    "room": "twin-island-beach",
+    "room": "north-island-resort-1",
     "vendor": {
-      "buyMenu": ["colt-45", "ak-47"],
+      "buyMenu": ["colt-45", "glock-9", "double-barreled-shotgun"],
       "sellMenu": [],
-      "currency": "dollar"
+      "currency": "pound"
     }
   },
   {
@@ -155,7 +176,7 @@
     "vendor": {
       "buyMenu": ["machete", "straw-hat", "canvas-vest"],
       "sellMenu": [],
-      "currency": "dollar"
+      "currency": "pound"
     }
   },
   {
@@ -171,9 +192,9 @@
     }
   },
   {
-    "name": "Chase",
+    "name": "Gabriela",
     "shortDescription": "a clerk in a green apron",
-    "description": "A middle-aged man in a forest-green apron with a bear logo. He's restocking shelves with the calm focus of someone who has found peace in retail. A name tag reads 'CLARK.' Below it, a smaller tag reads 'GENEROUS.'",
+    "description": "A teenage girl in a forest-green apron with a bear logo, restocking shelves with the calm focus of someone who is mentally somewhere else.",
     "brainType": "vendor",
     "room": "generous-mart",
     "vendor": {
@@ -189,9 +210,47 @@
     "brainType": "vendor",
     "room": "locke-secret-bar",
     "vendor": {
-      "buyMenu": ["beer"],
+      "buyMenu": [
+        "beer"
+      ],
       "sellMenu": [],
       "currency": "dollar"
+    }
+  },
+  {
+    "name": "Linus",
+    "shortDescription": "an older Black man in a pressed shirt and collar",
+    "description": "A Black man in his sixties, dressed up conservatively.",
+    "brainType": "state_machine",
+    "room": "locke-secret-bar",
+    "stateMachine": {
+      "initial": "linus_weathers1",
+      "states": {
+        "linus_weathers1": {
+          "type": "emote",
+          "args": "watches the dingy television in the corner of the bar, unblinking.",
+          "delay": 10,
+          "next": "linus_weathers2"
+        },
+        "linus_weathers2": {
+          "type": "say",
+          "args": "The Mavericks do not have coaching. They do not.",
+          "delay": 15,
+          "next": "linus_weathers3"
+        },
+        "linus_weathers3": {
+          "type": "emote",
+          "args": "sips his beer, watching the TV. He seems on-edge.",
+          "delay": 10,
+          "next": "linus_weathers3"
+        },
+        "linus_weathers4": {
+          "type": "say",
+          "args": "That's just wrong...",
+          "delay": 15,
+          "next": "linus_weathers1"
+        }
+      }
     }
   },
   {
@@ -463,13 +522,13 @@
         },
         "mutter_4": {
           "type": "say",
-          "args": "...four equilateral sides, but only two of them are real... You must keep in mind the unreal, Arthur.",
+          "args": "...four equilateral sides, but only two of them are real... You must keep in mind the allure of the unreal, Arthur.",
           "delay": 5,
           "next": "mutter_5"
         },
         "mutter_5": {
           "type": "say",
-          "args": "There has to be another one... and mathematically, it has to be around here.",
+          "args": "But there has to be another one, that is the thing we know for certain... mathematically, it's around here...",
           "delay": 6,
           "next": "emote_2"
         },

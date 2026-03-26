@@ -23,5 +23,10 @@
     "name": "a dead human body",
     "room": "radio-tower-pathway-2",
     "description": "The body of a woman in her late twenties, wearing a blue Anthropologie dress and a now crumpled hat. The cause of her death is not apparent."
+  },
+  {
+    "name": "sales kiosk",
+    "room": "hotel-st-saents-forecourt",
+    "description": "Spirit Island Experiences surrounds the kiosk window with pictures of boats, hang-gliders and helicopters. The sign says (in English, Russian and Korean) that payment in crypto is discounted."
   }
 ]

@@ -172,7 +172,62 @@
     "nightDesc": "A strip of dark sand under stars. The fishing boats creak against each other. Lights from the hotel reflect in the wet sand.",
     "exits": [
       {"direction": "north", "destination": "north-island-village-pier", "description": "A concrete pier extends north along the waterline."},
-      {"direction": "south", "destination": "hotel-st-saents-forecourt", "description": "A paved road curves south to a hotel entrance."}
+      {"direction": "south", "destination": "hotel-st-saents-forecourt", "description": "A paved road curves south to a hotel entrance."},
+      {"direction": "east", "destination": "north-island-eastern-reach-1", "description": "An unpaved road extends runs to a copse and then a treeline."}
+    ]
+  },
+  {
+    "id": "north-island-eastern-reach-1",
+    "shortDescription": "Island wilds - eastern reach",
+    "description": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "dayDesc": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "nightDesc": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "exits": [
+      {"direction": "west", "destination": "island-shore", "description": "The road leads west toward the main strip."},
+      {"direction": "south", "destination": "north-island-eastern-reach-2", "description": "A footpath breaks south through the undergrowth."}
+    ]
+  },
+  {
+    "id": "north-island-eastern-reach-2",
+    "shortDescription": "Island wilds - muddy road",
+    "description": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "dayDesc": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "nightDesc": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "exits": [
+      {"direction": "east", "destination": "north-island-resort-1", "description": "The road turns paved to the west, at the approach to an electronic gate."},
+      {"direction": "southeast", "destination": "north-island-eastern-reach-3", "description": "A footpath breaks south through the undergrowth."},
+      {"direction": "north", "destination": "north-island-eastern-reach-1", "description": "A footpath breaks south through the undergrowth."}
+    ]
+  },
+  {
+    "id": "north-island-eastern-reach-3",
+    "shortDescription": "Island wilds - muddy path",
+    "description": "The road rapidly ceases to exist among mudflats, thickets and rocky outcroppings.",
+    "dayDesc": "The road rapidly ceases to exist among mudflats, thickets and rocky outcroppings.",
+    "nightDesc": "The darkness is total. The air that carries the smell of the sea is cold.",
+    "exits": [
+      {"direction": "northwest", "destination": "north-island-eastern-reach-2", "description": "The road re-emerges to the northwest."},
+      {"direction": "south", "destination": "north-island-eastern-reach-4", "description": "A footpath breaks south through the undergrowth."}
+    ]
+  },
+  {
+    "id": "north-island-eastern-reach-4",
+    "shortDescription": "Island wilds - mudflats",
+    "description": "The path ends at a wide mudflat in which nothing grows. A mantle of roots wraps around it.",
+    "dayDesc": "The path ends at a wide mudflat in which nothing grows. A mantle of roots wraps around it.",
+    "nightDesc": "Moonlight dimly lights a muddy clearing surrounded by dense submerged forest.",
+    "exits": [
+      {"direction": "north", "destination": "north-island-eastern-reach-3", "description": "A footpath leads north, up and into the thicket."}
+    ]
+  },
+  {
+    "id": "north-island-resort-1",
+    "shortDescription": "Abandoned resort - parking lot",
+    "description": "Not much of the abandoned resort is left save two detached suites, an very basic (and uninhabited) commercial strip, and a fake lagoon.",
+    "dayDesc": "Not much of the abandoned resort is left save two detached suites, an very basic (and uninhabited) commercial strip, and a fake lagoon.",
+    "nightDesc": "The abandoned resort lot screams with insect life in pitch dark.",
+    "exits": [
+      {"direction": "west", "destination": "north-island-eastern-reach-2", "description": "To the west the trees thin out."}
     ]
   },
   {
@@ -334,7 +389,29 @@
     "dayDesc": "A crescent of white sand. The water is bath-warm and turquoise. Someone has arranged driftwood into a structure — a shelter, a sculpture, an altar.",
     "nightDesc": "A crescent of white sand under stars. The driftwood structure casts strange shadows. The water laps with metronomic patience.",
     "exits": [
-      {"direction": "south", "destination": "twin-island-isthmus", "description": "The rocky isthmus leads south to the main island."}
+      {"direction": "south", "destination": "twin-island-isthmus", "description": "The rocky isthmus leads south to the main island."},
+      {"direction": "southwest", "destination": "twin-island-lagoon-1", "description": "The coast of Twin Island winds through irregular marine lagoons.."}
+    ]
+  },
+  {
+    "id": "twin-island-lagoon-1",
+    "shortDescription": "Twin island lagoon",
+    "description": "",
+    "dayDesc": "",
+    "nightDesc": "",
+    "exits": [
+      {"direction": "northeast", "destination": "twin-island-beach", "description": "The rocky beach leads south to the main island."},
+      {"direction": "south", "destination": "twin-island-lagoon-2", "description": "The progress south crosses more lagoon."}
+    ]
+  },
+  {
+    "id": "twin-island-lagoon-2",
+    "shortDescription": "Twin island lagoon",
+    "description": "",
+    "dayDesc": "",
+    "nightDesc": "",
+    "exits": [
+      {"direction": "north", "destination": "twin-island-lagoon-1", "description": "The lagoon to the north bends around a shallow bay toward the isthmus."}
     ]
   },
   {

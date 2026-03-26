@@ -3,16 +3,16 @@
     "name": "pineapple patch",
     "templateId": "pineapple",
     "room": "north-island-wilds-1",
-    "skillName": "Farming",
+    "skillName": "Gathering",
     "intervalMs": 120000,
     "objectDescription": "A wild patch of pineapple plants growing between volcanic rocks. The fruit is small and fierce-looking, bristling with spiny leaves. Nobody planted these — they just showed up."
   },
   {
     "name": "old man's memoir",
-    "templateId": "dollar",
+    "templateId": "pound",
     "room": "hotel-st-saents-bar",
     "skillName": "Writing",
     "intervalMs": 90000,
-    "objectDescription": "An eccentric old man in a linen suit sits at the end of the bar with a stack of legal pads and a fountain pen he can't quite hold steady. He'll pay you a dollar for every page of his life story you transcribe. He talks fast and contradicts himself constantly."
+    "objectDescription": "Peter Hoffs wants someone to write his memoirs. He is paying in pounds. You could find duller things to do, but not easily. Say `work memoir` and `stop working` to interact."
   }
 ]

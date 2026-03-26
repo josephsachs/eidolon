@@ -5,8 +5,8 @@
     "intervalMs": 60000
   },
   {
-    "templateId": "leather-vest",
-    "room": "north-island-wilds-2",
+    "templateId": "tire-iron",
+    "room": "north-island-wilds-1",
     "intervalMs": 60000
   }
 ]
