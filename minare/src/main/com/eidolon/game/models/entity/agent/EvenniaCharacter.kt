@@ -12,8 +12,11 @@ import com.eidolon.game.evennia.EvenniaShadow
 import com.eidolon.game.evennia.Viewable
 import com.google.inject.Inject
 import com.minare.controller.EntityController
+import com.minare.controller.OperationController
 import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
+import com.minare.core.operation.models.Operation
+import com.minare.core.operation.models.OperationType
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlin.random.Random
@@ -26,6 +29,8 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     private lateinit var coroutineScope: CoroutineScope
     @Inject
     private lateinit var entityController: EntityController
+    @Inject
+    private lateinit var operationController: OperationController
     @Inject
     private lateinit var evenniaCommUtils: EvenniaCommUtils
     @Inject
@@ -175,12 +180,12 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                 health = updated
                 val recovering = downed && updated.vitality > 0
 
-                val changes = JsonObject().put("health", healthToJson())
+                val delta = JsonObject().put("health", healthToJson())
                 if (recovering) {
                     downed = false
-                    changes.put("downed", false)
+                    delta.put("downed", false)
                 }
-                entityController.saveState(_id, changes)
+                queueStateMutation(delta)
 
                 if (recovering) {
                     damageService.flagUndowned(this)
@@ -240,7 +245,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                         dead = true
                         health = updatedHealth
                         damageService.flagDead(this)
-                        entityController.saveState(_id, JsonObject()
+                        queueStateMutation(JsonObject()
                             .put("dead", true)
                             .put("health", healthToJson()))
                         entityController.saveProperties(_id, JsonObject()
@@ -251,7 +256,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                     downed = true
                     health = updatedHealth
                     damageService.flagDowned(this)
-                    entityController.saveState(_id!!, JsonObject()
+                    queueStateMutation(JsonObject()
                         .put("downed", true)
                         .put("health", healthToJson()))
                 }
@@ -269,7 +274,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                 propChanges.put("statusEffects", remaining)
             }
 
-            if (!stateChanges.isEmpty) entityController.saveState(_id, stateChanges)
+            if (!stateChanges.isEmpty) queueStateMutation(stateChanges)
             if (!propChanges.isEmpty) entityController.saveProperties(_id, propChanges)
         } catch (e: Exception) {
             log.error("processStatuses failed for {} ({}): {}", evenniaName, _id, e.message)
@@ -277,6 +282,16 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             val elapsed = System.currentTimeMillis() - start
             if (elapsed > 200) log.warn("SLOW processStatuses for {} ({}): {}ms", evenniaName, _id, elapsed)
         }
+    }
+
+    private suspend fun queueStateMutation(delta: JsonObject) {
+        operationController.queue(
+            Operation()
+                .entity(_id)
+                .entityType(EvenniaCharacter::class)
+                .action(OperationType.MUTATE)
+                .delta(delta)
+        )
     }
 
     // --- Viewable interface ---

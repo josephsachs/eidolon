@@ -87,27 +87,31 @@ class CombatService @Inject constructor(
         entityController.saveProperties(combatId, JsonObject()
             .put("lastActivity", System.currentTimeMillis()))
 
+        val name = getCharacterName(characterId)
         clearCombatProperties(characterId)
 
-        val name = getCharacterName(characterId)
         sendCombatMessage(combat.roomId, "|w$name disengages from combat.|n")
 
         // Clear targets pointing at the removed member and re-acquire for NPCs
-        for (memberId in updatedMembers) {
-            val member = getCharacter(memberId) ?: continue
-            if (member.targetId == characterId) {
-                // Find a new target from remaining members
-                val newTarget = updatedMembers
-                    .filter { it != memberId }
-                    .firstNotNullOfOrNull { id -> getCharacter(id)?.takeIf { !it.dead && !it.downed }?.let { id } }
+        if (updatedMembers.isNotEmpty()) {
+            val members = entityController.findByIds(updatedMembers)
+                .mapValues { it.value as? EvenniaCharacter }
 
-                if (newTarget != null && member.isNpc) {
-                    entityController.saveProperties(memberId, JsonObject()
-                        .put("targetId", newTarget)
-                        .put("combatMode", "attack"))
-                } else {
-                    entityController.saveProperties(memberId, JsonObject()
-                        .put("targetId", ""))
+            for (memberId in updatedMembers) {
+                val member = members[memberId] ?: continue
+                if (member.targetId == characterId) {
+                    val newTarget = updatedMembers
+                        .filter { it != memberId }
+                        .firstOrNull { id -> members[id]?.let { !it.dead && !it.downed } == true }
+
+                    if (newTarget != null && member.isNpc) {
+                        entityController.saveProperties(memberId, JsonObject()
+                            .put("targetId", newTarget)
+                            .put("combatMode", "attack"))
+                    } else {
+                        entityController.saveProperties(memberId, JsonObject()
+                            .put("targetId", ""))
+                    }
                 }
             }
         }

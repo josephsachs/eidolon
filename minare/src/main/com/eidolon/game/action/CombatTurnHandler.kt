@@ -17,7 +17,11 @@ import com.eidolon.game.models.entity.Combat
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
+import com.minare.controller.OperationController
+import com.minare.core.operation.models.Operation
+import com.minare.core.operation.models.OperationType
 import com.minare.core.storage.interfaces.StateStore
+import eidolon.game.action.cache.TurnContext
 import eidolon.game.models.entity.agent.EvenniaCharacter
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -27,6 +31,7 @@ import kotlin.random.Random
 @Singleton
 class CombatTurnHandler @Inject constructor(
     private val entityController: EntityController,
+    private val operationController: OperationController,
     private val stateStore: StateStore,
     private val combatService: CombatService,
     private val damageService: DamageService,
@@ -45,15 +50,12 @@ class CombatTurnHandler @Inject constructor(
     // Batched combat log entries: combatId -> list of entries to flush at end of phase
     private val pendingCombatLog = mutableMapOf<String, MutableList<JsonObject>>()
 
-    suspend fun handleTurn(turnPhase: GameTurnHandler.Companion.TurnPhase) {
+    suspend fun handleTurn(turnPhase: GameTurnHandler.Companion.TurnPhase, tc: TurnContext) {
         if (turnPhase == GameTurnHandler.Companion.TurnPhase.DURING) {
             downedThisRound.clear()
         }
 
-        val combatKeys = stateStore.findAllKeysForType("Combat")
-        if (combatKeys.isEmpty()) return
-
-        val combats = entityController.findByIds(combatKeys)
+        val combats = tc.findAllOfType("Combat")
         for ((id, entity) in combats) {
             val combat = entity as? Combat ?: continue
             if (combat.members.isEmpty()) continue
@@ -64,9 +66,9 @@ class CombatTurnHandler @Inject constructor(
 
             try {
                 when (turnPhase) {
-                    GameTurnHandler.Companion.TurnPhase.BEFORE -> handleBefore(combat)
-                    GameTurnHandler.Companion.TurnPhase.DURING -> handleDuring(combat)
-                    GameTurnHandler.Companion.TurnPhase.AFTER -> handleAfter(combat)
+                    GameTurnHandler.Companion.TurnPhase.BEFORE -> handleBefore(combat, tc)
+                    GameTurnHandler.Companion.TurnPhase.DURING -> handleDuring(combat, tc)
+                    GameTurnHandler.Companion.TurnPhase.AFTER -> handleAfter(combat, tc)
                 }
             } catch (e: Exception) {
                 log.error("CombatTurnHandler error for combat {} phase {}: {}", id, turnPhase, e.message, e)
@@ -78,8 +80,8 @@ class CombatTurnHandler @Inject constructor(
         }
     }
 
-    private suspend fun handleBefore(combat: Combat) {
-        val members = loadMembers(combat.members)
+    private suspend fun handleBefore(combat: Combat, tc: TurnContext) {
+        val members = loadMembers(combat.members, tc)
 
         // Increment round
         val newRound = combat.currentRound + 1
@@ -92,8 +94,8 @@ class CombatTurnHandler @Inject constructor(
         }
     }
 
-    private suspend fun handleDuring(combat: Combat) {
-        val members = loadMembers(combat.members)
+    private suspend fun handleDuring(combat: Combat, tc: TurnContext) {
+        val members = loadMembers(combat.members, tc)
 
         for ((id, character) in members) {
             log.info("Combat member ${character.evenniaName} ($id): mode=${character.combatMode} target=${character.targetId} dead=${character.dead} downed=${character.downed}")
@@ -110,8 +112,8 @@ class CombatTurnHandler @Inject constructor(
         flushCombatLog(combat)
     }
 
-    private suspend fun handleAfter(combat: Combat) {
-        val members = loadMembers(combat.members)
+    private suspend fun handleAfter(combat: Combat, tc: TurnContext) {
+        val members = loadMembers(combat.members, tc)
 
         // Drift equilibrium toward center (accumulate, don't save yet)
         for ((id, character) in members) {
@@ -178,10 +180,11 @@ class CombatTurnHandler @Inject constructor(
         }
 
         // Remove members with no target and no one targeting them
-        val refreshedCombat = entityController.findByIds(listOf(combat._id))
+        tc.markDirty(combat._id)
+        val refreshedCombat = tc.findByIds(listOf(combat._id))
             .values.firstOrNull() as? Combat
         if (refreshedCombat != null && refreshedCombat.members.size > 1) {
-            val refreshedMembers = loadMembers(refreshedCombat.members)
+            val refreshedMembers = loadMembers(refreshedCombat.members, tc)
             val targeted = refreshedMembers.values.map { it.targetId }.toSet()
 
             for ((id, character) in refreshedMembers) {
@@ -306,7 +309,7 @@ class CombatTurnHandler @Inject constructor(
             val isDowned = updatedHealth.vitality <= 0 && !target.downed && targetId !in downedThisRound
             if (isDowned) {
                 downedThisRound.add(targetId)
-                entityController.saveState(targetId, JsonObject()
+                queueCharacterMutation(targetId, JsonObject()
                     .put("downed", true)
                     .put("health", healthToJson(updatedHealth)))
                 damageService.flagDowned(target)
@@ -319,7 +322,7 @@ class CombatTurnHandler @Inject constructor(
                     .put("targetName", target.evenniaName)
                     .put("timestamp", System.currentTimeMillis()))
             } else {
-                entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
+                queueCharacterMutation(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
             }
 
             // Equilibrium shifts on hit
@@ -445,12 +448,12 @@ class CombatTurnHandler @Inject constructor(
 
         if (updatedHealth.vitality <= 0 && !target.downed && targetId !in downedThisRound) {
             downedThisRound.add(targetId)
-            entityController.saveState(targetId, JsonObject()
+            queueCharacterMutation(targetId, JsonObject()
                 .put("downed", true)
                 .put("health", healthToJson(updatedHealth)))
             damageService.flagDowned(target)
         } else {
-            entityController.saveState(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
+            queueCharacterMutation(targetId, JsonObject().put("health", healthToJson(updatedHealth)))
         }
 
         val msg = combatMessageService.hitMessage(weaponType, attacker.evenniaName, target.evenniaName, hitLocation)
@@ -668,8 +671,18 @@ class CombatTurnHandler @Inject constructor(
             .put("luck", health.luck)
     }
 
-    private suspend fun loadMembers(memberIds: List<String>): Map<String, EvenniaCharacter> {
-        val entities = entityController.findByIds(memberIds)
+    private suspend fun queueCharacterMutation(characterId: String, delta: JsonObject) {
+        operationController.queue(
+            Operation()
+                .entity(characterId)
+                .entityType(EvenniaCharacter::class)
+                .action(OperationType.MUTATE)
+                .delta(delta)
+        )
+    }
+
+    private suspend fun loadMembers(memberIds: List<String>, tc: TurnContext): Map<String, EvenniaCharacter> {
+        val entities = tc.findByIds(memberIds)
         return entities.mapNotNull { (id, entity) ->
             (entity as? EvenniaCharacter)?.let { id to it }
         }.toMap()

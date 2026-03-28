@@ -9,6 +9,7 @@ import com.minare.core.storage.interfaces.StateStore
 import com.minare.core.utils.types.esf.EventStateFlow
 import com.minare.core.utils.types.esf.StateFlowContext
 import com.minare.core.utils.vertx.EventBusUtils
+import eidolon.game.action.cache.TurnContext
 import io.vertx.core.Vertx
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
@@ -38,32 +39,37 @@ class GameTurnHandler @Inject constructor(
         looping = true // The sequence must loop indefinitely
     )
 
+    private fun createTurnContext(): TurnContext = TurnContext(entityController, stateStore)
+
     private val actAction: suspend (StateFlowContext) -> Unit = { context ->
         val start = System.currentTimeMillis()
+        val tc = createTurnContext()
         setGameProperties(TurnPhase.BEFORE, true)
-        characterTurnHandler.handleTurn(TurnPhase.BEFORE)
-        combatTurnHandler.handleTurn(TurnPhase.BEFORE)
-        worldTurnHandler.handleTurn(TurnPhase.BEFORE)
+        characterTurnHandler.handleTurn(TurnPhase.BEFORE, tc)
+        combatTurnHandler.handleTurn(TurnPhase.BEFORE, tc)
+        worldTurnHandler.handleTurn(tc)
         val elapsed = System.currentTimeMillis() - start
         if (elapsed > 100) log.warn("TURN_LOOP: ACT phase took ${elapsed}ms")
     }
 
     private val executeAction: suspend (StateFlowContext) -> Unit = { context ->
         val start = System.currentTimeMillis()
+        val tc = createTurnContext()
         setGameProperties(TurnPhase.DURING, true)
-        characterTurnHandler.handleTurn(TurnPhase.DURING)
-        combatTurnHandler.handleTurn(TurnPhase.DURING)
-        worldTurnHandler.handleTurn(TurnPhase.DURING)
+        characterTurnHandler.handleTurn(TurnPhase.DURING, tc)
+        combatTurnHandler.handleTurn(TurnPhase.DURING, tc)
+        worldTurnHandler.handleTurn(tc)
         val elapsed = System.currentTimeMillis() - start
         if (elapsed > 100) log.warn("TURN_LOOP: EXECUTE phase took ${elapsed}ms")
     }
 
     private val resolveAction: suspend (StateFlowContext) -> Unit = { context ->
         val start = System.currentTimeMillis()
+        val tc = createTurnContext()
         setGameProperties(TurnPhase.AFTER, true)
-        characterTurnHandler.handleTurn(TurnPhase.AFTER)
-        combatTurnHandler.handleTurn(TurnPhase.AFTER)
-        worldTurnHandler.handleTurn(TurnPhase.AFTER)
+        characterTurnHandler.handleTurn(TurnPhase.AFTER, tc)
+        combatTurnHandler.handleTurn(TurnPhase.AFTER, tc)
+        worldTurnHandler.handleTurn(tc)
         val elapsed = System.currentTimeMillis() - start
         if (elapsed > 100) log.warn("TURN_LOOP: RESOLVE phase took ${elapsed}ms")
     }

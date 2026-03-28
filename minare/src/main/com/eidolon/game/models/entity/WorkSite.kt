@@ -6,8 +6,11 @@ import com.eidolon.game.evennia.EvenniaCommUtils
 import com.eidolon.game.service.ItemRegistry
 import com.google.inject.Inject
 import com.minare.controller.EntityController
+import com.minare.controller.OperationController
 import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
+import com.minare.core.operation.models.Operation
+import com.minare.core.operation.models.OperationType
 import eidolon.game.models.entity.agent.EvenniaCharacter
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
@@ -19,6 +22,7 @@ class WorkSite : Entity() {
     @Inject private lateinit var crossLinkRegistry: CrossLinkRegistry
     @Inject private lateinit var itemRegistry: ItemRegistry
     @Inject private lateinit var entityController: EntityController
+    @Inject private lateinit var operationController: OperationController
     @Inject private lateinit var skillEvent: SkillEvent
 
     private val log = LoggerFactory.getLogger(WorkSite::class.java)
@@ -102,8 +106,13 @@ class WorkSite : Entity() {
             val updatedResources = worker.resources.toMutableMap()
             updatedResources[templateId] = (updatedResources[templateId] ?: 0) + 1
             worker.resources = updatedResources
-            entityController.saveState(worker._id, JsonObject()
-                .put("resources", worker.resourcesToJson()))
+            operationController.queue(
+                Operation()
+                    .entity(worker._id)
+                    .entityType(EvenniaCharacter::class)
+                    .action(OperationType.MUTATE)
+                    .delta(JsonObject().put("resources", worker.resourcesToJson()))
+            )
         }
 
         log.info("WorkSite '$name' granted '${template.name}' to ${presentWorkers.size} workers")

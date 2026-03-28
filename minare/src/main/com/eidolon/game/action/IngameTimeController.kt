@@ -59,7 +59,7 @@ class IngameTimeController @Inject constructor(
                 .entity(room._id)
                 .entityType(Room::class)
                 .action(OperationType.MUTATE)
-                .delta(JsonObject().put("description", newDesc))
+                .delta(JsonObject().put("shortDescription", newDesc))
 
             operationController.queue(operation)
         }

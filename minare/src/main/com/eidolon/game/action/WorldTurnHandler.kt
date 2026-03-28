@@ -9,6 +9,7 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
 import com.minare.core.storage.interfaces.StateStore
+import eidolon.game.action.cache.TurnContext
 import org.slf4j.LoggerFactory
 
 @Singleton
@@ -18,18 +19,16 @@ class WorldTurnHandler @Inject constructor(
 ) {
     private val log = LoggerFactory.getLogger(WorldTurnHandler::class.java)
 
-    suspend fun handleTurn(turnPhase: GameTurnHandler.Companion.TurnPhase) {
-        tickRooms()
-        tickObjectActors()
-        tickSpawners()
-        tickWorkSites()
-        tickExplorableExits()
+    suspend fun handleTurn(tc: TurnContext) {
+        tickRooms(tc)
+        tickObjectActors(tc)
+        tickSpawners(tc)
+        tickWorkSites(tc)
+        tickExplorableExits(tc)
     }
 
-    private suspend fun tickRooms() {
-        val keys = stateStore.findAllKeysForType("Room")
-        if (keys.isEmpty()) return
-        val entities = entityController.findByIds(keys)
+    private suspend fun tickRooms(tc: TurnContext) {
+        val entities = tc.findAllOfType("Room")
         for ((id, entity) in entities) {
             val room = entity as? Room ?: continue
             try {
@@ -40,10 +39,8 @@ class WorldTurnHandler @Inject constructor(
         }
     }
 
-    private suspend fun tickObjectActors() {
-        val keys = stateStore.findAllKeysForType("ObjectActor")
-        if (keys.isEmpty()) return
-        val entities = entityController.findByIds(keys)
+    private suspend fun tickObjectActors(tc: TurnContext) {
+        val entities = tc.findAllOfType("ObjectActor")
         for ((id, entity) in entities) {
             val actor = entity as? ObjectActor ?: continue
             try {
@@ -54,10 +51,8 @@ class WorldTurnHandler @Inject constructor(
         }
     }
 
-    private suspend fun tickSpawners() {
-        val keys = stateStore.findAllKeysForType("Spawner")
-        if (keys.isEmpty()) return
-        val entities = entityController.findByIds(keys)
+    private suspend fun tickSpawners(tc: TurnContext) {
+        val entities = tc.findAllOfType("Spawner")
         for ((id, entity) in entities) {
             val spawner = entity as? Spawner ?: continue
             try {
@@ -68,10 +63,8 @@ class WorldTurnHandler @Inject constructor(
         }
     }
 
-    private suspend fun tickWorkSites() {
-        val keys = stateStore.findAllKeysForType("WorkSite")
-        if (keys.isEmpty()) return
-        val entities = entityController.findByIds(keys)
+    private suspend fun tickWorkSites(tc: TurnContext) {
+        val entities = tc.findAllOfType("WorkSite")
         for ((id, entity) in entities) {
             val workSite = entity as? WorkSite ?: continue
             try {
@@ -82,10 +75,8 @@ class WorldTurnHandler @Inject constructor(
         }
     }
 
-    private suspend fun tickExplorableExits() {
-        val keys = stateStore.findAllKeysForType("ExplorableExit")
-        if (keys.isEmpty()) return
-        val entities = entityController.findByIds(keys)
+    private suspend fun tickExplorableExits(tc: TurnContext) {
+        val entities = tc.findAllOfType("ExplorableExit")
         for ((id, entity) in entities) {
             val exit = entity as? ExplorableExit ?: continue
             try {
