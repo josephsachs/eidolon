@@ -289,6 +289,16 @@ class NpcInitializer @Inject constructor(
 
         if (characters.isNotEmpty()) {
             gameChannelController.addEntitiesToChannel(characters, defaultChannelId)
+
+            // Re-save askTopics now that entities are in the channel so the delta
+            // actually broadcasts to Evennia (saveState before channel addition has
+            // no subscribers).
+            for (character in characters) {
+                if (character.askTopics.isNotEmpty()) {
+                    entityController.saveState(character._id, JsonObject()
+                        .put("askTopics", JsonArray(character.askTopics)))
+                }
+            }
         }
     }
 
