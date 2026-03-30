@@ -128,6 +128,9 @@ class GameMessageController @Inject constructor(
         registerRequestResponse("work_site_join") { msg -> handleWorkSiteJoin(msg) }
         registerRequestResponse("work_site_leave") { msg -> handleWorkSiteLeave(msg) }
 
+        registerRequestResponse("gossip_start") { msg -> handleGossipStart(msg) }
+        registerRequestResponse("gossip_stop") { msg -> handleGossipStop(msg) }
+
         registerRequestResponse("vendor_menu") { msg ->
             val vendorId = msg.getString("vendor_id", "")
             val menuType = msg.getString("menu_type", "buy")
@@ -475,6 +478,75 @@ class GameMessageController @Inject constructor(
         return JsonObject()
             .put("status", "success")
             .put("work_site_name", workSite.name)
+    }
+
+    private suspend fun handleGossipStart(message: JsonObject): JsonObject {
+        val characterId = message.getString("character_id", "")
+        val roomId = message.getString("room_id", "")
+
+        if (characterId.isEmpty() || roomId.isEmpty()) {
+            return JsonObject().put("status", "error").put("error", "Missing character_id or room_id")
+        }
+
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("status", "error").put("error", "Character not found")
+
+        if (character.gossiping) {
+            return JsonObject().put("status", "error").put("error", "Already gossiping")
+        }
+
+        // Check there are NPCs with knowledge in the room
+        val allCharKeys = stateStore.findAllKeysForType("EvenniaCharacter")
+        val allChars = entityController.findByIds(allCharKeys)
+        val npcsWithKnowledge = allChars.values
+            .filterIsInstance<EvenniaCharacter>()
+            .filter { it.isNpc && it.currentRoomId == roomId && it.characterKnowledge.isNotEmpty() }
+
+        if (npcsWithKnowledge.isEmpty()) {
+            return JsonObject().put("status", "error").put("error", "Nobody here to gossip with")
+        }
+
+        character.gossiping = true
+        character.gossipRoomId = roomId
+        character.lastGossipEvent = System.currentTimeMillis()
+        entityController.saveProperties(characterId, JsonObject()
+            .put("gossiping", true)
+            .put("gossipRoomId", roomId)
+            .put("lastGossipEvent", character.lastGossipEvent))
+
+        val npcNames = npcsWithKnowledge.joinToString(", ") { it.evenniaName }
+        log.info("Character {} started gossiping in room {} with {}", characterId, roomId, npcNames)
+
+        return JsonObject()
+            .put("status", "success")
+            .put("npc_names", npcNames)
+    }
+
+    private suspend fun handleGossipStop(message: JsonObject): JsonObject {
+        val characterId = message.getString("character_id", "")
+
+        if (characterId.isEmpty()) {
+            return JsonObject().put("status", "error").put("error", "Missing character_id")
+        }
+
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("status", "error").put("error", "Character not found")
+
+        if (!character.gossiping) {
+            return JsonObject().put("status", "error").put("error", "You aren't gossiping")
+        }
+
+        character.gossiping = false
+        character.gossipRoomId = ""
+        entityController.saveProperties(characterId, JsonObject()
+            .put("gossiping", false)
+            .put("gossipRoomId", ""))
+
+        log.info("Character {} stopped gossiping", characterId)
+
+        return JsonObject().put("status", "success")
     }
 
     private suspend fun handlePresence(message: JsonObject) {

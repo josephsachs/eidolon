@@ -248,10 +248,13 @@ class AgentCharacter(Character):
                 new_exit.locks.add("traverse:perm(Admin)")
                 block_message = command.get('block_message', 'The path is blocked and impassable.')
                 new_exit.db.err_traverse = block_message
+            if command.get('stile'):
+                new_exit.db.is_stile = True
             logger.log_info(
                 f"AgentCharacter: Created exit '{exit_name}' "
                 f"from '{from_room.key}' -> '{to_room.key}'"
                 f"{' (locked)' if command.get('locked') else ''}"
+                f"{' (stile)' if command.get('stile') else ''}"
             )
         except (Room.DoesNotExist, ValueError) as e:
             logger.log_err(f"AgentCharacter._handle_create_exit: {e}")

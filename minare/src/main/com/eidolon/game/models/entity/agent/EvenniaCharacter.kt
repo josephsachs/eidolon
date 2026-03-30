@@ -1,6 +1,7 @@
 package eidolon.game.models.entity.agent
 
 import com.eidolon.game.models.Attributes
+import com.eidolon.game.models.CharacterKnowledge
 import com.eidolon.game.models.CombatEquilibrium
 import com.eidolon.game.models.HardpointStatus
 import com.eidolon.game.models.HealthData
@@ -118,6 +119,23 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     @Property
     var combatEquilibrium: CombatEquilibrium = CombatEquilibrium()
+
+    @State
+    @Mutable
+    var characterKnowledge: List<CharacterKnowledge> = emptyList()
+
+    @State
+    @Mutable
+    var askTopics: List<String> = emptyList()
+
+    @Property
+    var gossiping: Boolean = false
+
+    @Property
+    var gossipRoomId: String = ""
+
+    @Property
+    var lastGossipEvent: Long = 0L
 
     /**
      * Equipment slots: slot name -> item template ID.
@@ -305,11 +323,13 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("attributes", attributesToJson())
             .put("equipment", equipmentToJson())
             .put("resources", resourcesToJson())
+            .put("characterKnowledge", knowledgeToJson())
         "skills" -> skillsToJson()
         "health" -> healthToJson()
         "attributes" -> attributesToJson()
         "equipment" -> equipmentToJson()
         "resources" -> resourcesToJson()
+        "characterKnowledge" -> JsonObject().put("characterKnowledge", knowledgeToJson())
         else -> null
     }
 
@@ -359,6 +379,19 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             obj.put(slot, templateId)
         }
         return obj
+    }
+
+    private fun knowledgeToJson(): JsonArray {
+        val arr = JsonArray()
+        characterKnowledge.forEach { ck ->
+            arr.add(JsonObject()
+                .put("name", ck.name)
+                .put("description", ck.description)
+                .put("longDescription", ck.longDescription)
+                .put("weight", ck.weight)
+                .put("tags", JsonArray(ck.tags)))
+        }
+        return arr
     }
 
     fun resourcesToJson(): JsonObject {

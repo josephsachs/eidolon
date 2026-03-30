@@ -65,6 +65,12 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdInfo())
         self.add(CmdWork())
         self.add(CmdStopWorking())
+        # NPC interaction commands — on the player so they're always available
+        from commands.npc_commands import CmdTalk, CmdAsk, CmdGossip, CmdStopGossip
+        self.add(CmdTalk())
+        self.add(CmdAsk())
+        self.add(CmdGossip())
+        self.add(CmdStopGossip())
 
 
 class AgentCharacterCmdSet(CmdSet):
@@ -100,8 +106,10 @@ class NpcCmdSet(CmdSet):
     priority = 1
 
     def at_cmdset_creation(self):
-        from commands.npc_commands import CmdTalk
+        from commands.npc_commands import CmdTalk, CmdAsk, CmdGossip
         self.add(CmdTalk())
+        self.add(CmdAsk())
+        self.add(CmdGossip())
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):

@@ -172,6 +172,9 @@ class RoomInitializer @Inject constructor(
                     cmd.put("locked", true)
                     cmd.put("block_message", exitObj.getString("blockMessage", "The path is blocked and impassable."))
                 }
+                if (exitObj.getBoolean("stile", false)) {
+                    cmd.put("stile", true)
+                }
                 exitCommands.add(cmd)
             }
         }

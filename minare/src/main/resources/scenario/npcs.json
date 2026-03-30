@@ -606,5 +606,133 @@
         }
       }
     }
+  },
+  {
+    "name": "Karen Billberger",
+    "shortDescription": "a woman in a windbreaker with a lot to say",
+    "description": "A sixtysomething woman in a teal windbreaker and reading glasses on a chain. She carries a canvas tote with a library book in it. She has the posture of someone who has been standing at this intersection on purpose.",
+    "brainType": "talk",
+    "room": "lakeland-crossing",
+    "topics": {
+      "lakeland": "Oh, Lakeland. It's not what it was. The dollar store killed the old five-and-dime, and nobody's fixed the stoplight since Carter.",
+      "logistix": "That Logistix place? Strange hours. I've seen trucks coming and going at two, three in the morning. Trucks with no markings. You don't need to be a genius.",
+      "shipments": "I've seen them. No markings on the trucks. Middle of the night. I told Dolores at the post office and she said I was imagining things. I am NOT imagining things.",
+      "aiken": "Aiken? One of the Logistix boys. Grew up here. His mother was a Crowell. I don't have anything specific to say, but I'll say this: people who grow up broke and end up flush, there's a story there.",
+      "chester": "Chester runs Logistix with Aiken. I knew his father. The apple does not fall far.",
+      "dollar store": "It killed the five-and-dime. That's what these places do. They move in, undercut everyone, and then the town looks like this.",
+      "post office": "Dolores runs it. She's been there thirty years. I love her dearly but she has no curiosity whatsoever.",
+      "bar": "There's supposedly a bar behind the barbershop on Main. I've never been. I don't drink. But I hear things.",
+      "barbershop": "Carl's been cutting hair there since before I moved here. He doesn't talk much, which is unusual for a barber.",
+      "island": "Spirit Island? That's the resort place across the water. Used to be just for rich people. Now I hear it's gotten strange.",
+      "bearman": "That poor man in the hoodie? He walks up and down the road all day talking to himself. His mother Cindy stands out on the frontage road trying to get him to come home. It's a tragedy, is what it is.",
+      "cindy": "Cindy is Bearman's mother. Sweet woman. Worried sick. She stands out on the highway waiting for him to walk by so she can talk sense into him. I don't think it's working.",
+      "pete": "Pete? The Logistix guard? Nice enough fellow. Quiet. I think he knows more than he lets on about what goes on in that yard.",
+      "weather": "It's been humid. It's always humid. I don't know why I keep commenting on it.",
+      "gas station": "The Generous Mart. Gabriela works there. Good kid. The prices are highway robbery.",
+      "dairy queen": "The DQ is fine. The Blizzard machine works about half the time. The cashier looks like she wants to be anywhere else.",
+      "motel": "I wouldn't stay there if you paid me. The reviews online are... well. I'll leave it at that.",
+      "highway": "Interstate 71. Runs north to Columbus. South to... I don't actually know what's south. Nothing good.",
+      "thrift store": "On Main Street. They have some decent things if you dig. I found a Le Creuset there once for four dollars."
+    },
+    "characterKnowledge": [
+      {
+        "name": "night shipments",
+        "description": "knows about unmarked trucks at Logistix at night",
+        "longDescription": "I've watched those trucks myself. No company markings, no plates you can read. They come between two and four in the morning, always from the south. And they always leave lighter than they came.",
+        "weight": 0.4,
+        "tags": ["clue", "imbroglio"]
+      },
+      {
+        "name": "Logistix owners",
+        "description": "knows Aiken and Chester run Logistix",
+        "longDescription": "Aiken and Chester grew up right here in Lakeland. Went to school together. Neither one of them had a dime, and now they own the biggest business in town. Draw your own conclusions.",
+        "weight": 0.2,
+        "tags": ["clue"]
+      },
+      {
+        "name": "Dolores",
+        "description": "knows the post office clerk dismisses concerns",
+        "longDescription": "I told Dolores about the trucks and she looked at me like I had two heads. People around here don't want to know things.",
+        "weight": 0.1,
+        "tags": ["gossip"]
+      }
+    ]
+  },
+  {
+    "name": "Pete",
+    "shortDescription": "an off-duty security guard sitting on a pallet",
+    "description": "A heavyset man in a Logistix Security polo, untucked, sitting on an upturned pallet near the gate. He has a faded tattoo on his forearm and the watchful stillness of someone who has learned not to make sudden moves. A thermos of coffee sits beside him.",
+    "brainType": "talk",
+    "room": "logistix-yard",
+    "topics": {
+      "logistix": "It's a job. Pays alright. I don't ask too many questions.",
+      "aiken": "He's the boss. Signs the checks. That's all I need to know.",
+      "chester": "Chester handles the operations side. He's... particular.",
+      "trucks": "Trucks come and go. That's what a logistics company does.",
+      "shipments": "I'm day shift. I don't know what happens at night. I go home.",
+      "night": "I'm day shift.",
+      "job": "It's steady work. It's my re-entry placement. I've got a kid in middle school. You don't walk away from that. You don't.",
+      "warehouse": "It's a warehouse. Boxes. Pallets. Nothing exciting.",
+      "guard": "Security's mostly making sure nobody steals the forklift. Again.",
+      "karen": "The lady at the crossroads? She talks a lot. I wouldn't put too much stock in it.",
+      "yard": "It's a yard. Gravel, razor wire, the usual. Nothing to see."
+    },
+    "characterKnowledge": [
+      {
+        "name": "criminal enterprise",
+        "description": "knows Aiken and Chester are criminals",
+        "longDescription": "Look, I didn't tell you this. Aiken and Chester — they're not just running a logistics company. I've seen what's in some of those crates. I can't say more than that. I did five years for aggravated assault and I am NOT going back. Not for them. Not for anybody.",
+        "weight": 0.9,
+        "tags": ["secret", "imbroglio"]
+      },
+      {
+        "name": "night shift",
+        "description": "knows the night shift is different",
+        "longDescription": "The night crew — they're not the same guys. Different people. I don't recognize any of them. And they don't wear the company polo.",
+        "weight": 0.7,
+        "tags": ["secret", "clue"]
+      },
+      {
+        "name": "re-entry",
+        "description": "knows this job is his mandatory re-entry placement",
+        "longDescription": "This is my placement. Mandatory. I did time — aggravated assault, five years at Chillicothe. The parole board set me up here. If I lose this job, I go back. So I keep my head down and I don't see things.",
+        "weight": 0.8,
+        "tags": ["secret"]
+      }
+    ]
+  },
+  {
+    "name": "Cindy",
+    "shortDescription": "a tired woman in a housecoat, watching the road",
+    "description": "A woman in her late fifties in a faded floral housecoat and house slippers, standing at the edge of the frontage road like she's waiting for a bus that isn't coming. She watches the road south with a mixture of hope and exhaustion.",
+    "brainType": "talk",
+    "room": "highway-1",
+    "topics": {
+      "bearman": "That's my Arthur. He's not well. He used to be so sharp — math, science, all of it. Now he just walks around talking about shapes and chirality. I don't even know what that means.",
+      "arthur": "He could save up from his job — he HAS a job, at the warehouse, they haven't fired him yet — and do whatever he wants. Take a class. Fix the house. Instead he walks.",
+      "son": "He's a good boy. He's just... lost. I come out here because sometimes he walks this way and I can talk to him for a minute before he wanders off again.",
+      "logistix": "Arthur works there. Or worked there. I'm not sure anymore. They're patient with him, I'll give them that.",
+      "lakeland": "We've been here since Arthur was little. It was nicer then. Or maybe I was younger. Same thing.",
+      "job": "He has a job! That's what kills me. He could save up. Do something. But he'd rather walk around the fields muttering about geometry.",
+      "shapes": "He's always talking about shapes. Equilateral this, chirality that. I looked it up once and it's a real word but I still don't understand.",
+      "house": "It needs work. The gutters are falling off. Arthur could fix them in an afternoon if he'd just come home.",
+      "karen": "Karen Billberger? She means well. She told me about some program for people like Arthur but I lost the pamphlet."
+    },
+    "characterKnowledge": [
+      {
+        "name": "Arthur's obsession",
+        "description": "knows her son is fixated on geometric patterns",
+        "longDescription": "He keeps saying he's found something. Something mathematical, in the fields. He draws these diagrams — triangles inside triangles. I threw them away once and he cried. A grown man, crying over triangles.",
+        "weight": 0.3,
+        "tags": ["clue", "imbroglio"]
+      },
+      {
+        "name": "Arthur's job",
+        "description": "knows Arthur technically works at Logistix",
+        "longDescription": "He's on the books at Logistix. Night shift. I think they keep him because he doesn't ask questions and he's strong as an ox. Chester told me once they'd keep him as long as he shows up.",
+        "weight": 0.2,
+        "tags": ["clue"]
+      }
+    ]
   }
 ]

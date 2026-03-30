@@ -15,6 +15,9 @@ import eidolon.game.models.entity.agent.EvenniaCharacter
 import eidolon.game.models.entity.agent.StateConfig
 import eidolon.game.models.entity.agent.StateMachineBrain
 import eidolon.game.models.entity.agent.StateMachineConfig
+import eidolon.game.models.entity.agent.TalkBrain
+import eidolon.game.models.entity.agent.TalkConfig
+import com.eidolon.game.models.CharacterKnowledge
 import io.vertx.core.Vertx
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
@@ -253,6 +256,33 @@ class NpcInitializer @Inject constructor(
                 }
             }
 
+            // Load character knowledge
+            val knowledgeJson = npc.getJsonArray("characterKnowledge")
+            if (knowledgeJson != null && knowledgeJson.size() > 0) {
+                val knowledgeList = parseCharacterKnowledge(knowledgeJson)
+                character.characterKnowledge = knowledgeList
+                entityController.saveState(character._id, JsonObject()
+                    .put("characterKnowledge", knowledgeJson))
+            }
+
+            // Register talk brain config if applicable
+            if (brainType == "talk") {
+                val talkBrain = brainRegistry.get("talk") as? TalkBrain
+                if (talkBrain != null) {
+                    val topicsJson = npc.getJsonObject("topics")
+                    val topics = if (topicsJson != null) {
+                        topicsJson.fieldNames().associateWith { topicsJson.getString(it) }
+                    } else emptyMap()
+                    talkBrain.registerConfig(character._id, TalkConfig(topics = topics))
+
+                    if (topics.isNotEmpty()) {
+                        character.askTopics = topics.keys.toList()
+                        entityController.saveState(character._id, JsonObject()
+                            .put("askTopics", JsonArray(topics.keys.toList())))
+                    }
+                }
+            }
+
             characters.add(character)
             log.info("Created Minare EvenniaCharacter '${name}' (id=${character._id}, brain=${brainType}, room=${roomMinareId})",)
         }
@@ -281,6 +311,19 @@ class NpcInitializer @Inject constructor(
         } catch (e: Exception) {
             log.error("Failed to read rooms.json: $e")
             emptyList()
+        }
+    }
+
+    private fun parseCharacterKnowledge(jsonArray: JsonArray): List<CharacterKnowledge> {
+        return (0 until jsonArray.size()).map { i ->
+            val obj = jsonArray.getJsonObject(i)
+            CharacterKnowledge(
+                name = obj.getString("name", ""),
+                description = obj.getString("description", ""),
+                longDescription = obj.getString("longDescription", ""),
+                weight = obj.getDouble("weight", 0.0),
+                tags = obj.getJsonArray("tags")?.map { it as String } ?: emptyList()
+            )
         }
     }
 
