@@ -21,6 +21,11 @@ class Exit(ObjectParent, DefaultExit):
     See mygame/typeclasses/objects.py for a list of
     properties and methods available on all Objects child classes like this.
 
+    Attributes:
+        is_stile (bool): If True, NPCs will not use this exit when wandering
+            randomly. Set at scenario design time via ``exit.db.is_stile = True``.
     """
 
-    pass
+    def at_object_creation(self):
+        super().at_object_creation()
+        self.db.is_stile = False

@@ -16,6 +16,7 @@ import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
 import com.eidolon.game.service.ItemRegistry
+import com.eidolon.game.models.StatusEffect
 import com.eidolon.game.models.entity.WorkSite
 import com.eidolon.game.service.VendorService
 import com.google.inject.Inject
@@ -210,6 +211,22 @@ class GameMessageController @Inject constructor(
                     combatService.setAttackMode(characterId, targetId)
                 } else {
                     combatService.createCombat(roomId, characterId, targetId)
+                }
+            }
+        }
+
+        register("combat_kill") { _, msg, _ ->
+            val targetId = msg.getString("target_id", "")
+            val target = entityController.findByIds(listOf(targetId))
+                .values.firstOrNull() as? EvenniaCharacter
+            if (target != null && target.downed && !target.dead) {
+                target.dead = true
+                damageService.flagDead(target)
+                entityController.saveState(targetId, JsonObject().put("dead", true))
+                entityController.saveProperties(targetId, JsonObject()
+                    .put("statusEffects", listOf<StatusEffect>()))
+                if (target.combatId.isNotEmpty()) {
+                    combatService.removeMember(target.combatId, targetId)
                 }
             }
         }

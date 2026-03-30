@@ -20,7 +20,7 @@ from commands.player_commands import (
     CmdExplore, CmdNoHome, CmdNoAccess, CmdInfo, CmdWork, CmdStopWorking,
 )
 from commands.combat_commands import (
-    CmdAttack, CmdDefend, CmdAvoid, CmdEscape, CmdStance, CmdTactic,
+    CmdAttack, CmdDefend, CmdAvoid, CmdEscape, CmdKill, CmdStance, CmdTactic,
 )
 from commands.equipment_commands import (
     CmdEquip, CmdUnequip, CmdInventory,
@@ -54,6 +54,7 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdDefend())
         self.add(CmdAvoid())
         self.add(CmdEscape())
+        self.add(CmdKill())
         self.add(CmdStance())
         self.add(CmdTactic())
         self.add(CmdEquip())

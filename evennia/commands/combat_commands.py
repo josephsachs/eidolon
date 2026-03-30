@@ -177,6 +177,65 @@ class CmdEscape(Command):
         )
 
 
+class CmdKill(Command):
+    """
+    Finish off a downed character.
+
+    Usage:
+      kill <target>
+
+    Delivers a killing blow to a downed target, ending their life.
+    """
+    key = "kill"
+    locks = "cmd:all()"
+    help_category = "Combat"
+
+    def func(self):
+        caller = self.caller
+
+        if not self.args:
+            caller.msg("Kill whom?")
+            return
+
+        char_id, room_id = _minare_ids(caller)
+        if not char_id:
+            caller.msg("No character data available.")
+            return
+
+        if getattr(caller.db, 'is_downed', False):
+            caller.msg("|rYou're too injured to do that.|n")
+            return
+
+        target = caller.search(self.args.strip(), location=caller.location)
+        if not target:
+            return
+
+        if target == caller:
+            caller.msg("You can't do that to yourself.")
+            return
+
+        target_minare_id = getattr(target.db, 'minare_domain_id', None)
+        if not target_minare_id:
+            caller.msg("You can't kill that.")
+            return
+
+        if getattr(target.db, 'is_dead', False):
+            caller.msg(f"{target.key} is already dead.")
+            return
+
+        if not getattr(target.db, 'is_downed', False):
+            caller.msg(f"{target.key} is not downed.")
+            return
+
+        caller.msg(f"|RYou deliver the killing blow to {target.key}.|n")
+        _get_client().send_message({
+            'type': 'combat_kill',
+            'character_id': char_id,
+            'target_id': target_minare_id,
+            'room_id': room_id,
+        })
+
+
 class CmdStance(Command):
     """
     Set your combat stance.

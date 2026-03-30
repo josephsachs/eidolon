@@ -412,10 +412,11 @@ class AgentCharacter(Character):
             if not char_obj.location:
                 return
 
-            # Find all exits from current room
+            # Find all exits from current room, excluding stiles
             exits = [
                 obj for obj in char_obj.location.contents
                 if obj.destination and obj.destination != char_obj.location
+                and not getattr(obj.db, 'is_stile', False)
             ]
             if not exits:
                 return
