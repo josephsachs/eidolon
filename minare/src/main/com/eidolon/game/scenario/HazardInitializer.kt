@@ -196,7 +196,7 @@ class HazardInitializer @Inject constructor(
             val entity = entityFactory.createEntity(ObjectActor::class.java) as ObjectActor
             entityController.create(entity)
 
-            entityController.saveState(entity._id!!, JsonObject()
+            entityController.saveState(entity._id, JsonObject()
                 .put("evenniaId", evenniaId)
                 .put("roomId", roomMinareId)
                 .put("roomEvenniaId", roomEvenniaId)
@@ -210,7 +210,7 @@ class HazardInitializer @Inject constructor(
                 .put("explosionMessages", hazard.getJsonArray("explosionMessages",
                     JsonArray().add("The barrel explodes!"))))
 
-            linkDomainEntity.link(evenniaId, entity._id!!, "ObjectActor")
+            linkDomainEntity.link(evenniaId, entity._id, "ObjectActor")
 
             hazards.add(entity)
             log.info("Created ObjectActor '$name' (id=${entity._id}, room=$roomMinareId)")

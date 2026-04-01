@@ -15,6 +15,9 @@ import eidolon.game.models.entity.agent.EvenniaCharacter
 import eidolon.game.models.entity.agent.StateConfig
 import eidolon.game.models.entity.agent.StateMachineBrain
 import eidolon.game.models.entity.agent.StateMachineConfig
+import eidolon.game.models.entity.agent.TalkBrain
+import eidolon.game.models.entity.agent.TalkConfig
+import com.eidolon.game.models.CharacterKnowledge
 import io.vertx.core.Vertx
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
@@ -202,8 +205,6 @@ class NpcInitializer @Inject constructor(
             val state = JsonObject()
                 .put("evenniaId", evenniaId)
                 .put("evenniaName", name)
-                .put("description", npc.getString("description", ""))
-                .put("shortDescription", npc.getString("shortDescription", ""))
                 .put("isNpc", true)
                 .put("brainType", brainType)
                 .put("currentRoomId", roomMinareId)
@@ -218,10 +219,23 @@ class NpcInitializer @Inject constructor(
                 state.put("equipment", equipmentJson)
             }
 
-            entityController.saveState(character._id!!, state)
+            entityController.saveState(character._id, state)
 
             // Link EvenniaObject stub <-> EvenniaCharacter domain entity
             linkDomainEntity.link(evenniaId, character._id!!, "EvenniaCharacter")
+
+            // Set description on the linked EvenniaObject so it syncs to Evennia
+            val npcDescription = npc.getString("description", "")
+            val npcShortDescription = npc.getString("shortDescription", "")
+            if (npcDescription.isNotEmpty() || npcShortDescription.isNotEmpty()) {
+                val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId)
+                if (eoMinareId != null) {
+                    val eoState = JsonObject()
+                    if (npcDescription.isNotEmpty()) eoState.put("description", npcDescription)
+                    if (npcShortDescription.isNotEmpty()) eoState.put("shortDescription", npcShortDescription)
+                    entityController.saveState(eoMinareId, eoState)
+                }
+            }
 
             // Register vendor config if applicable
             val vendorJson = npc.getJsonObject("vendor")
@@ -229,7 +243,7 @@ class NpcInitializer @Inject constructor(
                 val buyMenu = vendorJson.getJsonArray("buyMenu")?.map { it as String } ?: emptyList()
                 val sellMenu = vendorJson.getJsonArray("sellMenu")?.map { it as String } ?: emptyList()
                 val currency = vendorJson.getString("currency", "dollar")
-                vendorService.registerVendor(character._id!!, VendorService.VendorConfig(buyMenu, sellMenu, currency))
+                vendorService.registerVendor(character._id, VendorService.VendorConfig(buyMenu, sellMenu, currency))
             }
 
             // Register state machine config if applicable
@@ -238,7 +252,34 @@ class NpcInitializer @Inject constructor(
                 val smBrain = brainRegistry.get("state_machine") as? StateMachineBrain
                 if (smBrain != null) {
                     val config = parseStateMachineConfig(smJson)
-                    smBrain.registerConfig(character._id!!, config)
+                    smBrain.registerConfig(character._id, config)
+                }
+            }
+
+            // Load character knowledge
+            val knowledgeJson = npc.getJsonArray("characterKnowledge")
+            if (knowledgeJson != null && knowledgeJson.size() > 0) {
+                val knowledgeList = parseCharacterKnowledge(knowledgeJson)
+                character.characterKnowledge = knowledgeList
+                entityController.saveState(character._id, JsonObject()
+                    .put("characterKnowledge", knowledgeJson))
+            }
+
+            // Register talk brain config if applicable
+            if (brainType == "talk") {
+                val talkBrain = brainRegistry.get("talk") as? TalkBrain
+                if (talkBrain != null) {
+                    val topicsJson = npc.getJsonObject("topics")
+                    val topics = if (topicsJson != null) {
+                        topicsJson.fieldNames().associateWith { topicsJson.getString(it) }
+                    } else emptyMap()
+                    talkBrain.registerConfig(character._id, TalkConfig(topics = topics))
+
+                    if (topics.isNotEmpty()) {
+                        character.askTopics = topics.keys.toList()
+                        entityController.saveState(character._id, JsonObject()
+                            .put("askTopics", JsonArray(topics.keys.toList())))
+                    }
                 }
             }
 
@@ -248,6 +289,16 @@ class NpcInitializer @Inject constructor(
 
         if (characters.isNotEmpty()) {
             gameChannelController.addEntitiesToChannel(characters, defaultChannelId)
+
+            // Re-save askTopics now that entities are in the channel so the delta
+            // actually broadcasts to Evennia (saveState before channel addition has
+            // no subscribers).
+            for (character in characters) {
+                if (character.askTopics.isNotEmpty()) {
+                    entityController.saveState(character._id, JsonObject()
+                        .put("askTopics", JsonArray(character.askTopics)))
+                }
+            }
         }
     }
 
@@ -270,6 +321,19 @@ class NpcInitializer @Inject constructor(
         } catch (e: Exception) {
             log.error("Failed to read rooms.json: $e")
             emptyList()
+        }
+    }
+
+    private fun parseCharacterKnowledge(jsonArray: JsonArray): List<CharacterKnowledge> {
+        return (0 until jsonArray.size()).map { i ->
+            val obj = jsonArray.getJsonObject(i)
+            CharacterKnowledge(
+                name = obj.getString("name", ""),
+                description = obj.getString("description", ""),
+                longDescription = obj.getString("longDescription", ""),
+                weight = obj.getDouble("weight", 0.0),
+                tags = obj.getJsonArray("tags")?.map { it as String } ?: emptyList()
+            )
         }
     }
 

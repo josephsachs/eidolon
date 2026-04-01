@@ -120,8 +120,10 @@ class CmdInventory(Command):
 
     Usage:
       inventory
+      inventory <resource>
 
-    Shows what you're carrying and what you have equipped.
+    With no arguments, shows what you're carrying and what you have equipped.
+    With a resource name, shows its description.
     """
     key = "inventory"
     aliases = ["inv", "i"]
@@ -130,21 +132,35 @@ class CmdInventory(Command):
 
     def func(self):
         caller = self.caller
+        sim_state = caller.db.sim_state or {}
+        resources = sim_state.get('resources', {})
+
+        if self.args:
+            self._show_resource(caller, resources)
+            return
+
         items = [obj for obj in caller.contents if hasattr(obj.db, 'template_id')]
         other = [obj for obj in caller.contents if not hasattr(obj.db, 'template_id') and obj != caller]
 
-        if not items and not other:
+        if not items and not other and not resources:
             caller.msg("You aren't carrying anything.")
             return
 
-        lines = ["|wYou are carrying:|n"]
-        for item in items:
-            lines.append(f"  {item.key}")
-        for obj in other:
-            lines.append(f"  {obj.key}")
+        lines = []
 
-        # Show equipment from sim_state if available
-        sim_state = caller.db.sim_state or {}
+        if items or other:
+            lines.append("|wYou are carrying:|n")
+            for item in items:
+                lines.append(f"  {item.key}")
+            for obj in other:
+                lines.append(f"  {obj.key}")
+
+        if resources:
+            lines.append("|wResources:|n")
+            for template_id, count in resources.items():
+                name = template_id.replace("-", " ").title()
+                lines.append(f"  {name} x{count}")
+
         equipment = sim_state.get('equipment', {})
         if equipment:
             lines.append("|wEquipped:|n")
@@ -153,3 +169,40 @@ class CmdInventory(Command):
                     lines.append(f"  {slot}: {template_id}")
 
         caller.msg("\n".join(lines))
+
+    def _show_resource(self, caller, resources):
+        query = self.args.strip().lower()
+        # Match by template_id or display name
+        matched_id = None
+        for template_id in resources:
+            name = template_id.replace("-", " ").lower()
+            if query == template_id or query == name or name.startswith(query):
+                matched_id = template_id
+                break
+
+        if not matched_id:
+            caller.msg(f"You don't have any resource matching '{query}'.")
+            return
+
+        char_id = caller.db.minare_domain_id or ""
+        if not char_id:
+            name = matched_id.replace("-", " ").title()
+            caller.msg(f"|w{name}|n x{resources[matched_id]}")
+            return
+
+        def on_response(response):
+            desc = response.get('description', '')
+            name = response.get('name', matched_id.replace("-", " ").title())
+            count = resources.get(matched_id, 0)
+            if desc:
+                caller.msg(f"|w{name}|n x{count}\n{desc}")
+            else:
+                caller.msg(f"|w{name}|n x{count}")
+
+        _get_client().send_with_callback(
+            {
+                'type': 'resource_info',
+                'template_id': matched_id,
+            },
+            on_response,
+        )

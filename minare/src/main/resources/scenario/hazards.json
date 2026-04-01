@@ -1,9 +1,29 @@
 [
   {
+    "id": "grasping-arms",
+    "room": "radio-tower-pathway-2",
+    "name": "a pair of enormous arms",
+    "description": "Two massive arms hang from somewhere above, too large to belong to anything that should fit in this space. The fingers are long and wrong-jointed. They twitch and flex with a patience that suggests intelligence, then periodically rake downward at everything below.",
+    "hazardType": "burn",
+    "hardpointDamage": 10,
+    "vitalityDamage": 5,
+    "burnDuration": 12000,
+    "burnTickDamage": 3,
+    "intervalMin": 10000,
+    "intervalMax": 25000,
+    "explosionMessages": [
+      "The arms lunge downward, clawing blindly at the ground!",
+      "A massive hand rakes across the space, fingers splayed and grasping!",
+      "The arms scrabble frantically, nails dragging against the floor with a sound like tearing metal!",
+      "One arm sweeps low while the other slams down, trapping everything between them!",
+      "The fingers flex and claw in a sudden frenzy, scorching where they touch!"
+    ]
+  },
+  {
     "id": "flaming-barrel",
-    "room": "loading-bay",
+    "room": "radio-tower-pathway-1",
     "name": "a flaming barrel",
-    "description": "A rusted oil drum, inexplicably ablaze. Flames lick from its open top in rhythmic pulses, as if something inside keeps detonating. The heat is oppressive.",
+    "description": "A rusted oil drum, inexplicably ablaze. Flames lick from its open top in rhythmic pulses, as if something inside keeps detonating. It shouldn't be here. Nothing should.",
     "hazardType": "burn",
     "hardpointDamage": 8,
     "vitalityDamage": 4,

@@ -2,7 +2,9 @@ package com.eidolon.game.scenario
 
 import com.eidolon.game.commands.LinkDomainEntity
 import com.eidolon.game.controller.GameConnectionController
+import com.eidolon.game.evennia.CrossLinkRegistry
 import com.eidolon.game.evennia.EvenniaCommUtils
+import com.eidolon.game.models.entity.EvenniaObject
 import com.eidolon.game.models.entity.ExplorableExit
 import com.eidolon.game.models.entity.Room
 import com.google.inject.Inject
@@ -29,6 +31,7 @@ class RoomInitializer @Inject constructor(
     private val entityController: EntityController,
     private val evenniaCommUtils: EvenniaCommUtils,
     private val linkDomainEntity: LinkDomainEntity,
+    private val crossLinkRegistry: CrossLinkRegistry,
     private val coroutineScope: CoroutineScope,
     private val vertx: Vertx
 ) {
@@ -72,13 +75,10 @@ class RoomInitializer @Inject constructor(
         // Phase 1: Send dig commands to Evennia, wait for ObjectParent registrations
         val roomKeyToEvenniaId = digRooms(roomData, scenarioIdToRoomKey.values.toSet())
 
-        // Phase 2: Send describe commands to set room descriptions
-        describeRooms(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId)
-
-        // Phase 3: Create exits between rooms
+        // Phase 2: Create exits between rooms
         createExits(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId)
 
-        // Phase 4: Create lightweight Room entities in Minare
+        // Phase 3: Create lightweight Room entities in Minare, set descriptions on EvenniaObjects
         createMinareEntities(roomData, scenarioIdToRoomKey, roomKeyToEvenniaId, defaultChannelId)
 
         log.info("RoomInitializer: initialized ${roomData.size} rooms via agent commands")
@@ -140,36 +140,7 @@ class RoomInitializer @Inject constructor(
     }
 
     /**
-     * Phase 2: Send describe commands to set room descriptions.
-     * CmdDig creates rooms but doesn't set descriptions.
-     */
-    private suspend fun describeRooms(
-        roomData: List<JsonObject>,
-        scenarioIdToRoomKey: Map<String, String>,
-        roomKeyToEvenniaId: Map<String, String>
-    ) {
-        val describeCommands = mutableListOf<JsonObject>()
-
-        for (json in roomData) {
-            val roomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
-            val evenniaId = roomKeyToEvenniaId[roomKey] ?: continue
-            val description = json.getString("description", "")
-            if (description.isNotEmpty()) {
-                describeCommands.add(JsonObject()
-                    .put("action", "describe")
-                    .put("room_evennia_id", evenniaId)
-                    .put("text", description))
-            }
-        }
-
-        if (describeCommands.isNotEmpty()) {
-            log.info("RoomInitializer: Sending batch describe for ${describeCommands.size} rooms")
-            evenniaCommUtils.sendBatchCommands(describeCommands)
-        }
-    }
-
-    /**
-     * Phase 3: Create one-way exits between rooms using the roomKey map.
+     * Phase 2: Create one-way exits between rooms using the roomKey map.
      */
     private suspend fun createExits(
         roomData: List<JsonObject>,
@@ -201,6 +172,9 @@ class RoomInitializer @Inject constructor(
                     cmd.put("locked", true)
                     cmd.put("block_message", exitObj.getString("blockMessage", "The path is blocked and impassable."))
                 }
+                if (exitObj.getBoolean("stile", false)) {
+                    cmd.put("stile", true)
+                }
                 exitCommands.add(cmd)
             }
         }
@@ -212,8 +186,8 @@ class RoomInitializer @Inject constructor(
     }
 
     /**
-     * Phase 4: Create lightweight Room entities in Minare.
-     * Room entities store shortDescription — full description lives in Evennia.
+     * Phase 3: Create lightweight Room entities in Minare.
+     * Descriptions are set on the linked EvenniaObject and synced to Evennia automatically.
      */
     private suspend fun createMinareEntities(
         roomData: List<JsonObject>,
@@ -227,16 +201,26 @@ class RoomInitializer @Inject constructor(
             val roomKey = scenarioIdToRoomKey[json.getString("id")] ?: continue
             val evenniaId = roomKeyToEvenniaId[roomKey] ?: continue
 
-            // Create Room entity (lightweight — description lives in Evennia)
+            // Create Room entity (lightweight — description lives on EvenniaObject)
             val room = entityFactory.createEntity(Room::class.java) as Room
             room.shortDescription = json.getString("shortDescription", "")
-            room.description = "" // Evennia is authoritative for descriptions
             room.dayDesc = json.getString("dayDesc", "")
             room.nightDesc = json.getString("nightDesc", "")
             entityController.create(room)
 
             // Link EvenniaObject stub <-> Room domain entity
-            linkDomainEntity.link(evenniaId, room._id!!, "Room")
+            linkDomainEntity.link(evenniaId, room._id, "Room")
+
+            // Set description on the linked EvenniaObject so it syncs to Evennia
+            val description = json.getString("description", "")
+            if (description.isNotEmpty()) {
+                val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId)
+                if (eoMinareId != null) {
+                    entityController.saveState(eoMinareId, JsonObject()
+                        .put("description", description)
+                        .put("shortDescription", json.getString("shortDescription", "")))
+                }
+            }
 
             rooms.add(room)
             log.info("Created Minare Room '${room.shortDescription}' (id=${room._id}, evenniaId=$evenniaId)")
@@ -260,7 +244,7 @@ class RoomInitializer @Inject constructor(
 
                 val explorableExit = entityFactory.createEntity(ExplorableExit::class.java) as ExplorableExit
                 entityController.create(explorableExit)
-                entityController.saveState(explorableExit._id!!, JsonObject()
+                entityController.saveState(explorableExit._id, JsonObject()
                     .put("direction", direction)
                     .put("destination", destRoom._id)
                     .put("description", exitObj.getString("description", ""))
@@ -270,7 +254,7 @@ class RoomInitializer @Inject constructor(
 
                 // Add to room's exits map
                 val updatedExits = sourceRoom.exits.copy().put(direction, explorableExit._id)
-                entityController.saveState(sourceRoom._id!!, JsonObject().put("exits", updatedExits))
+                entityController.saveState(sourceRoom._id, JsonObject().put("exits", updatedExits))
 
                 explorableExits.add(explorableExit)
                 log.info("Created ExplorableExit '${direction}' in '${sourceRoom.shortDescription}' (id=${explorableExit._id})")

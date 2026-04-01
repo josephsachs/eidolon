@@ -37,11 +37,14 @@ class NpcInteraction @Inject constructor(
             return JsonObject().put("status", "error").put("error", "No brain for type: ${npc.brainType}")
         }
 
+        val topic = message.getString("topic", "")
+
         val interaction = JsonObject()
             .put("player_id", playerId)
             .put("player_name", playerName)
             .put("interaction_type", interactionType)
             .put("text", text)
+            .put("topic", topic)
 
         brain.onPlayerInteraction(npc, interaction)
 

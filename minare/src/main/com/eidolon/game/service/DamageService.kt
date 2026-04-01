@@ -105,32 +105,30 @@ class DamageService @Inject constructor(
     }
 
     /**
-     * Flag a character as dead in Evennia — applies death locks.
+     * Log that a character has died.
+     *
+     * Evennia is notified via the @State delta broadcast for `dead = true`,
+     * which triggers the sync hook on the Evennia side. No agent command needed.
      */
-    suspend fun flagDead(character: EvenniaCharacter) {
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "flag_dead")
-            .put("character_evennia_id", character.evenniaId))
+    fun flagDead(character: EvenniaCharacter) {
         log.info("Character {} ({}) has died", character.evenniaName, character._id)
     }
 
     /**
-     * Flag a character as downed (incapacitated) in Evennia.
+     * Log that a character has been downed.
+     *
+     * Evennia is notified via the @State delta broadcast for `downed = true`.
      */
-    suspend fun flagDowned(character: EvenniaCharacter) {
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "flag_downed")
-            .put("character_evennia_id", character.evenniaId))
+    fun flagDowned(character: EvenniaCharacter) {
         log.info("Character {} ({}) has been downed", character.evenniaName, character._id)
     }
 
     /**
-     * Clear downed state in Evennia (character recovered).
+     * Log that a character has recovered from downed.
+     *
+     * Evennia is notified via the @State delta broadcast for `downed = false`.
      */
-    suspend fun flagUndowned(character: EvenniaCharacter) {
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "flag_undowned")
-            .put("character_evennia_id", character.evenniaId))
+    fun flagUndowned(character: EvenniaCharacter) {
         log.info("Character {} ({}) has recovered from downed", character.evenniaName, character._id)
     }
 

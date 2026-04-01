@@ -25,6 +25,8 @@ class RegisterEvenniaObject @Inject constructor(
         val typeclassPath = message.getString("typeclass_path", "")
         val key = message.getString("key", "")
         val locationEvenniaId = message.getString("location_evennia_id", "")
+        val description = message.getString("description", "")
+        val shortDescription = message.getString("short_description", "")
 
         // Check if already registered
         val existingId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId)
@@ -37,6 +39,8 @@ class RegisterEvenniaObject @Inject constructor(
                 if (existing.typeclassPath != typeclassPath) updates.put("typeclassPath", typeclassPath)
                 if (existing.key != key) updates.put("key", key)
                 if (existing.locationEvenniaId != locationEvenniaId) updates.put("locationEvenniaId", locationEvenniaId)
+                if (description.isNotEmpty() && existing.description != description) updates.put("description", description)
+                if (shortDescription.isNotEmpty() && existing.shortDescription != shortDescription) updates.put("shortDescription", shortDescription)
                 if (!updates.isEmpty) {
                     entityController.saveState(existingId, updates)
                 }
@@ -54,6 +58,8 @@ class RegisterEvenniaObject @Inject constructor(
         eo.typeclassPath = typeclassPath
         eo.key = key
         eo.locationEvenniaId = locationEvenniaId
+        eo.description = description
+        eo.shortDescription = shortDescription
         entityController.create(eo)
 
         // Add to default channel

@@ -1,7 +1,7 @@
 [
   {
     "id": "rusty-knife",
-    "name": "Rusty knife",
+    "name": "rusty knife",
     "description": "A dull, pitted blade with a cracked wooden handle. Better than bare fists, barely.",
     "type": "weapon",
     "slot": "MAIN_HAND",
@@ -13,9 +13,9 @@
     "price": { "currency": "dollar", "amount": 5 }
   },
   {
-    "id": "stinger",
-    "name": "Stinger",
-    "description": "A hefty electrical prod shaped like a bee's stinger. Crackles with barely contained voltage. Standard issue for the bee guards.",
+    "id": "tire-iron",
+    "name": "tire iron",
+    "description": "A heavy, gunmetal-gray tire iron with a bronze brand sticker.",
     "type": "weapon",
     "slot": "MAIN_HAND",
     "damage": 15,
@@ -28,7 +28,7 @@
   {
     "id": "colt-45",
     "name": "Colt 45",
-    "description": "A battered but functional revolver. Six shots, if you can find the ammo.",
+    "description": "A battered but functional revolver. Six shots.",
     "type": "weapon",
     "slot": "MAIN_HAND",
     "damage": 20,
@@ -39,9 +39,9 @@
     "price": { "currency": "dollar", "amount": 50 }
   },
   {
-    "id": "ak-47",
-    "name": "AK-47",
-    "description": "A scratched-up assault rifle of indeterminate origin. Reliable as gravity.",
+    "id": "glock-9",
+    "name": "Glock 9",
+    "description": "The famous plastic handgun, 9mm and (semi) accurate.",
     "type": "weapon",
     "slot": "MAIN_HAND",
     "damage": 35,
@@ -49,25 +49,25 @@
     "weaponType": "firearm",
     "balanceCost": 8,
     "critModifier": 3.0,
-    "price": { "currency": "dollar", "amount": 200 }
+    "price": { "currency": "pound", "amount": 200 }
   },
   {
-    "id": "restraint-arm",
-    "name": "Restraint arm",
-    "description": "A hydraulic clamp arm designed for patient restraint. Crushes with mechanical indifference.",
+    "id": "double-barreled-shotgun",
+    "name": "double-barreled shotgun",
+    "description": "A pump-action shotgun intended for use on large animals.",
     "type": "weapon",
     "slot": "MAIN_HAND",
-    "damage": 30,
-    "skill": "Hand-to-Hand",
-    "weaponType": "blunt",
-    "balanceCost": 10,
-    "critModifier": -2.0,
-    "price": { "currency": "dollar", "amount": 0 }
+    "damage": 50,
+    "skill": "Firearms",
+    "weaponType": "firearm",
+    "balanceCost": 15,
+    "critModifier": 7.0,
+    "price": { "currency": "pound", "amount": 700 }
   },
   {
-    "id": "leather-vest",
-    "name": "Leather vest",
-    "description": "A stiff leather vest, sun-cracked but still good for stopping a blade.",
+    "id": "plastic-body-armor",
+    "name": "plastic body armor",
+    "description": "A plastic splint jacket intended for contact sports.",
     "type": "armor",
     "slot": "TORSO",
     "absorption": 5,
@@ -75,8 +75,8 @@
   },
   {
     "id": "hard-hat",
-    "name": "Hard hat",
-    "description": "A scuffed yellow hard hat. Protects against falling debris and feral tusks alike.",
+    "name": "hard hat",
+    "description": "A scuffed yellow hard hat.",
     "type": "armor",
     "slot": "HEAD",
     "absorption": 3,
@@ -84,8 +84,8 @@
   },
   {
     "id": "work-boots",
-    "name": "Work boots",
-    "description": "Heavy steel-toed boots, well worn but solid.",
+    "name": "work boots",
+    "description": "Heavy steel-toed boots, well worn.",
     "type": "armor",
     "slot": "RIGHT_LEG",
     "absorption": 2,
@@ -100,15 +100,231 @@
   },
   {
     "id": "cucumber",
-    "name": "Cucumber",
+    "name": "cucumber",
     "description": "A fresh cucumber. Where it came from in this desert is anyone's guess.",
     "type": "resource",
-    "price": { "currency": "dollar", "amount": 1 }
+    "price": { "currency": "pound", "amount": 1 }
+  },
+  {
+    "id": "pineapple",
+    "name": "pineapple",
+    "description": "A small, fierce tropical pineapple. More sour than sweet. The leaves could cut you.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 2 }
+  },
+  {
+    "id": "boar-tusks",
+    "name": "boar tusks",
+    "description": "Yellowed tusks chipped from rooting through volcanic rock. They gore with animal conviction.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 18,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 5,
+    "critModifier": 3.0,
+    "price": { "currency": "pound", "amount": 0 }
+  },
+  {
+    "id": "lizard-jaws",
+    "name": "lizard jaws",
+    "description": "Strong jaws and serrated teeth made to remove flesh from bones.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 18,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 2,
+    "critModifier": 1.5,
+    "price": { "currency": "pound", "amount": 0 }
+  },
+  {
+    "id": "shadow-touch",
+    "name": "shadow touch",
+    "description": "Not a weapon so much as a contact. Where the shadow grazes you, warmth leaves.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 8,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 2,
+    "critModifier": 6.0,
+    "price": { "currency": "dollar", "amount": 0 }
+  },
+  {
+    "id": "shadow-slam",
+    "name": "shadow slam",
+    "description": "The full weight of something that shouldn't have weight. The impact feels like being forgotten.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 28,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 9,
+    "critModifier": -1.0,
+    "price": { "currency": "dollar", "amount": 0 }
+  },
+  {
+    "id": "coconut",
+    "name": "coconut",
+    "description": "A green coconut, heavy with water. You could drink it or throw it.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 2 }
+  },
+  {
+    "id": "mango",
+    "name": "mango",
+    "description": "A ripe mango, soft and fragrant. Juice runs down your wrist the moment you touch it.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 2 }
+  },
+  {
+    "id": "beer",
+    "name": "beer bottle",
+    "description": "A can of cheap lager, lukewarm. The label is an American brand, Budweiser, known for consistency at the expense of other qualities.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 3 }
+  },
+  {
+    "id": "lager",
+    "name": "lager bottle",
+    "description": "A can of cheap lager, lukewarm. The label is a British micro-brand, Yarmouth Arms, known for its sour, hoppy tang, often described as 'metallic'.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 3 }
+  },
+  {
+    "id": "aged-rum",
+    "name": "glass of aged rum",
+    "description": "A pour of dark rum in a heavy glass. It smells like burnt sugar.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "red-wine",
+    "name": "glass of red wine",
+    "description": "A glass of dark red wine.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "white-wine",
+    "name": "glass of white wine",
+    "description": "A glass of pink-gold white wine.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "cider",
+    "name": "pint of cider",
+    "description": "A glass of cloudy hard cider.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "scotch",
+    "name": "glass of scotch",
+    "description": "A glass of watery icy scotch.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 5 }
+  },
+  {
+    "id": "island-cocktail",
+    "name": "Island cocktail",
+    "description": "Something pink with a paper umbrella. You have to make an island cocktail, if you're on an island.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 8 }
+  },
+  {
+    "id": "boat-tour-ticket",
+    "name": "Boat tour ticket",
+    "description": "A laminated ticket for a 'Sunset Lagoon Experience' boat tour. The departure time is listed as 'TBD.' The fine print says no refunds.",
+    "type": "resource",
+    "price": { "currency": "pound", "amount": 15 }
+  },
+  {
+    "id": "machete",
+    "name": "Machete",
+    "description": "A broad-bladed machete with a wooden handle wrapped in electrical tape. Good for jungle and for trouble.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 14,
+    "skill": "Blades",
+    "weaponType": "blade",
+    "balanceCost": 5,
+    "critModifier": 2.5,
+    "price": { "currency": "dollar", "amount": 25 }
+  },
+  {
+    "id": "straw-hat",
+    "name": "Straw hat",
+    "description": "A wide-brimmed straw hat. Keeps the sun off and a boar tusk out of your skull, barely.",
+    "type": "armor",
+    "slot": "HEAD",
+    "absorption": 2,
+    "price": { "currency": "dollar", "amount": 8 }
+  },
+  {
+    "id": "canvas-vest",
+    "name": "Canvas vest",
+    "description": "A heavy canvas vest with brass snaps. Tourist gear, but it'll stop a graze.",
+    "type": "armor",
+    "slot": "TORSO",
+    "absorption": 4,
+    "price": { "currency": "dollar", "amount": 20 }
+  },
+  {
+    "id": "blizzard",
+    "name": "Blizzard",
+    "description": "A Dairy Queen Blizzard, served upside-down per company policy. Cookie dough. It's already melting.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 4 }
+  },
+  {
+    "id": "hamburger",
+    "name": "hamburger",
+    "description": "A Dairy Queen hamburger in a foil wrapper. The cheese has fused with the bun. It's delicious.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 5 }
+  },
+  {
+    "id": "dilly-bar",
+    "name": "Dilly Bar",
+    "description": "A chocolate-dipped ice cream bar on a stick. The coating cracks when you bite it. An American classic.",
+    "type": "resource",
+    "price": { "currency": "dollar", "amount": 2 }
+  },
+  {
+    "id": "canvas-jacket",
+    "name": "canvas jacket",
+    "description": "A forest-green canvas jacket with a Generous Mart bear patch on the breast. Stiff but warm. Surprisingly tough.",
+    "type": "armor",
+    "slot": "TORSO",
+    "absorption": 6,
+    "price": { "currency": "dollar", "amount": 25 }
+  },
+  {
+    "id": "flashlight",
+    "name": "flashlight",
+    "description": "A heavy-duty rubber flashlight, the kind that doubles as a club. Batteries included.",
+    "type": "weapon",
+    "slot": "MAIN_HAND",
+    "damage": 6,
+    "skill": "Hand-to-Hand",
+    "weaponType": "blunt",
+    "balanceCost": 3,
+    "critModifier": 1.0,
+    "price": { "currency": "dollar", "amount": 12 }
   },
   {
     "id": "dollar",
-    "name": "Dollar",
-    "description": "A crumpled greenback. Still spends.",
+    "name": "dollar",
+    "description": "United States currency. Green, displays eagles and pyramids.",
+    "type": "currency"
+  },
+  {
+    "id": "pound",
+    "name": "pound",
+    "description": "British currency. Gold and silver, displays King Charles III.",
     "type": "currency"
   }
 ]

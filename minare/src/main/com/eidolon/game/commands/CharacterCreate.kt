@@ -46,8 +46,6 @@ class CharacterCreate @Inject constructor(
         // Create new character
         val character = entityFactory.createEntity(EvenniaCharacter::class.java) as EvenniaCharacter
         character.evenniaName = characterData.getString("name", "")
-        character.description = characterData.getString("description", "")
-        character.shortDescription = characterData.getString("name", "")
         val skillsJson = characterData.getJsonObject("skills")
 
         if (skillsJson != null) {
@@ -116,7 +114,7 @@ class CharacterCreate @Inject constructor(
             .put("character", JsonObject()
                 .put("_id", character._id)
                 .put("evenniaName", character.evenniaName)
-                .put("description", character.description)
+                .put("description", characterData.getString("description", ""))
             )
     }
 }

@@ -1,195 +1,738 @@
 [
   {
-    "name": "Dr. Ganz",
-    "shortDescription": "a thin man in a stained lab coat",
-    "description": "A gaunt man in a once-white lab coat, now bearing unidentifiable stains. He peers at you through smudged bifocals with an expression of mild academic interest, as if you were a culture in a petri dish exhibiting unexpected behavior.",
-    "brainType": "kibitz",
-    "room": "exam-room-1"
-  },
-  {
-    "name": "Bee guard",
-    "shortDescription": "a guard in a bee costume",
-    "description": "A stocky figure in a full-body bee costume — fuzzy yellow-and-black stripes, vestigial wings, bobbing antennae. The effect would be comical if not for the crackling electrical weapon holstered at its hip. Its face is hidden behind a mesh visor. It buzzes menacingly.",
+    "name": "boar",
+    "shortDescription": "a massive feral boar",
+    "description": "A bristle-backed boar the size of a motorcycle, scarred and mud-caked. Its tusks are yellowed and chipped from rooting through volcanic rock. It watches you with small, furious eyes.",
     "brainType": "feral",
-    "room": "security-station",
+    "room": "north-island-wilds-2",
     "equipment": {
-      "MAIN_HAND": "stinger"
+      "MAIN_HAND": "boar-tusks"
     },
     "attributes": {
-      "strength": 75,
-      "agility": 55,
-      "toughness": 80,
-      "intellect": 10,
+      "strength": 80,
+      "agility": 45,
+      "toughness": 85,
+      "intellect": 5,
       "imagination": 5,
-      "discipline": 30,
+      "discipline": 20,
       "charisma": 5,
       "empathy": 5,
-      "wits": 60
+      "wits": 55
     }
   },
   {
-    "name": "Nanny",
-    "shortDescription": "a hulking robot in a nurse's cap",
-    "description": "A seven-foot industrial robot squeezed into a dented white chassis. Someone has bolted a nurse's cap to its head and painted a red cross on its chest plate. Its hydraulic arms end in padded clamps designed for patient restraint. A speaker in its throat emits a continuous low hum that might once have been a lullaby. Its targeting optics are scratched but functional.",
+    "name": "large-tailed monitor",
+    "shortDescription": "a large-tailed lizard with black-green coloring and a hyperactive forked tongue",
+    "description": "A large-tailed lizard bounds about, sniffing the air for opportune food. Parker's monitors are notoriously short-sighted.",
     "brainType": "feral",
-    "room": "security-station",
+    "room": "twin-island-lagoon-2",
     "equipment": {
-      "MAIN_HAND": "restraint-arm"
+      "MAIN_HAND": "lizard-jaws"
+    },
+    "attributes": {
+      "strength": 80,
+      "agility": 45,
+      "toughness": 30,
+      "intellect": 1,
+      "imagination": 3,
+      "discipline": 20,
+      "charisma": 5,
+      "empathy": 1,
+      "wits": 55
+    }
+  },
+  {
+    "name": "Littleman shadow",
+    "shortDescription": "a darting, child-sized shadow",
+    "description": "A shadow shaped roughly like a small person, but wrong — the proportions shift when you're not looking directly at it. It moves in quick, angular jerks, as if animated frame by frame. Where it touches the ground, the surface darkens.",
+    "brainType": "feral",
+    "room": "radio-tower-pathway-1",
+    "equipment": {
+      "MAIN_HAND": "shadow-touch"
+    },
+    "attributes": {
+      "strength": 30,
+      "agility": 85,
+      "toughness": 35,
+      "intellect": 20,
+      "imagination": 60,
+      "discipline": 10,
+      "charisma": 5,
+      "empathy": 5,
+      "wits": 80
+    }
+  },
+  {
+    "name": "Bigman shadow",
+    "shortDescription": "a towering, lumbering shadow",
+    "description": "A shadow the size and shape of a large man, but stretched at the edges, trailing wisps of darkness like smoke. It moves with terrible patience. Its outline flickers — sometimes it has arms, sometimes more.",
+    "brainType": "feral",
+    "room": "radio-tower-pathway-3",
+    "equipment": {
+      "MAIN_HAND": "shadow-slam"
     },
     "attributes": {
       "strength": 90,
-      "agility": 20,
-      "toughness": 95,
-      "intellect": 5,
-      "imagination": 5,
-      "discipline": 50,
+      "agility": 25,
+      "toughness": 90,
+      "intellect": 30,
+      "imagination": 70,
+      "discipline": 40,
       "charisma": 5,
       "empathy": 5,
-      "wits": 30
+      "wits": 35
     }
   },
   {
-    "name": "Earl",
-    "shortDescription": "a heavyset man behind a folding table",
-    "description": "A heavyset man in an orange jumpsuit sits behind a folding table piled with dubious merchandise. He has somehow set up shop in the middle of a prison riot. He watches you with shrewd, calculating eyes.",
+    "name": "Gaspar",
+    "shortDescription": "a fruit vendor with a wide smile",
+    "description": "A wiry man in a tank top sitting behind a wooden crate piled with tropical fruit. He fans himself with a folded newspaper and greets everyone like a cousin.",
     "brainType": "vendor",
-    "room": "intake-lobby",
+    "room": "north-island-village",
     "vendor": {
-      "buyMenu": ["colt-45", "ak-47", "pickle-jar"],
-      "sellMenu": ["cucumber"],
+      "buyMenu": ["pineapple", "coconut", "mango"],
+      "sellMenu": ["pineapple"],
+      "currency": "pound"
+    }
+  },
+  {
+    "name": "Brandreth",
+    "shortDescription": "a bartender polishing a glass",
+    "description": "A tall man with a broad, silvery face and an immaculate white shirt, polishing the same glass he was polishing an hour ago. He moves with the unhurried precision of someone who has been tending bar since before you were born.",
+    "brainType": "vendor",
+    "room": "hotel-st-saents-bar",
+    "vendor": {
+      "buyMenu": ["lager", "ale", "red-wine", "white-wine", "aged-rum", "cider", "scotch", "island-cocktail"],
+      "sellMenu": [],
+      "currency": "pound"
+    }
+  },
+  {
+    "name": "Peter Hoffs",
+    "shortDescription": "an old man in a courduroy blazer",
+    "description": "A late-middle-aged man. He has a white hair describable as a 'shock'. He wears a corduroy blazer and a Tyrolean hat with two pins.",
+    "brainType": "state_machine",
+    "room": "hotel-st-saents-bar",
+    "stateMachine": {
+      "initial": "chitchat_1",
+      "states": {
+        "chitchat_1": {
+          "type": "say",
+          "args": "It's quite good actually, because Spirit Island is quite cheap to live, compared to tax almost anywhere else in the region.",
+          "delay": 10,
+          "next": "chitchat_2"
+        },
+        "chitchat_2": {
+          "type": "say",
+          "args": "It's good to know that there are places in the Pacific where you still pay in pounds.",
+          "delay": 10,
+          "next": "chitchat_3"
+        },
+        "chitchat_3": {
+          "type": "say",
+          "args": "Well, in point of fact I am, erm, shall we say encouraging input from professions. If some, er, brilliant writers were to WORK on my memoirs, to actually write them with me. Some fantastic young female up-and-comer, if I'm honest. I would of course PAY you for that. It's far less than creative talent deserves— all creative talent! And I realize that, but it does buy quite a lot at Tesco, and perhaps in the grand scheme, that's the more important thing, so...",
+          "delay": 10,
+          "next": "chitchat_4"
+        },
+        "chitchat_4": {
+          "type": "say",
+          "args": "Well, it's not quite Forest Road British Lager's on tap, heh. Of course it's not meant to be. This is certainly not— that sort of place. No... this is the sort of place where you want to HAVE FUN!",
+          "delay": 4,
+          "next": "chitchat_5"
+        },
+        "chitchat_5": {
+          "type": "say",
+          "args": "The surroundings are truly beautiful. And the Padrigans are a lovely people, of course, very welcoming. You'll see that.",
+          "delay": 10,
+          "next": "chitchat_6"
+        },
+        "chitchat_6": {
+          "type": "emote",
+          "args": "glances around himself at the faces of the others. He glances at the door to the hotel lobby.",
+          "delay": 10,
+          "next": "chitchat_1"
+        }
+      }
+    }
+  },
+  {
+    "name": "Lizzy",
+    "shortDescription": "an aggressively cheerful tour agent",
+    "description": "A thirtyish white woman in a floral tank and capri shorts, standing behind a folding table with a sun-bleached banner reading 'SPIRIT ISLAND EXPERIENCES.' Her smile never wavers. Her eyes are tired.",
+    "brainType": "vendor",
+    "room": "hotel-st-saents-forecourt",
+    "vendor": {
+      "buyMenu": ["boat-tour-ticket"],
+      "sellMenu": [],
+      "currency": "pound"
+    }
+  },
+  {
+    "name": "Baltasar",
+    "shortDescription": "a guard leaning against a wall",
+    "description": "A stocky man in a faded security uniform, badge half-peeled off. He is the last remaining employee of the shuttered Lovesea resort.",
+    "brainType": "vendor",
+    "room": "north-island-resort-1",
+    "vendor": {
+      "buyMenu": ["colt-45", "glock-9", "double-barreled-shotgun"],
+      "sellMenu": [],
+      "currency": "pound"
+    }
+  },
+  {
+    "name": "Margarida",
+    "shortDescription": "a shopkeeper surrounded by tourist junk",
+    "description": "An older woman in a muumuu sits in a folding chair behind a card table stacked with shell necklaces, postcards, and — buried among the junk — some things that might actually be useful. She sizes you up before quoting a price.",
+    "brainType": "vendor",
+    "room": "north-island-village-pier",
+    "vendor": {
+      "buyMenu": ["machete", "straw-hat", "canvas-vest"],
+      "sellMenu": [],
+      "currency": "pound"
+    }
+  },
+  {
+    "name": "DQ Cashier",
+    "shortDescription": "a teenager behind the counter",
+    "description": "A teenager in a Dairy Queen visor, leaning on the register. She looks through you with a thousand-yard stare.",
+    "brainType": "vendor",
+    "room": "dairy-queen-store",
+    "vendor": {
+      "buyMenu": ["blizzard", "hamburger", "dilly-bar"],
+      "sellMenu": [],
       "currency": "dollar"
     }
   },
   {
-    "name": "Jasper",
-    "shortDescription": "a tired-looking janitor",
-    "description": "A wiry man in faded grey coveralls, pushing sixty but too stubborn to admit it. He carries himself with the weary authority of someone who has been cleaning up other people's messes for decades. A ring of keys jangles at his hip. His name tag reads 'JASPER' in blocky letters, the 'J' half-scraped off.",
+    "name": "Gabriela",
+    "shortDescription": "a clerk in a green apron",
+    "description": "A teenage girl in a forest-green apron with a bear logo, restocking shelves with the calm focus of someone who is mentally somewhere else.",
+    "brainType": "vendor",
+    "room": "generous-mart",
+    "vendor": {
+      "buyMenu": ["canvas-jacket", "hard-hat", "work-boots", "flashlight"],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Riggs",
+    "shortDescription": "a bartender who speaks in enigmatic statements about blood and insects",
+    "description": "A lean figure behind a plywood bar, face half-lit by the jukebox glow.",
+    "brainType": "vendor",
+    "room": "locke-secret-bar",
+    "vendor": {
+      "buyMenu": [
+        "beer"
+      ],
+      "sellMenu": [],
+      "currency": "dollar"
+    }
+  },
+  {
+    "name": "Linus",
+    "shortDescription": "an older Black man in a pressed shirt and collar",
+    "description": "A Black man in his sixties, dressed up conservatively.",
     "brainType": "state_machine",
-    "room": "exam-room-1",
+    "room": "locke-secret-bar",
     "stateMachine": {
-      "initial": "pickup_emote",
+      "initial": "linus_weathers1",
       "states": {
-        "pickup_emote": {
+        "linus_weathers1": {
           "type": "emote",
-          "args": "sighs, shuffles over to the copy machine, and grabs the sheet of paper from the tray.",
-          "delay": 2,
+          "args": "watches the dingy television in the corner of the bar, unblinking.",
+          "delay": 10,
+          "next": "linus_weathers2"
+        },
+        "linus_weathers2": {
+          "type": "say",
+          "args": "The Mavericks do not have coaching. They do not.",
+          "delay": 15,
+          "next": "linus_weathers3"
+        },
+        "linus_weathers3": {
+          "type": "emote",
+          "args": "sips his beer, watching the TV. He seems on-edge.",
+          "delay": 10,
+          "next": "linus_weathers3"
+        },
+        "linus_weathers4": {
+          "type": "say",
+          "args": "That's just wrong...",
+          "delay": 15,
+          "next": "linus_weathers1"
+        }
+      }
+    }
+  },
+  {
+    "name": "Tomé",
+    "shortDescription": "a wiry boy in cutoff shorts",
+    "description": "A teenager in cutoff shorts and flip-flops, Kai's nephew or cousin or something. He runs pineapples from the wild patch to Kai's crate with the grim efficiency of someone who has been doing this chore since he could walk.",
+    "brainType": "state_machine",
+    "room": "north-island-village",
+    "stateMachine": {
+      "initial": "head_out_emote",
+      "states": {
+        "head_out_emote": {
+          "type": "emote",
+          "args": "stretches, cracks his knuckles, and heads for the pineapple patch.",
+          "delay": 3,
+          "next": "walk_west"
+        },
+        "walk_west": {
+          "type": "command",
+          "args": "west",
+          "delay": 4,
+          "next": "walk_south"
+        },
+        "walk_south": {
+          "type": "command",
+          "args": "south",
+          "delay": 4,
+          "next": "arrive_patch_emote"
+        },
+        "arrive_patch_emote": {
+          "type": "emote",
+          "args": "kneels among the pineapple plants and starts twisting one free.",
+          "delay": 5,
           "next": "pickup"
         },
         "pickup": {
           "type": "command",
-          "args": "get sheet of paper",
+          "args": "get pineapple",
           "delay": 2,
-          "next": "grumble"
+          "next": "got_it_emote"
         },
-        "grumble": {
-          "type": "say",
-          "args": "Every damn day with this machine.",
-          "delay": 2,
-          "next": "walk_south_1"
-        },
-        "walk_south_1": {
-          "type": "command",
-          "args": "south",
-          "delay": 2,
-          "next": "walk_west_1"
-        },
-        "walk_west_1": {
-          "type": "command",
-          "args": "west",
-          "delay": 2,
-          "next": "walk_south_2"
-        },
-        "walk_south_2": {
-          "type": "command",
-          "args": "south",
-          "delay": 2,
-          "next": "walk_east_1"
-        },
-        "walk_east_1": {
-          "type": "command",
-          "args": "east",
-          "delay": 2,
-          "next": "walk_east_2"
-        },
-        "walk_east_2": {
-          "type": "command",
-          "args": "east",
-          "delay": 2,
-          "next": "walk_east_3"
-        },
-        "walk_east_3": {
-          "type": "command",
-          "args": "east",
-          "delay": 2,
-          "next": "walk_east_4"
-        },
-        "walk_east_4": {
-          "type": "command",
-          "args": "east",
-          "delay": 2,
-          "next": "drop_paper"
-        },
-        "drop_paper": {
-          "type": "command",
-          "args": "drop sheet of paper",
-          "delay": 1,
-          "next": "trash_emote"
-        },
-        "trash_emote": {
+        "got_it_emote": {
           "type": "emote",
-          "args": "crumples the paper and stuffs it into the trash can with a grunt of satisfaction.",
+          "args": "tucks the pineapple under his arm and heads back.",
           "delay": 3,
+          "next": "return_north"
+        },
+        "return_north": {
+          "type": "command",
+          "args": "north",
+          "delay": 4,
+          "next": "return_east"
+        },
+        "return_east": {
+          "type": "command",
+          "args": "east",
+          "delay": 4,
+          "next": "drop_pineapple"
+        },
+        "drop_pineapple": {
+          "type": "command",
+          "args": "drop pineapple",
+          "delay": 1,
+          "next": "deliver_emote"
+        },
+        "deliver_emote": {
+          "type": "emote",
+          "args": "sets the pineapple on Kai's crate and wipes his hands on his shorts.",
+          "delay": 6,
+          "next": "head_out_emote"
+        }
+      }
+    }
+  },
+  {
+    "name": "Fireflies",
+    "shortDescription": "a flickering cloud of fireflies",
+    "description": "A shimmer in the air, like heat haze with intention.",
+    "brainType": "state_machine",
+    "room": "north-island-wilds-1",
+    "stateMachine": {
+      "initial": "visible_1",
+      "states": {
+        "visible_1": {
+          "type": "emote",
+          "args": "hovers in place, edges rippling like a reflection on water.",
+          "delay": 12,
+          "next": "fade_out_1"
+        },
+        "fade_out_1": {
+          "type": "emote",
+          "args": "flickers violently, then fades to almost nothing.",
+          "delay": 25,
+          "next": "move_south_1"
+        },
+        "move_south_1": {
+          "type": "command",
+          "args": "south",
+          "delay": 1,
+          "next": "fade_in_2"
+        },
+        "fade_in_2": {
+          "type": "emote",
+          "args": "materializes from nothing, edges crackling with faint light.",
+          "delay": 15,
+          "next": "visible_2"
+        },
+        "visible_2": {
+          "type": "emote",
+          "args": "drifts slowly, turning as if listening to something inaudible.",
+          "delay": 10,
+          "next": "fade_out_2"
+        },
+        "fade_out_2": {
+          "type": "emote",
+          "args": "thins to a thread of light, then vanishes entirely.",
+          "delay": 30,
+          "next": "move_east_1"
+        },
+        "move_east_1": {
+          "type": "command",
+          "args": "east",
+          "delay": 1,
+          "next": "fade_in_3"
+        },
+        "fade_in_3": {
+          "type": "emote",
+          "args": "snaps into existence mid-stride, as if arriving from very far away.",
+          "delay": 8,
+          "next": "move_south_2"
+        },
+        "move_south_2": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "visible_3"
+        },
+        "visible_3": {
+          "type": "emote",
+          "args": "stands perfectly still among the ruins, light crawling across its outline.",
+          "delay": 18,
+          "next": "fade_out_3"
+        },
+        "fade_out_3": {
+          "type": "emote",
+          "args": "comes apart like smoke in a sudden wind. Gone.",
+          "delay": 35,
+          "next": "move_east_2"
+        },
+        "move_east_2": {
+          "type": "command",
+          "args": "east",
+          "delay": 1,
+          "next": "fade_in_4"
+        },
+        "fade_in_4": {
+          "type": "emote",
+          "args": "reassembles in the glade, piece by piece, like a puzzle solving itself.",
+          "delay": 20,
+          "next": "visible_4"
+        },
+        "visible_4": {
+          "type": "emote",
+          "args": "kneels at the flat stone, flickering. It might be praying. It might be dying.",
+          "delay": 15,
+          "next": "fade_out_4"
+        },
+        "fade_out_4": {
+          "type": "emote",
+          "args": "gutters like a candle and goes out.",
+          "delay": 40,
           "next": "return_west_1"
         },
         "return_west_1": {
           "type": "command",
           "args": "west",
-          "delay": 2,
-          "next": "return_west_2"
-        },
-        "return_west_2": {
-          "type": "command",
-          "args": "west",
-          "delay": 2,
-          "next": "return_west_3"
-        },
-        "return_west_3": {
-          "type": "command",
-          "args": "west",
-          "delay": 2,
-          "next": "return_west_4"
-        },
-        "return_west_4": {
-          "type": "command",
-          "args": "west",
-          "delay": 2,
+          "delay": 1,
           "next": "return_north_1"
         },
         "return_north_1": {
           "type": "command",
           "args": "north",
-          "delay": 2,
-          "next": "return_east_1"
+          "delay": 1,
+          "next": "return_west_2"
         },
-        "return_east_1": {
+        "return_west_2": {
           "type": "command",
-          "args": "east",
-          "delay": 2,
+          "args": "west",
+          "delay": 1,
           "next": "return_north_2"
         },
         "return_north_2": {
           "type": "command",
           "args": "north",
-          "delay": 2,
-          "next": "arrive_back"
+          "delay": 1,
+          "next": "fade_in_1"
         },
-        "arrive_back": {
+        "fade_in_1": {
           "type": "emote",
-          "args": "mops his brow and glances at the copy machine. Its output tray is full again.",
-          "delay": 4,
-          "next": "pickup_emote"
+          "args": "blinks into the thicket like a channel changing. It's back.",
+          "delay": 10,
+          "next": "visible_1"
         }
       }
     }
+  },
+  {
+    "name": "Bearman",
+    "shortDescription": "a fat man in a hoodie",
+    "description": "A heavy man in a stained grey hoodie, hood up, hands in pockets. He walks, stands, ponders, walks back, locomoting up and down the frontage road to a stretch of dusty fields. ",
+    "brainType": "state_machine",
+    "room": "muddy-fields",
+    "stateMachine": {
+      "initial": "mutter_1",
+      "states": {
+        "mutter_1": {
+          "type": "say",
+          "args": "...seven, carry the nothing. Still nothing.",
+          "delay": 4,
+          "next": "walk_north_1"
+        },
+        "walk_north_1": {
+          "type": "command",
+          "args": "north",
+          "delay": 3,
+          "next": "mutter_2"
+        },
+        "mutter_2": {
+          "type": "say",
+          "args": "What I will say is this: I no longer consider myself, in any way, countercultural.",
+          "delay": 4,
+          "next": "walk_west"
+        },
+        "walk_west": {
+          "type": "command",
+          "args": "west",
+          "delay": 3,
+          "next": "walk_south_1"
+        },
+        "walk_south_1": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "mutter_3"
+        },
+        "mutter_3": {
+          "type": "say",
+          "args": "The conclusion is around here somewhere, to the whole entire universe. These people are all in on it somehow.",
+          "delay": 5,
+          "next": "walk_south_2"
+        },
+        "walk_south_2": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "emote_1"
+        },
+        "emote_1": {
+          "type": "emote",
+          "args": "stops and stares at his hands for a long moment.",
+          "delay": 6,
+          "next": "walk_south_3"
+        },
+        "walk_south_3": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "mutter_4"
+        },
+        "mutter_4": {
+          "type": "say",
+          "args": "...four equilateral sides, but only two of them are real... You must keep in mind the allure of the unreal, Arthur.",
+          "delay": 5,
+          "next": "mutter_5"
+        },
+        "mutter_5": {
+          "type": "say",
+          "args": "But there has to be another one, that is the thing we know for certain... mathematically, it's around here...",
+          "delay": 6,
+          "next": "emote_2"
+        },
+        "emote_2": {
+          "type": "emote",
+          "args": "pulls his hood tighter and turns around.",
+          "delay": 4,
+          "next": "walk_north_2"
+        },
+        "walk_north_2": {
+          "type": "command",
+          "args": "north",
+          "delay": 3,
+          "next": "mutter_6"
+        },
+        "mutter_6": {
+          "type": "say",
+          "args": "",
+          "delay": 4,
+          "next": "walk_north_3"
+        },
+        "walk_north_3": {
+          "type": "command",
+          "args": "north",
+          "delay": 3,
+          "next": "walk_north_4"
+        },
+        "walk_north_4": {
+          "type": "command",
+          "args": "north",
+          "delay": 3,
+          "next": "mutter_7"
+        },
+        "mutter_7": {
+          "type": "say",
+          "args": "...it's not symmetry if it only works in one direction, that's just chirality...",
+          "delay": 5,
+          "next": "walk_east"
+        },
+        "walk_east": {
+          "type": "command",
+          "args": "east",
+          "delay": 3,
+          "next": "mutter_8"
+        },
+        "mutter_8": {
+          "type": "say",
+          "args": ".",
+          "delay": 4,
+          "next": "walk_south_4"
+        },
+        "walk_south_4": {
+          "type": "command",
+          "args": "south",
+          "delay": 3,
+          "next": "emote_3"
+        },
+        "emote_3": {
+          "type": "emote",
+          "args": "hunches his shoulders against a wind that isn't blowing.",
+          "delay": 5,
+          "next": "mutter_1"
+        }
+      }
+    }
+  },
+  {
+    "name": "Karen Billberger",
+    "shortDescription": "a woman in a windbreaker with a lot to say",
+    "description": "A sixtysomething woman in a teal windbreaker and reading glasses on a chain. She carries a canvas tote with a library book in it. She has the posture of someone who has been standing at this intersection on purpose.",
+    "brainType": "talk",
+    "room": "lakeland-crossing",
+    "topics": {
+      "lakeland": "Oh, Lakeland. It's not what it was. The dollar store killed the old five-and-dime, and nobody's fixed the stoplight since Carter.",
+      "logistix": "That Logistix place? Strange hours. I've seen trucks coming and going at two, three in the morning. Trucks with no markings. You don't need to be a genius.",
+      "shipments": "I've seen them. No markings on the trucks. Middle of the night. I told Dolores at the post office and she said I was imagining things. I am NOT imagining things.",
+      "aiken": "Aiken? One of the Logistix boys. Grew up here. His mother was a Crowell. I don't have anything specific to say, but I'll say this: people who grow up broke and end up flush, there's a story there.",
+      "chester": "Chester runs Logistix with Aiken. I knew his father. The apple does not fall far.",
+      "dollar store": "It killed the five-and-dime. That's what these places do. They move in, undercut everyone, and then the town looks like this.",
+      "post office": "Dolores runs it. She's been there thirty years. I love her dearly but she has no curiosity whatsoever.",
+      "bar": "There's supposedly a bar behind the barbershop on Main. I've never been. I don't drink. But I hear things.",
+      "barbershop": "Carl's been cutting hair there since before I moved here. He doesn't talk much, which is unusual for a barber.",
+      "island": "Spirit Island? That's the resort place across the water. Used to be just for rich people. Now I hear it's gotten strange.",
+      "bearman": "That poor man in the hoodie? He walks up and down the road all day talking to himself. His mother Cindy stands out on the frontage road trying to get him to come home. It's a tragedy, is what it is.",
+      "cindy": "Cindy is Bearman's mother. Sweet woman. Worried sick. She stands out on the highway waiting for him to walk by so she can talk sense into him. I don't think it's working.",
+      "pete": "Pete? The Logistix guard? Nice enough fellow. Quiet. I think he knows more than he lets on about what goes on in that yard.",
+      "weather": "It's been humid. It's always humid. I don't know why I keep commenting on it.",
+      "gas station": "The Generous Mart. Gabriela works there. Good kid. The prices are highway robbery.",
+      "dairy queen": "The DQ is fine. The Blizzard machine works about half the time. The cashier looks like she wants to be anywhere else.",
+      "motel": "I wouldn't stay there if you paid me. The reviews online are... well. I'll leave it at that.",
+      "highway": "Interstate 71. Runs north to Columbus. South to... I don't actually know what's south. Nothing good.",
+      "thrift store": "On Main Street. They have some decent things if you dig. I found a Le Creuset there once for four dollars."
+    },
+    "characterKnowledge": [
+      {
+        "name": "night shipments",
+        "description": "knows about unmarked trucks at Logistix at night",
+        "longDescription": "I've watched those trucks myself. No company markings, no plates you can read. They come between two and four in the morning, always from the south. And they always leave lighter than they came.",
+        "weight": 0.4,
+        "tags": ["clue", "imbroglio"]
+      },
+      {
+        "name": "Logistix owners",
+        "description": "knows Aiken and Chester run Logistix",
+        "longDescription": "Aiken and Chester grew up right here in Lakeland. Went to school together. Neither one of them had a dime, and now they own the biggest business in town. Draw your own conclusions.",
+        "weight": 0.2,
+        "tags": ["clue"]
+      },
+      {
+        "name": "Dolores",
+        "description": "knows the post office clerk dismisses concerns",
+        "longDescription": "I told Dolores about the trucks and she looked at me like I had two heads. People around here don't want to know things.",
+        "weight": 0.1,
+        "tags": ["gossip"]
+      }
+    ]
+  },
+  {
+    "name": "Pete",
+    "shortDescription": "an off-duty security guard sitting on a pallet",
+    "description": "A heavyset man in a Logistix Security polo, untucked, sitting on an upturned pallet near the gate. He has a faded tattoo on his forearm and the watchful stillness of someone who has learned not to make sudden moves. A thermos of coffee sits beside him.",
+    "brainType": "talk",
+    "room": "logistix-yard",
+    "topics": {
+      "logistix": "It's a job. Pays alright. I don't ask too many questions.",
+      "aiken": "He's the boss. Signs the checks. That's all I need to know.",
+      "chester": "Chester handles the operations side. He's... particular.",
+      "trucks": "Trucks come and go. That's what a logistics company does.",
+      "shipments": "I'm day shift. I don't know what happens at night. I go home.",
+      "night": "I'm day shift.",
+      "job": "It's steady work. It's my re-entry placement. I've got a kid in middle school. You don't walk away from that. You don't.",
+      "warehouse": "It's a warehouse. Boxes. Pallets. Nothing exciting.",
+      "guard": "Security's mostly making sure nobody steals the forklift. Again.",
+      "karen": "The lady at the crossroads? She talks a lot. I wouldn't put too much stock in it.",
+      "yard": "It's a yard. Gravel, razor wire, the usual. Nothing to see."
+    },
+    "characterKnowledge": [
+      {
+        "name": "criminal enterprise",
+        "description": "knows Aiken and Chester are criminals",
+        "longDescription": "Look, I didn't tell you this. Aiken and Chester — they're not just running a logistics company. I've seen what's in some of those crates. I can't say more than that. I did five years for aggravated assault and I am NOT going back. Not for them. Not for anybody.",
+        "weight": 0.9,
+        "tags": ["secret", "imbroglio"]
+      },
+      {
+        "name": "night shift",
+        "description": "knows the night shift is different",
+        "longDescription": "The night crew — they're not the same guys. Different people. I don't recognize any of them. And they don't wear the company polo.",
+        "weight": 0.7,
+        "tags": ["secret", "clue"]
+      },
+      {
+        "name": "re-entry",
+        "description": "knows this job is his mandatory re-entry placement",
+        "longDescription": "This is my placement. Mandatory. I did time — aggravated assault, five years at Chillicothe. The parole board set me up here. If I lose this job, I go back. So I keep my head down and I don't see things.",
+        "weight": 0.8,
+        "tags": ["secret"]
+      }
+    ]
+  },
+  {
+    "name": "Cindy",
+    "shortDescription": "a tired woman in a housecoat, watching the road",
+    "description": "A woman in her late fifties in a faded floral housecoat and house slippers, standing at the edge of the frontage road like she's waiting for a bus that isn't coming. She watches the road south with a mixture of hope and exhaustion.",
+    "brainType": "talk",
+    "room": "highway-1",
+    "topics": {
+      "bearman": "That's my Arthur. He's not well. He used to be so sharp — math, science, all of it. Now he just walks around talking about shapes and chirality. I don't even know what that means.",
+      "arthur": "He could save up from his job — he HAS a job, at the warehouse, they haven't fired him yet — and do whatever he wants. Take a class. Fix the house. Instead he walks.",
+      "son": "He's a good boy. He's just... lost. I come out here because sometimes he walks this way and I can talk to him for a minute before he wanders off again.",
+      "logistix": "Arthur works there. Or worked there. I'm not sure anymore. They're patient with him, I'll give them that.",
+      "lakeland": "We've been here since Arthur was little. It was nicer then. Or maybe I was younger. Same thing.",
+      "job": "He has a job! That's what kills me. He could save up. Do something. But he'd rather walk around the fields muttering about geometry.",
+      "shapes": "He's always talking about shapes. Equilateral this, chirality that. I looked it up once and it's a real word but I still don't understand.",
+      "house": "It needs work. The gutters are falling off. Arthur could fix them in an afternoon if he'd just come home.",
+      "karen": "Karen Billberger? She means well. She told me about some program for people like Arthur but I lost the pamphlet."
+    },
+    "characterKnowledge": [
+      {
+        "name": "Arthur's obsession",
+        "description": "knows her son is fixated on geometric patterns",
+        "longDescription": "He keeps saying he's found something. Something mathematical, in the fields. He draws these diagrams — triangles inside triangles. I threw them away once and he cried. A grown man, crying over triangles.",
+        "weight": 0.3,
+        "tags": ["clue", "imbroglio"]
+      },
+      {
+        "name": "Arthur's job",
+        "description": "knows Arthur technically works at Logistix",
+        "longDescription": "He's on the books at Logistix. Night shift. I think they keep him because he doesn't ask questions and he's strong as an ox. Chester told me once they'd keep him as long as he shows up.",
+        "weight": 0.2,
+        "tags": ["clue"]
+      }
+    ]
   }
 ]

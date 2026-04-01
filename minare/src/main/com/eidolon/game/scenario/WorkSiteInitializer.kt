@@ -77,12 +77,12 @@ class WorkSiteInitializer @Inject constructor(
 
             val workSite = entityFactory.createEntity(WorkSite::class.java) as WorkSite
             entityController.create(workSite)
-            entityController.saveState(workSite._id!!, JsonObject()
+            entityController.saveState(workSite._id, JsonObject()
                 .put("name", name)
                 .put("templateId", templateId)
                 .put("roomId", roomMinareId)
                 .put("skillName", skillName))
-            entityController.saveProperties(workSite._id!!, JsonObject()
+            entityController.saveProperties(workSite._id, JsonObject()
                 .put("intervalMs", intervalMs))
 
             workSites.add(workSite)

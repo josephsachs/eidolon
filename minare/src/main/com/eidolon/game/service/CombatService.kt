@@ -8,7 +8,6 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.minare.controller.EntityController
 import com.minare.core.entity.factories.EntityFactory
-import com.minare.core.storage.interfaces.StateStore
 import eidolon.game.controller.GameChannelController
 import eidolon.game.models.entity.agent.EvenniaCharacter
 import io.vertx.core.json.JsonObject
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory
 class CombatService @Inject constructor(
     private val entityController: EntityController,
     private val entityFactory: EntityFactory,
-    private val stateStore: StateStore,
     private val evenniaCommUtils: EvenniaCommUtils,
     private val crossLinkRegistry: CrossLinkRegistry,
     private val gameChannelController: GameChannelController,
@@ -26,15 +24,18 @@ class CombatService @Inject constructor(
 ) {
     private val log = LoggerFactory.getLogger(CombatService::class.java)
 
+    // roomId -> combatId index, maintained by createCombat/removeMember/cleanup
+    private val combatsByRoom = mutableMapOf<String, String>()
+
     suspend fun createCombat(roomId: String, attackerId: String, targetId: String): Combat {
         val combat = entityFactory.createEntity(Combat::class.java) as Combat
         entityController.create(combat)
 
         val now = System.currentTimeMillis()
-        entityController.saveState(combat._id!!, JsonObject()
+        entityController.saveState(combat._id, JsonObject()
             .put("members", listOf(attackerId, targetId))
             .put("roomId", roomId))
-        entityController.saveProperties(combat._id!!, JsonObject()
+        entityController.saveProperties(combat._id, JsonObject()
             .put("createdAt", now)
             .put("lastActivity", now))
 
@@ -45,18 +46,15 @@ class CombatService @Inject constructor(
         }
 
         // Set combatId on both characters
-        setCombatProperties(attackerId, combat._id!!, "attack", targetId)
-        setCombatProperties(targetId, combat._id!!, "", "")
-
-        // Lock movement for both
-        sendCombatLock(attackerId)
-        sendCombatLock(targetId)
+        setCombatProperties(attackerId, combat._id, "attack", targetId)
+        setCombatProperties(targetId, combat._id, "", "")
 
         // Room message
         val attackerName = getCharacterName(attackerId)
         val targetName = getCharacterName(targetId)
         sendCombatMessage(roomId, "|R** Combat breaks out! $attackerName attacks $targetName! **|n")
 
+        combatsByRoom[roomId] = combat._id
         log.info("Combat created: ${combat._id} in room $roomId, members: [$attackerId, $targetId]")
         return combat
     }
@@ -72,7 +70,6 @@ class CombatService @Inject constructor(
             .put("lastActivity", System.currentTimeMillis()))
 
         setCombatProperties(characterId, combatId, "", "")
-        sendCombatLock(characterId)
 
         val name = getCharacterName(characterId)
         sendCombatMessage(combat.roomId, "|y$name enters the fray!|n")
@@ -90,28 +87,31 @@ class CombatService @Inject constructor(
         entityController.saveProperties(combatId, JsonObject()
             .put("lastActivity", System.currentTimeMillis()))
 
-        clearCombatProperties(characterId)
-        sendCombatUnlock(characterId)
-
         val name = getCharacterName(characterId)
+        clearCombatProperties(characterId)
+
         sendCombatMessage(combat.roomId, "|w$name disengages from combat.|n")
 
         // Clear targets pointing at the removed member and re-acquire for NPCs
-        for (memberId in updatedMembers) {
-            val member = getCharacter(memberId) ?: continue
-            if (member.targetId == characterId) {
-                // Find a new target from remaining members
-                val newTarget = updatedMembers
-                    .filter { it != memberId }
-                    .firstNotNullOfOrNull { id -> getCharacter(id)?.takeIf { !it.dead && !it.downed }?.let { id } }
+        if (updatedMembers.isNotEmpty()) {
+            val members = entityController.findByIds(updatedMembers)
+                .mapValues { it.value as? EvenniaCharacter }
 
-                if (newTarget != null && member.isNpc) {
-                    entityController.saveProperties(memberId, JsonObject()
-                        .put("targetId", newTarget)
-                        .put("combatMode", "attack"))
-                } else {
-                    entityController.saveProperties(memberId, JsonObject()
-                        .put("targetId", ""))
+            for (memberId in updatedMembers) {
+                val member = members[memberId] ?: continue
+                if (member.targetId == characterId) {
+                    val newTarget = updatedMembers
+                        .filter { it != memberId }
+                        .firstOrNull { id -> members[id]?.let { !it.dead && !it.downed } == true }
+
+                    if (newTarget != null && member.isNpc) {
+                        entityController.saveProperties(memberId, JsonObject()
+                            .put("targetId", newTarget)
+                            .put("combatMode", "attack"))
+                    } else {
+                        entityController.saveProperties(memberId, JsonObject()
+                            .put("targetId", ""))
+                    }
                 }
             }
         }
@@ -120,9 +120,9 @@ class CombatService @Inject constructor(
             // End combat — no fight with one or zero members
             for (lastMemberId in updatedMembers) {
                 clearCombatProperties(lastMemberId)
-                sendCombatUnlock(lastMemberId)
             }
             entityController.saveState(combatId, JsonObject().put("members", emptyList<String>()))
+            combatsByRoom.remove(combat.roomId)
             sendCombatMessage(combat.roomId, "|wThe fighting subsides.|n")
         }
 
@@ -130,13 +130,17 @@ class CombatService @Inject constructor(
     }
 
     suspend fun findCombatInRoom(roomId: String): Combat? {
-        val combatKeys = stateStore.findAllKeysForType("Combat")
-        if (combatKeys.isEmpty()) return null
-        val combats = entityController.findByIds(combatKeys)
-        return combats.values
-            .filterIsInstance<Combat>()
-            .filter { it.roomId == roomId && it.members.isNotEmpty() }
-            .maxByOrNull { it.members.size }
+        val combatId = combatsByRoom[roomId] ?: return null
+        val combat = getCombat(combatId) ?: run {
+            // Stale index entry — combat was deleted externally
+            combatsByRoom.remove(roomId)
+            return null
+        }
+        if (combat.members.isEmpty()) {
+            combatsByRoom.remove(roomId)
+            return null
+        }
+        return combat
     }
 
     suspend fun findCombatForCharacter(characterId: String): Combat? {
@@ -149,8 +153,8 @@ class CombatService @Inject constructor(
         val combat = getCombat(combatId) ?: return
         for (memberId in combat.members) {
             clearCombatProperties(memberId)
-            sendCombatUnlock(memberId)
         }
+        combatsByRoom.remove(combat.roomId)
         entityController.delete(combatId)
         log.info("Combat $combatId cleaned up")
     }
@@ -170,7 +174,6 @@ class CombatService @Inject constructor(
                 .put("character_evennia_id", attackerEvenniaId)
                 .put("message", "|w$targetName is already down.|n"))
         }
-        sendCombatUnlock(attackerId)
     }
 
     suspend fun setAttackMode(characterId: String, targetId: String) {
@@ -262,33 +265,21 @@ class CombatService @Inject constructor(
     }
 
     private suspend fun setCombatProperties(characterId: String, combatId: String, mode: String, targetId: String) {
+        entityController.saveState(characterId, JsonObject()
+            .put("combatId", combatId))
         entityController.saveProperties(characterId, JsonObject()
-            .put("combatId", combatId)
             .put("combatMode", mode)
             .put("targetId", targetId))
     }
 
     private suspend fun clearCombatProperties(characterId: String) {
+        entityController.saveState(characterId, JsonObject()
+            .put("combatId", ""))
         entityController.saveProperties(characterId, JsonObject()
-            .put("combatId", "")
             .put("combatMode", "")
             .put("targetId", "")
             .put("stance", "")
             .put("tactic", ""))
-    }
-
-    private suspend fun sendCombatLock(characterId: String) {
-        val evenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", characterId) ?: return
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "combat_lock")
-            .put("character_evennia_id", evenniaId))
-    }
-
-    private suspend fun sendCombatUnlock(characterId: String) {
-        val evenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", characterId) ?: return
-        evenniaCommUtils.sendAgentCommand(JsonObject()
-            .put("action", "combat_unlock")
-            .put("character_evennia_id", evenniaId))
     }
 
     private suspend fun sendCombatMessage(roomId: String, message: String) {

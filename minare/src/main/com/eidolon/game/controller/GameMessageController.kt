@@ -16,6 +16,7 @@ import com.eidolon.game.evennia.EvenniaCommandHandler
 import com.eidolon.game.service.CombatService
 import com.eidolon.game.service.DamageService
 import com.eidolon.game.service.ItemRegistry
+import com.eidolon.game.models.StatusEffect
 import com.eidolon.game.models.entity.WorkSite
 import com.eidolon.game.service.VendorService
 import com.google.inject.Inject
@@ -35,6 +36,16 @@ import eidolon.game.controller.GameChannelController
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import org.slf4j.LoggerFactory
+
+/**
+ * Message handler type: receives the connection, the full message, and
+ * a function for sending responses back to the client.
+ */
+typealias MessageHandler = suspend (
+    connection: Connection,
+    message: JsonObject,
+    reply: suspend (JsonObject) -> Unit
+) -> Unit
 
 @Singleton
 class GameMessageController @Inject constructor(
@@ -63,308 +74,277 @@ class GameMessageController @Inject constructor(
 ) : MessageController() {
     private val log = LoggerFactory.getLogger(GameMessageController::class.java)
 
-    override suspend fun handle(connection: Connection, message: JsonObject) {
-        log.info("MESSAGE_CONTROLLER: ${message}")
+    /**
+     * Registry of message type -> handler. Populated at construction.
+     * New features register here instead of adding branches to a when block.
+     */
+    private val handlers = mutableMapOf<String, MessageHandler>()
 
-        when {
-            message.getString("type") == "heartbeat_response" -> {
-                val heartbeatCommand = HeartbeatResponse(
-                    connection,
-                    message.getLong("timestamp"),
-                    message.getLong("clientTimestamp")
-                )
+    init {
+        // --- Request-response commands (EvenniaCommand pattern) ---
+        registerRequestResponse("register_account") { msg -> accountRegister.execute(msg) }
+        registerRequestResponse("create_character") { msg -> characterCreate.execute(msg) }
+        registerRequestResponse("skill_event") { msg -> skillEvent.execute(msg) }
+        registerRequestResponse("entity_query") { msg -> entityQuery.execute(msg) }
+        registerRequestResponse("explore") { msg -> exploreCommand.execute(msg) }
+        registerRequestResponse("combat_escape") { msg -> combatService.attemptEscape(msg.getString("character_id", "")) }
 
-                dispatch(heartbeatCommand)
-            }
+        registerRequestResponse("skill_cooldown_check") { msg ->
+            skillEvent.checkCooldown(
+                msg.getString("character_id", ""),
+                msg.getString("skill_name", "")
+            )
+        }
 
-            message.getString("type") == "sync" -> {
-                val channels = message.getString("channels").split(",").toSet()
-
-                val syncCommand = SyncCommand(
-                    connection,
-                    SyncCommandType.CHANNEL,
-                    channels    // null = sync all
-                )
-
-                dispatch(syncCommand)
-            }
-
-            message.getString("type") == "register_account" -> {
-                val requestId = message.getString("request_id")
-                val result = accountRegister.execute(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "create_character" -> {
-                val requestId = message.getString("request_id")
-                val result = characterCreate.execute(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "room_say" -> {
-                roomSay.execute(message)
-            }
-
-            message.getString("type") == "room_pose" -> {
-                roomPose.execute(message)
-            }
-
-            message.getString("type") == "player_disconnect" -> {
-                playerDisconnect.execute(message)
-            }
-
-            message.getString("type") == "skill_cooldown_check" -> {
-                val requestId = message.getString("request_id")
-                val characterId = message.getString("character_id", "")
-                val skillName = message.getString("skill_name", "")
-                val result = skillEvent.checkCooldown(characterId, skillName)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "skill_event" -> {
-                val requestId = message.getString("request_id")
-                val result = skillEvent.execute(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "entity_query" -> {
-                val requestId = message.getString("request_id")
-                val result = entityQuery.execute(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "npc_interact" -> {
-                val requestId = message.getString("request_id")
-                val result = npcInteraction.execute(message)
-                if (result.getString("status") == "success") {
-                    val playerId = message.getString("player_id", "")
-                    if (playerId.isNotEmpty()) {
-                        skillEvent.execute(JsonObject()
-                            .put("character_id", playerId)
-                            .put("skill_name", "Smalltalk")
-                            .put("outcome", "success"))
-                    }
-                }
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "explore" -> {
-                val requestId = message.getString("request_id")
-                val result = exploreCommand.execute(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "combat_attack" -> {
-                val characterId = message.getString("character_id", "")
-                val targetId = message.getString("target_id", "")
-                val roomId = message.getString("room_id", "")
-
-                // Reject attacks on dead/downed targets
-                val target = entityController.findByIds(listOf(targetId))
-                    .values.firstOrNull() as? eidolon.game.models.entity.agent.EvenniaCharacter
-                if (target != null && (target.dead || target.downed)) {
-                    combatService.rejectAttack(characterId, targetId, roomId)
-                } else {
-                    val existing = combatService.findCombatInRoom(roomId)
-                    if (existing != null) {
-                        combatService.joinCombat(existing._id!!, characterId)
-                        combatService.setAttackMode(characterId, targetId)
-                    } else {
-                        combatService.createCombat(roomId, characterId, targetId)
-                    }
+        registerRequestResponse("npc_interact") { msg ->
+            val result = npcInteraction.execute(msg)
+            if (result.getString("status") == "success") {
+                val playerId = msg.getString("player_id", "")
+                if (playerId.isNotEmpty()) {
+                    skillEvent.execute(JsonObject()
+                        .put("character_id", playerId)
+                        .put("skill_name", "Smalltalk")
+                        .put("outcome", "success"))
                 }
             }
+            result
+        }
 
-            message.getString("type") == "combat_mode" -> {
-                val characterId = message.getString("character_id", "")
-                val mode = message.getString("mode", "")
-                combatService.setCombatMode(characterId, mode)
+        registerRequestResponse("resource_info") { msg ->
+            val templateId = msg.getString("template_id", "")
+            val template = itemRegistry.get(templateId)
+            if (template != null) {
+                JsonObject()
+                    .put("success", true)
+                    .put("name", template.name)
+                    .put("description", template.description)
+            } else {
+                JsonObject().put("success", false).put("reason", "unknown resource")
             }
+        }
 
-            message.getString("type") == "combat_escape" -> {
-                val requestId = message.getString("request_id")
-                val characterId = message.getString("character_id", "")
-                val result = combatService.attemptEscape(characterId)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
+        registerRequestResponse("equip_item") { msg -> handleEquip(msg) }
+        registerRequestResponse("unequip_item") { msg -> handleUnequip(msg) }
+        registerRequestResponse("work_site_join") { msg -> handleWorkSiteJoin(msg) }
+        registerRequestResponse("work_site_leave") { msg -> handleWorkSiteLeave(msg) }
+
+        registerRequestResponse("gossip_start") { msg -> handleGossipStart(msg) }
+        registerRequestResponse("gossip_stop") { msg -> handleGossipStop(msg) }
+
+        registerRequestResponse("vendor_menu") { msg ->
+            val vendorId = msg.getString("vendor_id", "")
+            val menuType = msg.getString("menu_type", "buy")
+            if (menuType == "sell") vendorService.getSellMenu(vendorId)
+            else vendorService.getBuyMenu(vendorId)
+        }
+
+        registerRequestResponse("vendor_buy") { msg ->
+            val vendorId = msg.getString("vendor_id", "")
+            val characterId = msg.getString("character_id", "")
+            val itemName = msg.getString("item_name", "")
+            val template = itemRegistry.all().values.firstOrNull {
+                it.name.equals(itemName, ignoreCase = true)
             }
-
-            message.getString("type") == "character_moved" -> {
-                val characterId = message.getString("character_id", "")
-                val newRoomId = message.getString("new_room_id", "")
-                combatService.onCharacterMoved(characterId, newRoomId)
-            }
-
-            message.getString("type") == "presence" -> {
-                handlePresence(message)
-            }
-
-            message.getString("type") == "equip_item" -> {
-                val requestId = message.getString("request_id")
-                val result = handleEquip(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "unequip_item" -> {
-                val requestId = message.getString("request_id")
-                val result = handleUnequip(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "vendor_menu" -> {
-                val requestId = message.getString("request_id")
-                val vendorId = message.getString("vendor_id", "")
-                val menuType = message.getString("menu_type", "buy")
-                val result = if (menuType == "sell") {
-                    vendorService.getSellMenu(vendorId)
-                } else {
-                    vendorService.getBuyMenu(vendorId)
-                }
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "vendor_buy" -> {
-                val requestId = message.getString("request_id")
-                val vendorId = message.getString("vendor_id", "")
-                val characterId = message.getString("character_id", "")
-                val itemName = message.getString("item_name", "")
-                // Resolve item name to template ID
-                val template = itemRegistry.all().values.firstOrNull {
-                    it.name.equals(itemName, ignoreCase = true)
-                }
-                val result = if (template != null) {
-                    val buyResult = vendorService.buyItem(vendorId, characterId, template.id)
-                    if (buyResult.getBoolean("success", false)) {
-                        skillEvent.execute(JsonObject()
-                            .put("character_id", characterId)
-                            .put("skill_name", "Haggling")
-                            .put("outcome", "success"))
-                    }
-                    buyResult
-                } else {
-                    io.vertx.core.json.JsonObject().put("success", false).put("reason", "Unknown item.")
-                }
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            message.getString("type") == "vendor_sell" -> {
-                val requestId = message.getString("request_id")
-                val vendorId = message.getString("vendor_id", "")
-                val characterId = message.getString("character_id", "")
-                val templateId = message.getString("template_id", "")
-                val result = vendorService.sellItem(vendorId, characterId, templateId)
-                if (result.getBoolean("success", false)) {
+            if (template != null) {
+                val buyResult = vendorService.buyItem(vendorId, characterId, template.id)
+                if (buyResult.getBoolean("success", false)) {
                     skillEvent.execute(JsonObject()
                         .put("character_id", characterId)
                         .put("skill_name", "Haggling")
                         .put("outcome", "success"))
                 }
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
+                buyResult
+            } else {
+                JsonObject().put("success", false).put("reason", "Unknown item.")
             }
+        }
 
-            message.getString("type") == "apply_damage" -> {
-                damageService.applyDamageFromEvennia(message)
+        registerRequestResponse("vendor_sell") { msg ->
+            val vendorId = msg.getString("vendor_id", "")
+            val characterId = msg.getString("character_id", "")
+            val templateId = msg.getString("template_id", "")
+            val result = vendorService.sellItem(vendorId, characterId, templateId)
+            if (result.getBoolean("success", false)) {
+                skillEvent.execute(JsonObject()
+                    .put("character_id", characterId)
+                    .put("skill_name", "Haggling")
+                    .put("outcome", "success"))
             }
+            result
+        }
 
-            message.getString("type") == "link_domain_entity" -> {
-                linkDomainEntity.execute(message)
+        // --- Fire-and-forget commands ---
+        register("room_say") { _, msg, _ -> roomSay.execute(msg) }
+        register("room_pose") { _, msg, _ -> roomPose.execute(msg) }
+        register("player_disconnect") { _, msg, _ -> playerDisconnect.execute(msg) }
+        register("apply_damage") { _, msg, _ -> damageService.applyDamageFromEvennia(msg) }
+        register("link_domain_entity") { _, msg, _ -> linkDomainEntity.execute(msg) }
+        register("update_eo_description") { _, msg, _ ->
+            val eoMinareId = msg.getString("eo_minare_id", "")
+            if (eoMinareId.isNotEmpty()) {
+                val updates = io.vertx.core.json.JsonObject()
+                val desc = msg.getString("description", "")
+                val shortDesc = msg.getString("short_description", "")
+                if (desc.isNotEmpty()) updates.put("description", desc)
+                if (shortDesc.isNotEmpty()) updates.put("shortDescription", shortDesc)
+                if (!updates.isEmpty) entityController.saveState(eoMinareId, updates)
             }
+        }
+        register("presence") { _, msg, _ -> handlePresence(msg) }
 
-            message.getString("type") == "register_cross_link" -> {
-                val entityType = message.getString("entity_type", "")
-                val minareId = message.getString("minare_id", "")
-                val evenniaId = message.getString("evennia_id", "")
-                if (entityType.isNotEmpty() && minareId.isNotEmpty() && evenniaId.isNotEmpty()) {
-                    crossLinkRegistry.link(entityType, minareId, evenniaId)
+        register("character_moved") { _, msg, _ ->
+            combatService.onCharacterMoved(
+                msg.getString("character_id", ""),
+                msg.getString("new_room_id", "")
+            )
+        }
+
+        register("combat_attack") { _, msg, _ ->
+            val characterId = msg.getString("character_id", "")
+            val targetId = msg.getString("target_id", "")
+            val roomId = msg.getString("room_id", "")
+            val target = entityController.findByIds(listOf(targetId))
+                .values.firstOrNull() as? EvenniaCharacter
+            if (target != null && (target.dead || target.downed)) {
+                combatService.rejectAttack(characterId, targetId, roomId)
+            } else {
+                val existing = combatService.findCombatInRoom(roomId)
+                if (existing != null) {
+                    combatService.joinCombat(existing._id!!, characterId)
+                    combatService.setAttackMode(characterId, targetId)
                 } else {
-                    log.warn("register_cross_link: missing fields — entity_type={}, minare_id={}, evennia_id={}",
-                        entityType, minareId, evenniaId)
+                    combatService.createCombat(roomId, characterId, targetId)
                 }
             }
+        }
 
-            message.getString("type") == "register_evennia_object" -> {
-                val requestId = message.getString("request_id")
-                val result = registerEvenniaObject.execute(message)
-                result.put("request_id", requestId)
-                result.put("key", message.getString("key", ""))
-                result.put("typeclass_path", message.getString("typeclass_path", ""))
-                sendToClient(connection, result)
-
-                // Publish to event bus so RoomInitializer (and others) can react
-                vertx.eventBus().publish("eidolon.evennia_object.registered", result)
+        register("combat_kill") { _, msg, _ ->
+            val targetId = msg.getString("target_id", "")
+            val target = entityController.findByIds(listOf(targetId))
+                .values.firstOrNull() as? EvenniaCharacter
+            if (target != null && target.downed && !target.dead) {
+                target.dead = true
+                damageService.flagDead(target)
+                entityController.saveState(targetId, JsonObject().put("dead", true))
+                entityController.saveProperties(targetId, JsonObject()
+                    .put("statusEffects", listOf<StatusEffect>()))
+                if (target.combatId.isNotEmpty()) {
+                    combatService.removeMember(target.combatId, targetId)
+                }
             }
+        }
 
-            message.getString("type") == "system_agent_ready" -> {
-                val agentEvenniaId = message.getString("agent_evennia_id", "")
-                val agentKey = message.getString("agent_key", "")
-                log.info("System agent ready in Evennia: key={}, evenniaId={}", agentKey, agentEvenniaId)
-                vertx.eventBus().publish(
-                    GameConnectionController.ADDRESS_EVENNIA_READY,
-                    JsonObject()
-                        .put("agent_evennia_id", agentEvenniaId)
-                        .put("agent_key", agentKey)
-                )
+        register("combat_mode") { _, msg, _ ->
+            combatService.setCombatMode(
+                msg.getString("character_id", ""),
+                msg.getString("mode", "")
+            )
+        }
+
+        register("register_cross_link") { _, msg, _ ->
+            val entityType = msg.getString("entity_type", "")
+            val minareId = msg.getString("minare_id", "")
+            val evenniaId = msg.getString("evennia_id", "")
+            if (entityType.isNotEmpty() && minareId.isNotEmpty() && evenniaId.isNotEmpty()) {
+                crossLinkRegistry.link(entityType, minareId, evenniaId)
+            } else {
+                log.warn("register_cross_link: missing fields — entity_type={}, minare_id={}, evennia_id={}",
+                    entityType, minareId, evenniaId)
             }
+        }
 
-            message.getString("type") == "command" -> {
-                val response = JsonObject()
-                val requestId = message.getString("request_id")
+        // --- Commands with special response handling ---
+        register("register_evennia_object") { conn, msg, reply ->
+            val requestId = msg.getString("request_id")
+            val result = registerEvenniaObject.execute(msg)
+            result.put("request_id", requestId)
+            result.put("key", msg.getString("key", ""))
+            result.put("typeclass_path", msg.getString("typeclass_path", ""))
+            reply(result)
+            vertx.eventBus().publish("eidolon.evennia_object.registered", result)
+        }
 
-                response.put("status", "success")
-                response.put("request_id", requestId)
-                response.put("message",
-                    evenniaCommandHandler.dispatch(message)
-                )
+        register("system_agent_ready") { _, msg, _ ->
+            val agentEvenniaId = msg.getString("agent_evennia_id", "")
+            val agentKey = msg.getString("agent_key", "")
+            log.info("System agent ready in Evennia: key={}, evenniaId={}", agentKey, agentEvenniaId)
+            vertx.eventBus().publish(
+                GameConnectionController.ADDRESS_EVENNIA_READY,
+                JsonObject()
+                    .put("agent_evennia_id", agentEvenniaId)
+                    .put("agent_key", agentKey)
+            )
+        }
 
-                sendToClient(connection, response)
-            }
+        register("command") { conn, msg, reply ->
+            val response = JsonObject()
+            val requestId = msg.getString("request_id")
+            response.put("status", "success")
+            response.put("request_id", requestId)
+            response.put("message", evenniaCommandHandler.dispatch(msg))
+            reply(response)
+        }
 
-            // Handle Evennia-style system messages for tracer bullet
-            message.getString("type") == "message" -> {
-                handleEvenniaMessage(connection, message)
-            }
+        register("message") { conn, msg, _ ->
+            handleEvenniaMessage(conn, msg)
+        }
 
-            message.getString("type") == "work_site_join" -> {
-                val requestId = message.getString("request_id")
-                val result = handleWorkSiteJoin(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
+        // --- Framework-level handlers ---
+        register("heartbeat_response") { conn, msg, _ ->
+            dispatch(HeartbeatResponse(
+                conn,
+                msg.getLong("timestamp"),
+                msg.getLong("clientTimestamp")
+            ))
+        }
 
-            message.getString("type") == "work_site_leave" -> {
-                val requestId = message.getString("request_id")
-                val result = handleWorkSiteLeave(message)
-                result.put("request_id", requestId)
-                sendToClient(connection, result)
-            }
-
-            else -> {
-                val operationCommand = OperationCommand(message)
-
-                dispatch(operationCommand)
-            }
+        register("sync") { conn, msg, _ ->
+            val channels = msg.getString("channels").split(",").toSet()
+            dispatch(SyncCommand(conn, SyncCommandType.CHANNEL, channels))
         }
     }
 
+    // --- Registration helpers ---
+
     /**
-     * Handle Evennia-style messages: {"id": "xyz", "type": "message", "message": "..."}
-     *
-     * Flow:
-     * 1. Send ACK immediately to unblock Evennia
-     * 2. Send response to DownSocket with correlation ID
+     * Register a handler for a message type.
      */
+    fun register(type: String, handler: MessageHandler) {
+        handlers[type] = handler
+    }
+
+    /**
+     * Register a simple request-response handler. The lambda receives the
+     * message and returns a result JsonObject. The request_id is automatically
+     * propagated to the response.
+     */
+    fun registerRequestResponse(type: String, handler: suspend (JsonObject) -> JsonObject) {
+        handlers[type] = { conn, msg, reply ->
+            val requestId = msg.getString("request_id")
+            val result = handler(msg)
+            result.put("request_id", requestId)
+            reply(result)
+        }
+    }
+
+    // --- Main dispatch ---
+
+    override suspend fun handle(connection: Connection, message: JsonObject) {
+        val type = message.getString("type")
+        log.info("MESSAGE_CONTROLLER: {}", message)
+
+        val handler = handlers[type]
+        if (handler != null) {
+            handler(connection, message) { response ->
+                sendToClient(connection, response)
+            }
+        } else {
+            dispatch(OperationCommand(message))
+        }
+    }
+
+    // --- Private handlers for complex logic ---
+
     private suspend fun handleEvenniaMessage(connection: Connection, message: JsonObject) {
         val messageId = message.getString("id")
         val messageText = message.getString("message", "")
@@ -372,31 +352,21 @@ class GameMessageController @Inject constructor(
         log.info("Received Evennia message from {}: id={}, message={}",
             connection.id, messageId, messageText)
 
-        // Send ACK immediately to unblock Evennia
         if (messageId != null) {
             val ack = JsonObject()
                 .put("type", "ack")
                 .put("id", messageId)
-
             sendToClient(connection, ack)
-            log.debug("Sent ACK for message {} to connection {}", messageId, connection.id)
         }
 
-        // Send response through DownSocket via channel broadcast
-        // Connection is already subscribed to default channel via onClientFullyConnected
         val defaultChannelId = channelController.getDefaultChannel()
-
         if (defaultChannelId != null && messageId != null) {
             val response = JsonObject()
                 .put("id", messageId)
                 .put("type", "message_response")
                 .put("original_message", messageText)
                 .put("timestamp", System.currentTimeMillis())
-
             channelController.broadcast(defaultChannelId, response)
-            log.debug("Broadcast response for message {} to channel {}", messageId, defaultChannelId)
-        } else {
-            log.warn("Cannot send response: defaultChannelId={}, messageId={}", defaultChannelId, messageId)
         }
     }
 
@@ -436,11 +406,9 @@ class GameMessageController @Inject constructor(
 
         val updatedEquipment = character.equipment.toMutableMap()
 
-        // Try as slot name first
         val slot = if (updatedEquipment.containsKey(slotOrItem)) {
             slotOrItem
         } else {
-            // Try to find by template name (exact or partial match)
             updatedEquipment.entries.firstOrNull { (_, templateId) ->
                 if (templateId.isEmpty()) return@firstOrNull false
                 val template = itemRegistry.get(templateId) ?: return@firstOrNull false
@@ -473,7 +441,6 @@ class GameMessageController @Inject constructor(
             return JsonObject().put("status", "error").put("error", "Missing character_id or room_id")
         }
 
-        // Find WorkSite entities in this room
         val workSiteKeys = stateStore.findAllKeysForType("WorkSite")
         val workSites = entityController.findByIds(workSiteKeys)
         val workSite = workSites.values
@@ -513,18 +480,85 @@ class GameMessageController @Inject constructor(
             .put("work_site_name", workSite.name)
     }
 
+    private suspend fun handleGossipStart(message: JsonObject): JsonObject {
+        val characterId = message.getString("character_id", "")
+        val roomId = message.getString("room_id", "")
+
+        if (characterId.isEmpty() || roomId.isEmpty()) {
+            return JsonObject().put("status", "error").put("error", "Missing character_id or room_id")
+        }
+
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("status", "error").put("error", "Character not found")
+
+        if (character.gossiping) {
+            return JsonObject().put("status", "error").put("error", "Already gossiping")
+        }
+
+        // Check there are NPCs with knowledge in the room
+        val allCharKeys = stateStore.findAllKeysForType("EvenniaCharacter")
+        val allChars = entityController.findByIds(allCharKeys)
+        val npcsWithKnowledge = allChars.values
+            .filterIsInstance<EvenniaCharacter>()
+            .filter { it.isNpc && it.currentRoomId == roomId && it.characterKnowledge.isNotEmpty() }
+
+        if (npcsWithKnowledge.isEmpty()) {
+            return JsonObject().put("status", "error").put("error", "Nobody here to gossip with")
+        }
+
+        character.gossiping = true
+        character.gossipRoomId = roomId
+        character.lastGossipEvent = System.currentTimeMillis()
+        entityController.saveProperties(characterId, JsonObject()
+            .put("gossiping", true)
+            .put("gossipRoomId", roomId)
+            .put("lastGossipEvent", character.lastGossipEvent))
+
+        val npcNames = npcsWithKnowledge.joinToString(", ") { it.evenniaName }
+        log.info("Character {} started gossiping in room {} with {}", characterId, roomId, npcNames)
+
+        return JsonObject()
+            .put("status", "success")
+            .put("npc_names", npcNames)
+    }
+
+    private suspend fun handleGossipStop(message: JsonObject): JsonObject {
+        val characterId = message.getString("character_id", "")
+
+        if (characterId.isEmpty()) {
+            return JsonObject().put("status", "error").put("error", "Missing character_id")
+        }
+
+        val entities = entityController.findByIds(listOf(characterId))
+        val character = entities[characterId] as? EvenniaCharacter
+            ?: return JsonObject().put("status", "error").put("error", "Character not found")
+
+        if (!character.gossiping) {
+            return JsonObject().put("status", "error").put("error", "You aren't gossiping")
+        }
+
+        character.gossiping = false
+        character.gossipRoomId = ""
+        entityController.saveProperties(characterId, JsonObject()
+            .put("gossiping", false)
+            .put("gossipRoomId", ""))
+
+        log.info("Character {} stopped gossiping", characterId)
+
+        return JsonObject().put("status", "success")
+    }
+
     private suspend fun handlePresence(message: JsonObject) {
         val event = message.getString("event", "")
         val characterId = message.getString("character_id", "")
         val isNpc = message.getBoolean("is_npc", false)
         val roomId = message.getString("room_id", "")
 
-        // Remove departing players from work sites
         if (event == "departed" && !isNpc && characterId.isNotEmpty() && roomId.isNotEmpty()) {
             removeWorkerFromSites(characterId, roomId)
         }
 
-        // Notify NPC brains
         val occupants = message.getJsonArray("occupants") ?: return
         if (occupants.isEmpty) return
 

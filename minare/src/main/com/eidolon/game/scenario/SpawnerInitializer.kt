@@ -70,10 +70,10 @@ class SpawnerInitializer @Inject constructor(
 
             val spawner = entityFactory.createEntity(Spawner::class.java) as Spawner
             entityController.create(spawner)
-            entityController.saveState(spawner._id!!, JsonObject()
+            entityController.saveState(spawner._id, JsonObject()
                 .put("templateId", templateId)
                 .put("roomId", roomMinareId))
-            entityController.saveProperties(spawner._id!!, JsonObject()
+            entityController.saveProperties(spawner._id, JsonObject()
                 .put("intervalMs", intervalMs))
 
             spawners.add(spawner)

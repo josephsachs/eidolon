@@ -26,14 +26,14 @@ entity:
   update:
     collect_changes: true
     interval: 200
-  graphing:
-    store: mongo
+  # graphing:
+  #  store: mongo
 
 
 frames:
-  threads: 10
-  frame_duration: 400
-  lookahead: 25
+  threads: 6
+  frame_duration: 800
+  lookahead: 35
   session:
     auto_session: frames_per_session
     frames_per_session: 400
@@ -45,8 +45,8 @@ frames:
       assign_on_resume: false
     replay:
       buffer_while_replay: true
-  snapshot:
-    store: mongo
+  # snapshot:
+  #  store: mongo
 
 
 tasks:
@@ -66,6 +66,8 @@ mongo:
 redis:
   host: redis
   port: 6379
+  pool: 6
+  max_waiting: 500
 
 
 kafka:

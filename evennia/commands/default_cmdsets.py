@@ -20,7 +20,7 @@ from commands.player_commands import (
     CmdExplore, CmdNoHome, CmdNoAccess, CmdInfo, CmdWork, CmdStopWorking,
 )
 from commands.combat_commands import (
-    CmdAttack, CmdDefend, CmdAvoid, CmdEscape, CmdStance, CmdTactic,
+    CmdAttack, CmdDefend, CmdAvoid, CmdEscape, CmdKill, CmdStance, CmdTactic,
 )
 from commands.equipment_commands import (
     CmdEquip, CmdUnequip, CmdInventory,
@@ -54,6 +54,7 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdDefend())
         self.add(CmdAvoid())
         self.add(CmdEscape())
+        self.add(CmdKill())
         self.add(CmdStance())
         self.add(CmdTactic())
         self.add(CmdEquip())
@@ -64,6 +65,12 @@ class PlayerCharacterCmdSet(CmdSet):
         self.add(CmdInfo())
         self.add(CmdWork())
         self.add(CmdStopWorking())
+        # NPC interaction commands — on the player so they're always available
+        from commands.npc_commands import CmdTalk, CmdAsk, CmdGossip, CmdStopGossip
+        self.add(CmdTalk())
+        self.add(CmdAsk())
+        self.add(CmdGossip())
+        self.add(CmdStopGossip())
 
 
 class AgentCharacterCmdSet(CmdSet):
@@ -99,8 +106,10 @@ class NpcCmdSet(CmdSet):
     priority = 1
 
     def at_cmdset_creation(self):
-        from commands.npc_commands import CmdTalk
+        from commands.npc_commands import CmdTalk, CmdAsk, CmdGossip
         self.add(CmdTalk())
+        self.add(CmdAsk())
+        self.add(CmdGossip())
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):

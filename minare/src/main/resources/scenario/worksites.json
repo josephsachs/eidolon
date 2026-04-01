@@ -1,10 +1,18 @@
 [
   {
-    "name": "cucumber farm",
-    "templateId": "cucumber",
-    "room": "garden",
-    "skillName": "Farming",
+    "name": "pineapple patch",
+    "templateId": "pineapple",
+    "room": "north-island-wilds-1",
+    "skillName": "Gathering",
     "intervalMs": 120000,
-    "objectDescription": "A patch of tilled earth with cucumber vines climbing a lattice of salvaged IV poles. Hand-lettered stakes mark the rows. A laminated card wired to the fence reads: 'COMMUNAL PLOT — WORK TO HARVEST. NO FREELOADING.'"
+    "objectDescription": "A wild patch of pineapple plants growing between volcanic rocks. The fruit is small and fierce-looking, bristling with spiny leaves. Nobody planted these — they just showed up."
+  },
+  {
+    "name": "old man's memoir",
+    "templateId": "pound",
+    "room": "hotel-st-saents-bar",
+    "skillName": "Writing",
+    "intervalMs": 90000,
+    "objectDescription": "Peter Hoffs wants someone to write his memoirs. He is paying in pounds. You could find duller things to do, but not easily. Say `work memoir` and `stop working` to interact."
   }
 ]

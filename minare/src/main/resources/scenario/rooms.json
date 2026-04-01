@@ -1,204 +1,470 @@
 [
   {
-    "id": "intake-lobby",
-    "shortDescription": "Intake Lobby",
-    "description": "A fluorescent-lit intake lobby with scuffed linoleum floors. A thick plexiglass window separates you from an empty processing desk. Motivational posters peel from the walls.",
-    "dayDesc": "A fluorescent-lit intake lobby. The overhead tubes hum and flicker. A thick plexiglass window separates you from an empty processing desk.",
-    "nightDesc": "The intake lobby is dim, half the fluorescents dead. The plexiglass window reflects your silhouette back at you.",
+    "id": "highway-1",
+    "shortDescription": "Highway frontage",
+    "description": "A two-lane frontage road flanked by grassy thickets. The concrete bulkheads of Interstate 71 curtain off the wilderness to the north.",
+    "dayDesc": "A two-lane frontage road flanked by grassy thickets. The concrete bulkheads of Interstate 71 curtain off the wilderness to the north.",
+    "nightDesc": "A two-lane frontage road flanked by croaking, chittering thickets. The highway's silhouette merges with the black sky.",
     "exits": [
-      {"direction": "east", "destination": "corridor-a", "description": "A long corridor stretches east under buzzing lights."},
-      {"direction": "south", "destination": "loading-bay", "description": "A loading bay opens to the south."}
+      {"direction": "west", "destination": "highway-2", "description": "To the west, the highway exit descends."},
+      {"direction": "south", "destination": "muddy-fields", "description": "A farm road branches off the frontage to the south."}
     ]
   },
   {
-    "id": "corridor-a",
-    "shortDescription": "Corridor A",
-    "description": "A long institutional corridor with pale green walls and a stripe of maroon paint at waist height. The floor is polished concrete, reflecting the overhead lights in dull smears.",
-    "dayDesc": "A long institutional corridor. Every footstep echoes. The fluorescents are bright and unforgiving.",
-    "nightDesc": "The corridor is lit by emergency strips along the baseboards, casting everything in a dull amber glow.",
+    "id": "highway-2",
+    "shortDescription": "Highway exit",
+    "description": "Interstate 71 exits here at a nine-way stoplight with two dedicated truck lanes.",
+    "dayDesc": "Interstate 71 exits here at a nine-way stoplight with two dedicated truck lanes.",
+    "nightDesc": "Interstate 71 exits here at a nine-way stoplight with two dedicated truck lanes. The lights semaphore pointlessly in the dark.",
     "exits": [
-      {"direction": "west", "destination": "intake-lobby", "description": "The intake lobby lies to the west."},
-      {"direction": "east", "destination": "junction-b", "description": "A junction opens ahead to the east."},
-      {"direction": "south", "destination": "exam-room-1", "description": "An examination room door stands ajar to the south."}
+      {"direction": "east", "destination": "highway-1", "description": "To the east, the frontage runs to a private road into some woodland."},
+      {"direction": "south", "destination": "highway-3", "description": "To the south, an intersection with shop signs."}
     ]
   },
   {
-    "id": "junction-b",
-    "shortDescription": "Junction B",
-    "description": "A T-junction where two corridors meet. A directory sign on the wall lists departments in faded stencil. Someone has scratched 'WHY' into the paint beneath it.",
+    "id": "highway-3",
+    "shortDescription": "Gardner and Locke at I-71",
+    "description": "A wide concrete intersection hosts a cavernous, hula-hutted Dairy Queen, an Economy Island extended-stay and a gas station.",
+    "dayDesc": "A wide concrete intersection hosts a cavernous, hula-hutted Dairy Queen, an Economy Island extended-stay and a gas station.",
+    "nightDesc": "A wide concrete intersection hosts a sleeping restaurant, a dreary-looking motel and a gas station: brightly-lit, the contents of its glass on display.",
     "exits": [
-      {"direction": "west", "destination": "corridor-a", "description": "Corridor A continues to the west."},
-      {"direction": "east", "destination": "observation-hall", "description": "A wide observation hall lies to the east."},
-      {"direction": "south", "destination": "stairwell", "description": "A stairwell descends to the south."}
+      {"direction": "north", "destination": "highway-2", "description": "An intimidating vehicle mixup flashes signals to the north."},
+      {"direction": "south", "destination": "lakeland-crossing", "description": "Locke continues south to the crossroads of the town of Lakeland."},
+      {"direction": "west", "destination": "gardner-culdesac", "description": "On Gardner to the west are some houses whose modesty says pre-war."},
+      {"direction": "store", "destination": "dairy-queen-store", "description": "The Dairy Queen's glass doors face the intersection."},
+      {"direction": "mart", "destination": "generous-mart", "description": "The gas station's forest-green bear sign glows over the pumps."}
     ]
   },
   {
-    "id": "observation-hall",
-    "shortDescription": "Observation Hall",
-    "description": "A wide hall lined with one-way mirrors on both sides. Behind each mirror is a darkened room. The mirrors reflect you from every angle, fractured and multiplied.",
+    "id": "generous-mart",
+    "shortDescription": "Generous Mart",
+    "description": "A gas station convenience store under humming fluorescents. The forest-green bear mascot grins from every surface — cups, bags, the clock above the register. The shelves are surprisingly well-stocked.",
+    "dayDesc": "A gas station convenience store. Sunlight through the glass front makes the linoleum shine. The coffee is fresh. The bear grins.",
+    "nightDesc": "A gas station convenience store, the brightest thing for a mile. Moths ping against the windows. The coffee has been sitting since morning. The bear grins.",
     "exits": [
-      {"direction": "west", "destination": "junction-b", "description": "Junction B lies back to the west."},
-      {"direction": "south", "destination": "ward-c", "description": "A heavy door leads to Ward C to the south."}
+      {"direction": "exit", "destination": "highway-3", "description": "The glass doors open to the intersection and the pumps."}
     ]
   },
   {
-    "id": "loading-bay",
-    "shortDescription": "Loading Bay",
-    "description": "A concrete loading bay with a half-open roll-up door. Crates of medical supplies are stacked haphazardly. The air smells of diesel and disinfectant.",
+    "id": "muddy-fields",
+    "shortDescription": "Muddy fields",
+    "description": "A dirt road cuts between fallow soybean fields. Tire ruts full of standing water reflect the sky. A rusted grain elevator stands in the middle distance like a monument.",
+    "dayDesc": "A dirt road cuts between fallow soybean fields. Tire ruts full of standing water reflect the sky. A rusted grain elevator stands in the middle distance like a monument.",
+    "nightDesc": "The fields are a flat darkness broken only by the faint gleam of water in the tire ruts. Something large moves in the soybeans.",
     "exits": [
-      {"direction": "north", "destination": "intake-lobby", "description": "The intake lobby is to the north."},
-      {"direction": "east", "destination": "exam-room-1", "description": "An examination room is to the east."},
-      {"direction": "south", "destination": "boiler-room", "description": "A boiler room lies to the south."}
+      {"direction": "north", "destination": "highway-1", "description": "The frontage road runs north along the highway."},
+      {"direction": "south", "destination": "farm-road", "description": "The dirt road continues south past a collapsed fence."}
     ]
   },
   {
-    "id": "exam-room-1",
-    "shortDescription": "Examination Room 1",
-    "description": "A clinical examination room with a padded table under a surgical lamp. Cabinets line the walls, most hanging open and empty. A drain in the center of the floor is stained dark.",
+    "id": "farm-road",
+    "shortDescription": "Farm road",
+    "description": "The road dwindles to two bare tracks through waist-high grass. A caved-in barn sags to the east. The air smells of wet earth and something animal.",
+    "dayDesc": "The road dwindles to two bare tracks through waist-high grass. A caved-in barn sags to the east. Crows wheel overhead in a slow gyre.",
+    "nightDesc": "The road dwindles to two bare tracks through waist-high grass. The barn is a black shape against a marginally less black sky. Eyes reflect from the grass.",
     "exits": [
-      {"direction": "north", "destination": "corridor-a", "description": "Corridor A is to the north."},
-      {"direction": "west", "destination": "loading-bay", "description": "The loading bay is to the west."},
-      {"direction": "east", "destination": "stairwell", "description": "A stairwell lies to the east."},
-      {"direction": "south", "destination": "pharmacy", "description": "A pharmacy counter is visible to the south."}
+      {"direction": "north", "destination": "muddy-fields", "description": "The dirt road leads north through the fields."}
     ]
   },
   {
-    "id": "stairwell",
-    "shortDescription": "Stairwell",
-    "description": "A bare concrete stairwell between floors. Graffiti covers the walls in layers — gang tags, pleas for help, crude anatomical drawings. The echo is disorienting.",
+    "id": "gardner-culdesac",
+    "shortDescription": "Gardner cul-de-sac",
+    "description": "A cul-de-sac of small clapboard houses with chain-link yards. A basketball hoop with no net leans over a cracked driveway. Most of the mailboxes are empty.",
+    "dayDesc": "A cul-de-sac of small clapboard houses with chain-link yards. A dog barks somewhere. Dandelions have colonized every lawn.",
+    "nightDesc": "A cul-de-sac of small clapboard houses. A single porch light is on. The rest of the houses are dark, but a television flickers blue behind curtains.",
     "exits": [
-      {"direction": "north", "destination": "junction-b", "description": "Junction B is above to the north."},
-      {"direction": "west", "destination": "exam-room-1", "description": "Examination Room 1 is to the west."},
-      {"direction": "east", "destination": "ward-c", "description": "Ward C lies to the east."},
-      {"direction": "south", "destination": "sub-basement", "description": "Stairs descend further to the south."}
+      {"direction": "east", "destination": "highway-3", "description": "Gardner runs east to the intersection at I-71."}
     ]
   },
   {
-    "id": "ward-c",
-    "shortDescription": "Ward C",
-    "description": "A long ward of empty hospital beds arranged in two rows. Curtain rails line the ceiling but the curtains are gone. At the far end, a television mounted to the wall plays static.",
+    "id": "lakeland-crossing",
+    "shortDescription": "Lakeland crossing",
+    "description": "The crossroads of Lakeland: a stoplight, a post office, and a dollar store. Locke Street runs north-south. A side street heads east toward what passes for downtown.",
+    "dayDesc": "The crossroads of Lakeland. The dollar store is open. An elderly man sits on a bench outside the post office reading a newspaper from last week.",
+    "nightDesc": "The crossroads of Lakeland. The stoplight blinks yellow. The dollar store's sign buzzes, half its letters dark.",
     "exits": [
-      {"direction": "north", "destination": "observation-hall", "description": "The observation hall is to the north."},
-      {"direction": "west", "destination": "stairwell", "description": "The stairwell is to the west."},
-      {"direction": "south", "destination": "rec-room", "description": "A recreation room lies to the south."},
-      {"direction": "east", "destination": "security-station", "description": "A security station with a heavy door is to the east."}
+      {"direction": "north", "destination": "highway-3", "description": "Locke runs north toward the highway interchange."},
+      {"direction": "east", "destination": "lakeland-main-street", "description": "A side street leads east into a block of old storefronts."},
+      {"direction": "south", "destination": "locke-street", "description": "Locke continues south past the post office."}
     ]
   },
   {
-    "id": "security-station",
-    "shortDescription": "Security Station",
-    "description": "A reinforced security checkpoint. Banks of dead monitors line one wall. The desk is overturned and a chair lies on its side. A big red security buzzer is mounted on the wall.",
+    "id": "lakeland-main-street",
+    "shortDescription": "Main Street - Lakeland",
+    "description": "A half-block of pre-war storefronts: a barbershop, a thrift store, a place that sells bait. The sidewalk is buckled where tree roots have won their slow war with concrete.",
+    "dayDesc": "A half-block of pre-war storefronts. The barbershop pole still turns. An orange cat sleeps in the thrift store window.",
+    "nightDesc": "A half-block of pre-war storefronts, all closed. The barbershop pole is still. Between two buildings, an alley leads to a warehouse whose lights are on.",
     "exits": [
-      {"direction": "west", "destination": "ward-c", "description": "Ward C lies to the west."}
+      {"direction": "west", "destination": "lakeland-crossing", "description": "The side street runs west to the crossroads."},
+      {"direction": "alley", "destination": "locke-secret-bar", "description": "A narrow alley cuts between the barbershop and the thrift store."}
     ]
   },
   {
-    "id": "boiler-room",
-    "shortDescription": "Boiler Room",
-    "description": "A sweltering room dominated by massive industrial boilers. Pipes run in every direction along the ceiling, sweating condensation. The rhythmic clang of expanding metal fills the air.",
+    "id": "locke-street",
+    "shortDescription": "Locke Street south",
+    "description": "The south end of Locke Street. The houses thin out and give way to light industrial lots behind chain-link. A logistics company has a fenced yard to the east.",
+    "dayDesc": "The south end of Locke Street. A truck idles at the logistics yard gate. Heat shimmers off the asphalt.",
+    "nightDesc": "The south end of Locke Street. Sodium lights buzz over the logistics yard. The residential windows are all dark.",
     "exits": [
-      {"direction": "north", "destination": "loading-bay", "description": "The loading bay is to the north."},
-      {"direction": "east", "destination": "pharmacy", "description": "A pharmacy is to the east."},
-      {"direction": "south", "destination": "incinerator", "description": "An incinerator room lies to the south."}
+      {"direction": "north", "destination": "lakeland-crossing", "description": "The crossroads are to the north."},
+      {"direction": "east", "destination": "logistix-yard", "description": "A gate in the chain-link opens to the logistics yard."}
     ]
   },
   {
-    "id": "pharmacy",
-    "shortDescription": "Pharmacy",
-    "description": "A ransacked pharmacy behind a shattered security window. Pill bottles crunch underfoot. The controlled substances cabinet has been pried open, its shelves bare.",
+    "id": "dairy-queen-store",
+    "shortDescription": "Dairy Queen",
+    "description": "A gleaming corporate ice cream retailer. There's no one at the counter. The menu board flickers between seasonal specials for two different seasons.",
     "exits": [
-      {"direction": "north", "destination": "exam-room-1", "description": "Examination Room 1 is to the north."},
-      {"direction": "west", "destination": "boiler-room", "description": "The boiler room is to the west."},
-      {"direction": "east", "destination": "sub-basement", "description": "The sub-basement corridor is to the east."},
-      {"direction": "south", "destination": "morgue", "description": "A cold draft comes from the south."}
+      {"direction": "bathroom", "destination": "dairy-queen-bathroom", "description": "There's a bathroom next to the trash and the ketchup."},
+      {"direction": "exit", "destination": "highway-3", "description": "Outside the exit is a narrow parking lot and a wide intersection."}
     ]
   },
   {
-    "id": "sub-basement",
-    "shortDescription": "Sub-Basement Corridor",
-    "description": "A low-ceilinged corridor of unpainted cinder block. Water stains streak the walls. Somewhere ahead, a pipe drips with metronomic patience.",
+    "id": "dairy-queen-bathroom",
+    "shortDescription": "Dairy Queen bathroom",
+    "description": "A gleaming corporate bathroom. It smells like antiseptic. The fluorescent light hums at a frequency that makes your fillings ache.",
     "exits": [
-      {"direction": "north", "destination": "stairwell", "description": "The stairwell leads up to the north."},
-      {"direction": "west", "destination": "pharmacy", "description": "The pharmacy is to the west."},
-      {"direction": "east", "destination": "rec-room", "description": "A recreation room is to the east."},
-      {"direction": "south", "destination": "solitary", "description": "Solitary confinement lies to the south."}
+      {"direction": "seam", "destination": "radio-tower-pathway-3", "description": "A seam by the toilet leaves this world.", "explorable": true, "blockMessage": "There's a hairline crack in the tile by the toilet. It seems like it could be wider than it is.", "stile": true},
+      {"direction": "exit", "destination": "dairy-queen-store", "description": "The swinging doors exit to the restaurant."}
     ]
   },
   {
-    "id": "rec-room",
-    "shortDescription": "Recreation Room",
-    "description": "A recreation room with bolted-down furniture. A ping-pong table missing its net sits in the center. Board games with missing pieces are scattered across the tables.",
+    "id": "logistix-yard",
+    "shortDescription": "Logistix yard",
+    "description": "A gravel yard behind chain-link topped with razor wire. Loading pallets are stacked in rows. A forklift sits abandoned mid-turn, keys still in the ignition.",
+    "dayDesc": "A gravel yard baking in the sun. The razor wire throws sharp shadows. A crow sits on the forklift.",
+    "nightDesc": "A gravel yard under sodium floods. The shadows are hard-edged and orange. The forklift looks like it's been sitting there for years.",
     "exits": [
-      {"direction": "north", "destination": "ward-c", "description": "Ward C is to the north."},
-      {"direction": "west", "destination": "sub-basement", "description": "The sub-basement corridor is to the west."},
-      {"direction": "east", "destination": "chapel", "description": "A small chapel lies to the east."},
-      {"direction": "south", "destination": "exercise-yard", "description": "An exercise yard is to the south."}
+      {"direction": "west", "destination": "locke-street", "description": "The gate opens to Locke Street."},
+      {"direction": "warehouse", "destination": "logistix-warehouse", "description": "The warehouse's loading doors are half-open."}
     ]
   },
   {
-    "id": "chapel",
-    "shortDescription": "Chapel",
-    "description": "A small nondenominational chapel. Folding chairs face a bare podium. The overhead light has a warm tint that feels almost intentional. Someone has left flowers — plastic ones.",
+    "id": "logistix-warehouse",
+    "shortDescription": "Logistix warehouse",
+    "description": "A vast empty warehouse with some suspicious-looking grease stains. A floodlight tries to light it all and cannot.",
     "exits": [
-      {"direction": "west", "destination": "rec-room", "description": "The recreation room is to the west."},
-      {"direction": "south", "destination": "garden", "description": "An enclosed garden is to the south."}
+      {"direction": "office", "destination": "logistix-manager-office", "description": "A small, dimly-lit box stands apart in the corner."},
+      {"direction": "door", "destination": "logistix-yard", "description": "Double-doors lead to the yard."}
     ]
   },
   {
-    "id": "incinerator",
-    "shortDescription": "Incinerator Room",
-    "description": "A concrete chamber housing a massive industrial incinerator. The iron door hangs open, revealing a blackened maw. The heat is tremendous even with the fires long dead.",
+    "id": "logistix-manager-office",
+    "shortDescription": "Manager's office",
+    "description": "A plywood office with a metal desk, a calendar three years out of date, and a coffee mug growing something green. The computer monitor is smashed. A window looks out into the warehouse darkness.",
     "exits": [
-      {"direction": "north", "destination": "boiler-room", "description": "The boiler room is to the north."},
-      {"direction": "east", "destination": "morgue", "description": "The morgue is to the east."}
+      {"direction": "door", "destination": "logistix-warehouse", "description": "The office door opens to the warehouse floor."}
     ]
   },
   {
-    "id": "morgue",
-    "shortDescription": "Morgue",
-    "description": "A cold, tiled room with stainless steel drawers lining one wall. The air conditioning still works here, impossibly. The drain in the floor is spotless.",
+    "id": "locke-secret-bar",
+    "shortDescription": "Warehouse bar",
+    "description": "The interior of a warehouse has been converted into a bar, but it's so dimly lit you'd never find it. Booming trap from a jukebox makes it impossible to hear.",
     "exits": [
-      {"direction": "north", "destination": "pharmacy", "description": "The pharmacy is to the north."},
-      {"direction": "west", "destination": "incinerator", "description": "The incinerator room is to the west."},
-      {"direction": "east", "destination": "solitary", "description": "Solitary confinement is to the east."}
+      {"direction": "exit", "destination": "lakeland-main-street", "description": "The alley leads back to the storefronts on Main Street."}
     ]
   },
   {
-    "id": "solitary",
-    "shortDescription": "Solitary Confinement",
-    "description": "A row of narrow steel doors, each with a slot at eye level. The cells beyond are barely wide enough to lie down in. The silence here has a physical weight.",
+    "id": "island-shore",
+    "shortDescription": "Island shore",
+    "description": "A strip of dark volcanic sand between the water and a low seawall. Fishing boats are pulled up in a row, their hulls crusted with salt. The hotel tower rises to the south.",
+    "dayDesc": "A strip of dark volcanic sand. The water is impossibly blue. Fishing nets dry on stakes driven into the sand.",
+    "nightDesc": "A strip of dark sand under stars. The fishing boats creak against each other. Lights from the hotel reflect in the wet sand.",
     "exits": [
-      {"direction": "north", "destination": "sub-basement", "description": "The sub-basement corridor is to the north."},
-      {"direction": "west", "destination": "morgue", "description": "The morgue is to the west."},
-      {"direction": "east", "destination": "exercise-yard", "description": "An exercise yard is to the east."},
-      {"direction": "south", "destination": "tunnel", "description": "A maintenance tunnel stretches into darkness to the south.", "explorable": true, "blockMessage": "The tunnel entrance is blocked by debris. It might be passable with enough effort."}
+      {"direction": "north", "destination": "north-island-village-pier", "description": "A concrete pier extends north along the waterline."},
+      {"direction": "south", "destination": "hotel-st-saents-forecourt", "description": "A paved road curves south to a hotel entrance."},
+      {"direction": "east", "destination": "north-island-eastern-reach-1", "description": "An unpaved road extends runs to a copse and then a treeline."}
     ]
   },
   {
-    "id": "exercise-yard",
-    "shortDescription": "Exercise Yard",
-    "description": "An enclosed concrete yard open to the sky — or what should be the sky. The ceiling is a grid of reinforced glass panels far above. Chain-link fencing topped with razor wire divides the space.",
+    "id": "north-island-eastern-reach-1",
+    "shortDescription": "Island wilds - eastern reach",
+    "description": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "dayDesc": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "nightDesc": "The approach to the road is clear cut, but further east is a thick jungle.",
     "exits": [
-      {"direction": "north", "destination": "rec-room", "description": "The recreation room is to the north."},
-      {"direction": "west", "destination": "solitary", "description": "Solitary confinement is to the west."},
-      {"direction": "east", "destination": "garden", "description": "An enclosed garden is to the east."}
+      {"direction": "west", "destination": "island-shore", "description": "The road leads west toward the main strip."},
+      {"direction": "south", "destination": "north-island-eastern-reach-2", "description": "A footpath breaks south through the undergrowth."}
     ]
   },
   {
-    "id": "garden",
-    "shortDescription": "Enclosed Garden",
-    "description": "An improbable garden thriving under grow lights. Raised beds overflow with vegetables and herbs. The air is humid and green. A hand-lettered sign reads 'THERAPY GARDEN — NO UNAUTHORIZED HARVESTING'.",
+    "id": "north-island-eastern-reach-2",
+    "shortDescription": "Island wilds - muddy road",
+    "description": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "dayDesc": "The approach to the road is clear cut, but further east is a thick jungle.",
+    "nightDesc": "The approach to the road is clear cut, but further east is a thick jungle.",
     "exits": [
-      {"direction": "north", "destination": "chapel", "description": "The chapel is to the north."},
-      {"direction": "west", "destination": "exercise-yard", "description": "The exercise yard is to the west."}
+      {"direction": "east", "destination": "north-island-resort-1", "description": "The road turns paved to the west, at the approach to an electronic gate."},
+      {"direction": "southeast", "destination": "north-island-eastern-reach-3", "description": "A footpath breaks south through the undergrowth."},
+      {"direction": "north", "destination": "north-island-eastern-reach-1", "description": "A footpath breaks south through the undergrowth."}
     ]
   },
   {
-    "id": "tunnel",
-    "shortDescription": "Maintenance Tunnel",
-    "description": "A narrow maintenance tunnel of raw concrete and bundled cables. It stretches further than it should, further than the building's footprint allows. The air tastes of ozone.",
+    "id": "north-island-eastern-reach-3",
+    "shortDescription": "Island wilds - muddy path",
+    "description": "The road rapidly ceases to exist among mudflats, thickets and rocky outcroppings.",
+    "dayDesc": "The road rapidly ceases to exist among mudflats, thickets and rocky outcroppings.",
+    "nightDesc": "The darkness is total. The air that carries the smell of the sea is cold.",
     "exits": [
-      {"direction": "north", "destination": "solitary", "description": "Solitary confinement lies to the north."}
+      {"direction": "northwest", "destination": "north-island-eastern-reach-2", "description": "The road re-emerges to the northwest."},
+      {"direction": "south", "destination": "north-island-eastern-reach-4", "description": "A footpath breaks south through the undergrowth."}
+    ]
+  },
+  {
+    "id": "north-island-eastern-reach-4",
+    "shortDescription": "Island wilds - mudflats",
+    "description": "The path ends at a wide mudflat in which nothing grows. A mantle of roots wraps around it.",
+    "dayDesc": "The path ends at a wide mudflat in which nothing grows. A mantle of roots wraps around it.",
+    "nightDesc": "Moonlight dimly lights a muddy clearing surrounded by dense submerged forest.",
+    "exits": [
+      {"direction": "north", "destination": "north-island-eastern-reach-3", "description": "A footpath leads north, up and into the thicket."}
+    ]
+  },
+  {
+    "id": "north-island-resort-1",
+    "shortDescription": "Abandoned resort - parking lot",
+    "description": "Not much of the abandoned resort is left save two detached suites, an very basic (and uninhabited) commercial strip, and a fake lagoon.",
+    "dayDesc": "Not much of the abandoned resort is left save two detached suites, an very basic (and uninhabited) commercial strip, and a fake lagoon.",
+    "nightDesc": "The abandoned resort lot screams with insect life in pitch dark.",
+    "exits": [
+      {"direction": "west", "destination": "north-island-eastern-reach-2", "description": "To the west the trees thin out."}
+    ]
+  },
+  {
+    "id": "hotel-st-saents-forecourt",
+    "shortDescription": "Hotel forecourt",
+    "description": "A freshly-paved street loops before the hotel, providing taxis a place to drop passengers without stopping.",
+    "dayDesc": "A freshly-paved street loops before the hotel, providing taxis a place to drop passengers without stopping.",
+    "nightDesc": "A freshly-paved street loops before the hotel, providing taxis a place to drop passengers without stopping. Sea breeze whips in from the shore to the north.",
+    "exits": [
+      {"direction": "hotel", "destination": "hotel-st-saents-lobby", "description": "A hotel tower stands to the south."},
+      {"direction": "north", "destination": "island-shore", "description": "The shore road curves north to the waterfront."}
+    ]
+  },
+  {
+    "id": "hotel-st-saents-lobby",
+    "shortDescription": "Hotel lobby",
+    "description": "The Hotel Saint-Saens is woody, carpeted and chrome. It smells like a half-frozen air conditioner.",
+    "exits": [
+      {"direction": "door", "destination": "hotel-st-saents-forecourt", "description": "The front doors open to the outdoor forecourt."},
+      {"direction": "bar", "destination": "hotel-st-saents-bar", "description": "A chrome double-door leads to the bar."},
+      {"direction": "southeast", "destination": "hotel-st-saents-elevators-ground", "description": "The elevators skulk in the dark to the southeast."}
+    ]
+  },
+  {
+    "id": "hotel-st-saents-bar",
+    "shortDescription": "Hotel bar",
+    "description": "A long mahogany bar under copper pendant lights. The shelves behind are fully stocked but there's no bartender. A jazz record plays on a turntable behind the bar, needle riding the runout groove.",
+    "dayDesc": "A long mahogany bar. Daylight filters through plantation shutters, striping the copper fixtures. The turntable is off.",
+    "nightDesc": "A long mahogany bar under warm copper light. The bottles glow amber. A jazz record has been playing the same runout groove for hours.",
+    "exits": [
+      {"direction": "exit", "destination": "hotel-st-saents-lobby", "description": "Chrome double-doors lead back to the lobby."}
+    ]
+  },
+  {
+    "id": "hotel-st-saents-elevators-ground",
+    "shortDescription": "Hotel elevators",
+    "description": "A dim alcove with two brass elevator doors, tarnished green at the edges. One elevator's indicator is stuck between floors. The other dings softly, doors open, empty.",
+    "exits": [
+      {"direction": "northwest", "destination": "hotel-st-saents-lobby", "description": "The lobby opens up to the northwest."},
+      {"direction": "up", "destination": "hotel-st-saents-hallway", "description": "The working elevator waits, doors open."}
+    ]
+  },
+  {
+    "id": "hotel-st-saents-hallway",
+    "shortDescription": "Hotel hallway",
+    "description": "A carpeted hallway on an upper floor. The room numbers skip: 3, 5, 8, 13. At the far end, a window looks out on a strip of gleaming apartment complexes on a hillside.",
+    "dayDesc": "A carpeted hallway on an upper floor. The room numbers skip: 3, 5, 8, 13. At the far end, a window looks out on a strip of gleaming condos on a hillside.",
+    "nightDesc": "A carpeted hallway on an upper floor. The room numbers skip: 3, 5, 8, 13. At the far end, a window looks out on a mosaic of glowing lights from the buildings a hillside.",
+    "exits": [
+      {"direction": "elevator", "destination": "hotel-st-saents-elevators-ground", "description": "The elevator alcove is here."}
+    ]
+  },
+  {
+    "id": "north-island-village",
+    "shortDescription": "Unnamed village",
+    "description": "A collection of cement houses painted blue and salmon-pink cluster around the meeting of two semi-paved roads. The houses have strips of white ceramic tile with a green diamond pattern.",
+    "dayDesc": "A collection of simple, cement houses cluster around the meeting of two semi-paved roads. Motorbikes drone somewhere nearby.",
+    "nightDesc": "A collection of simple, cement houses cluster around the meeting of two semi-paved roads. Cold glare from an overhead halogen lights the intersection.",
+    "exits": [
+      {"direction": "south", "destination": "spirit-island-jungle-1", "description": "The road south disappears into dense jungle."},
+      {"direction": "west", "destination": "north-island-wilds-1", "description": "To the west a road cuts between forest and field."},
+      {"direction": "east", "destination": "north-island-village-pier", "description": "To the east the road stops at a fishing pier."}
+    ]
+  },
+  {
+    "id": "north-island-village-pier",
+    "shortDescription": "Village pier",
+    "description": "A concrete pier extending over shallow turquoise water. Fishing boats are tied along one side. Nets hang drying from crooked wooden posts.",
+    "dayDesc": "A concrete pier over shallow turquoise water. Children dive off the end. The catch of the day lies silver and gasping in plastic bins.",
+    "nightDesc": "A concrete pier over black water. The boats knock against the pilings. A single lantern hangs from a post, swinging in the breeze.",
+    "exits": [
+      {"direction": "west", "destination": "north-island-village", "description": "The village road leads west."},
+      {"direction": "south", "destination": "island-shore", "description": "A path follows the waterline south toward the hotel shore."}
+    ]
+  },
+  {
+    "id": "north-island-wilds-1",
+    "shortDescription": "Island wilds - thicket",
+    "description": "Dense tropical scrub presses in from both sides of a deteriorating road. Machete marks on the branches are old. Birds you can't name shriek from the canopy.",
+    "dayDesc": "Dense tropical scrub. The road is barely visible under encroaching vegetation. Butterflies the size of your hand drift between shafts of light.",
+    "nightDesc": "The scrub is a wall of black on both sides. Things rustle and snap in the undergrowth. The road is felt more than seen.",
+    "exits": [
+      {"direction": "east", "destination": "north-island-village", "description": "The road leads east to the village."},
+      {"direction": "south", "destination": "north-island-wilds-2", "description": "A footpath breaks south through the undergrowth."}
+    ]
+  },
+  {
+    "id": "north-island-wilds-2",
+    "shortDescription": "Island wilds - clearing",
+    "description": "A natural clearing in the scrub where volcanic rock breaks through the soil. Feral goat droppings are everywhere. A collapsed stone wall suggests someone farmed here once.",
+    "dayDesc": "A natural clearing. The volcanic rock is warm to the touch. Lizards sun themselves on the old wall. The jungle buzzes.",
+    "nightDesc": "A clearing under open sky. The stars are violent. Something has been digging near the collapsed wall.",
+    "exits": [
+      {"direction": "north", "destination": "north-island-wilds-1", "description": "The footpath leads north into the thicket."},
+      {"direction": "east", "destination": "spirit-island-jungle-1", "description": "A game trail winds east into the jungle."}
+    ]
+  },
+  {
+    "id": "spirit-island-jungle-1",
+    "shortDescription": "Jungle trail",
+    "description": "A trail cuts through dense jungle. Roots cross the path like veins. The canopy is so thick the light is green and submarine.",
+    "dayDesc": "A trail through dense jungle. The light is green and submarine. Water drips from leaves that haven't seen direct sun in decades.",
+    "nightDesc": "A trail through dense jungle. Total darkness. The canopy blocks even starlight. Phosphorescent fungi glow faintly on the tree trunks.",
+    "exits": [
+      {"direction": "north", "destination": "north-island-village", "description": "The trail opens north toward the village.", "stile": true},
+      {"direction": "south", "destination": "spirit-island-jungle-2", "description": "The trail descends deeper into the jungle to the south."},
+      {"direction": "west", "destination": "north-island-wilds-2", "description": "A game trail leads west into the wilds."}
+    ]
+  },
+  {
+    "id": "spirit-island-jungle-2",
+    "shortDescription": "Deep jungle",
+    "description": "The jungle thickens and the trail narrows to a thread. Stone ruins peek through the vegetation — carved faces worn smooth by centuries of rain. The air is heavy and still.",
+    "dayDesc": "The jungle at its densest. Stone faces stare from the undergrowth, half-consumed by roots. A carved stairway descends, each step shallower than the last.",
+    "nightDesc": "The jungle at its densest. The stone faces are invisible but you can feel them watching. Fireflies drift between the ruins like slow sparks.",
+    "exits": [
+      {"direction": "north", "destination": "spirit-island-jungle-1", "description": "The trail climbs north toward thinner jungle."},
+      {"direction": "west", "destination": "spirit-island-causeway", "description": "A stone path leads west through the ruins toward the sound of water."},
+      {"direction": "east", "destination": "spirit-island-glade-1", "description": "A break in the canopy to the east reveals a sunlit glade."}
+    ]
+  },
+  {
+    "id": "spirit-island-glade-1",
+    "shortDescription": "Island glade",
+    "description": "A circular clearing where the jungle pulls back as if by agreement. Wildflowers carpet the ground. A flat stone in the center has been worn smooth by sitting, or kneeling.",
+    "dayDesc": "A circular clearing full of wildflowers. The flat stone in the center is warm. Birdsong fills the space from every direction, unsourced.",
+    "nightDesc": "A circular clearing. The flowers have closed. The flat stone in the center is cold. The silence here is different from the jungle's silence — it's listening.",
+    "exits": [
+      {"direction": "west", "destination": "spirit-island-jungle-2", "description": "The jungle wall rises to the west."}
+    ]
+  },
+  {
+    "id": "spirit-island-causeway",
+    "shortDescription": "Tidal causeway",
+    "description": "A dry path crosses the marine lagoon to join the main body of Spirit Island to the east with the adjoining Twin Island to the northwest.",
+    "dayDesc": "A dry path crosses the marine lagoon. The water on both sides is shallow and crystal clear. Small sharks cruise the flats, unhurried.",
+    "nightDesc": "At high tide, the marine lagoon rises to ankle depth over the causeway stones. The crossing is possible but uneasy.",
+    "exits": [
+      {"direction": "east", "destination": "spirit-island-jungle-2", "description": "A stone path leads east into the jungle ruins."},
+      {"direction": "southeast", "destination": "spirit-island-glade-1", "description": "A faint path curves southeast toward a break in the canopy."},
+      {"direction": "northwest", "destination": "twin-island-isthmus", "description": "A narrow rocky isthmus connects to the smaller island to the northwest."}
+    ]
+  },
+  {
+    "id": "twin-island-isthmus",
+    "shortDescription": "Rocky isthmus",
+    "description": "A spine of black volcanic rock barely above the waterline connects the twin islands. Waves crash on both sides, throwing salt spray. The footing is treacherous.",
+    "dayDesc": "A spine of black volcanic rock. Crabs scuttle into crevices as you pass. The twin island rises ahead, its peak crowned with scrub.",
+    "nightDesc": "A spine of black rock indistinguishable from the black water except by the shock of spray. Crossing in the dark is an act of faith.",
+    "exits": [
+      {"direction": "southeast", "destination": "spirit-island-causeway", "description": "The causeway stretches southeast to the main island."},
+      {"direction": "north", "destination": "twin-island-beach", "description": "A pocket beach lies on the lee side of the twin island."}
+    ]
+  },
+  {
+    "id": "twin-island-beach",
+    "shortDescription": "Twin island beach",
+    "description": "A crescent of white sand sheltered from the prevailing wind. The water here is absurdly calm. Driftwood has been arranged into something that might be a shelter or might be art.",
+    "dayDesc": "A crescent of white sand. The water is bath-warm and turquoise. Someone has arranged driftwood into a structure — a shelter, a sculpture, an altar.",
+    "nightDesc": "A crescent of white sand under stars. The driftwood structure casts strange shadows. The water laps with metronomic patience.",
+    "exits": [
+      {"direction": "south", "destination": "twin-island-isthmus", "description": "The rocky isthmus leads south to the main island."},
+      {"direction": "southwest", "destination": "twin-island-lagoon-1", "description": "The coast of Twin Island winds through irregular marine lagoons.."}
+    ]
+  },
+  {
+    "id": "twin-island-lagoon-1",
+    "shortDescription": "Twin island lagoon",
+    "description": "",
+    "dayDesc": "",
+    "nightDesc": "",
+    "exits": [
+      {"direction": "northeast", "destination": "twin-island-beach", "description": "The rocky beach leads south to the main island."},
+      {"direction": "south", "destination": "twin-island-lagoon-2", "description": "The progress south crosses more lagoon."}
+    ]
+  },
+  {
+    "id": "twin-island-lagoon-2",
+    "shortDescription": "Twin island lagoon",
+    "description": "",
+    "dayDesc": "",
+    "nightDesc": "",
+    "exits": [
+      {"direction": "north", "destination": "twin-island-lagoon-1", "description": "The lagoon to the north bends around a shallow bay toward the isthmus."}
+    ]
+  },
+  {
+    "id": "spirit-island-causeway-alternate",
+    "shortDescription": "Awakened causeway",
+    "description": "A straight path between the two ancient oceans to the seat of power.",
+    "dayDesc": "A straight path between the two ancient oceans to the seat of power. The sun smiles above and an angel points to a door to the north.",
+    "nightDesc": "A straight path between the two ancient oceans to the seat of power. The triangle of their outlines shines against the dark wilderness to the north.",
+    "exits": [
+      {"direction": "north", "destination": "causeway-door", "description": "Something to the north is possible now."},
+      {"direction": "east", "destination": "spirit-island-jungle-2", "description": "A stone path leads east into the jungle ruins."},
+      {"direction": "southeast", "destination": "spirit-island-glade-1", "description": "A faint path curves southeast toward a break in the canopy."},
+      {"direction": "northwest", "destination": "twin-island-isthmus", "description": "A narrow rocky isthmus connects to the smaller island to the northwest."}
+    ]
+  },
+  {
+    "id": "causeway-door",
+    "shortDescription": "The Road to the Absolute",
+    "description": "Something is wrong with the road, it's blocked. Two rebounds lead to a watery pediment and a spandrel respectively.",
+    "exits": [
+      {"direction": "pediment", "destination": "spirit-island-causeway-alternate", "description": "An island is nearby.", "stile": true},
+      {"direction": "path", "destination": "radio-tower-pathway-1", "description": "As is a path that diminishes."}
+    ]
+  },
+  {
+    "id": "radio-tower-pathway-1",
+    "shortDescription": "Paths - hillside",
+    "description": "The structures and trees around are barely silhouettes, they're more like pure potential.",
+    "dayDesc": "The structures and trees around are barely silhouettes, they're more like pure potential.",
+    "nightDesc": "You're somewhere in the Paths. The wind is punishing and visibility is nil.",
+    "exits": [
+      {"direction": "clockwise", "destination": "radio-tower-pathway-2", "description": "To the clockwise, a threadier path with more spandrels but less wind."},
+      {"direction": "widdershins", "destination": "causeway-door", "description": "To widdershins, the warmth of the sun, felt if not seen."}
+    ]
+  },
+  {
+    "id": "radio-tower-pathway-2",
+    "shortDescription": "Paths - parking lot",
+    "description": "A dimly lit parking lot limned by spiral roads that shrink away to nil rather than terminate.",
+    "dayDesc": "A dimly lit parking lot limned by spiral roads that shrink away to nil rather than terminate.",
+    "nightDesc": "The surroundings are opaque by night, it could be anywhere. It isn't windy.",
+    "exits": [
+      {"direction": "widdershins", "destination": "radio-tower-pathway-1", "description": "To the widdershins, the path leads up to someplace chaotic."},
+      {"direction": "down", "destination": "radio-tower-pathway-3", "description": "There's something down there, but how to reach it?"}
+    ]
+  },
+  {
+    "id": "radio-tower-pathway-3",
+    "shortDescription": "Paths - down below",
+    "description": "The descending arm of a spiral into a vast, neutral space, like the inside of a hangar. Something is watching this spot, the impression is of a whale's vast eye. A small box is bolted to the wall of the factory.",
+    "exits": [
+      {"direction": "up", "destination": "radio-tower-pathway-2", "description": "Somewhere up there is a path out, but how to get there?"},
+      {"direction": "door", "destination": "dairy-queen-bathroom", "description": "A catwalk leads to a toylike, human-scale door."}
     ]
   }
 ]

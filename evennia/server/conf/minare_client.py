@@ -9,6 +9,7 @@ and DownSocket (updates).
 import os
 import json
 import time
+import uuid
 from twisted.internet import reactor, protocol
 from twisted.internet.protocol import ReconnectingClientFactory
 from autobahn.twisted.websocket import WebSocketClientProtocol, WebSocketClientFactory
@@ -20,6 +21,7 @@ MINARE_HOST = os.environ.get('MINARE_HOST', 'localhost')
 MINARE_UPSOCKET_PORT = int(os.environ.get('MINARE_UPSOCKET_PORT', '4225'))
 MINARE_DOWNSOCKET_PORT = int(os.environ.get('MINARE_DOWNSOCKET_PORT', '4226'))
 RECONNECT_INTERVAL = int(os.environ.get('MINARE_RECONNECT_INTERVAL', '5'))
+CALLBACK_TIMEOUT = int(os.environ.get('MINARE_CALLBACK_TIMEOUT', '30'))
 
 
 class MinareUpSocketProtocol(WebSocketClientProtocol):
@@ -99,7 +101,7 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
             # Check for pending callbacks by request_id
             request_id = msg.get('request_id')
             if request_id and request_id in self.factory.pending_callbacks:
-                callback = self.factory.pending_callbacks.pop(request_id)
+                callback, _created = self.factory.pending_callbacks.pop(request_id)
                 try:
                     callback(msg)
                 except Exception as cb_err:
@@ -116,7 +118,7 @@ class MinareUpSocketProtocol(WebSocketClientProtocol):
     def send_message(self, message_dict):
         """Send a message to Minare with automatic ID generation if needed."""
         if 'id' not in message_dict:
-            message_dict['id'] = f"evennia-{int(time.time() * 1000)}"
+            message_dict['id'] = f"evennia-{uuid.uuid4().hex[:12]}"
 
         payload = json.dumps(message_dict)
         self.sendMessage(payload.encode('utf8'))
@@ -226,7 +228,8 @@ class MinareUpSocketFactory(ReconnectingClientFactory, WebSocketClientFactory):
         self.downsocket_factory = None
         self.active_protocol = None  # Track the active protocol instance
         self.pending_sync_entities = []  # Accumulated during initial sync
-        self.pending_callbacks = {}  # request_id -> callback for async responses
+        self.pending_callbacks = {}  # request_id -> (callback, created_at)
+        self._start_callback_reaper()
 
     def clientConnectionFailed(self, connector, reason):
         logger.log_warn(f"Minare UpSocket: Connection failed - {reason.getErrorMessage()}")
@@ -235,6 +238,24 @@ class MinareUpSocketFactory(ReconnectingClientFactory, WebSocketClientFactory):
     def clientConnectionLost(self, connector, reason):
         logger.log_warn(f"Minare UpSocket: Connection lost - {reason.getErrorMessage()}")
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+
+    def _start_callback_reaper(self):
+        """Periodically clean up callbacks that have been waiting too long."""
+        def _reap():
+            now = time.time()
+            expired = [
+                rid for rid, (cb, created) in self.pending_callbacks.items()
+                if now - created > CALLBACK_TIMEOUT
+            ]
+            for rid in expired:
+                cb, created = self.pending_callbacks.pop(rid)
+                age = int(now - created)
+                logger.log_warn(
+                    f"Minare UpSocket: Callback timeout for {rid} "
+                    f"(waited {age}s, limit {CALLBACK_TIMEOUT}s)"
+                )
+            reactor.callLater(10, _reap)
+        reactor.callLater(10, _reap)
 
     def connect_downsocket(self):
         """Initiate DownSocket connection after UpSocket is established."""
@@ -266,74 +287,205 @@ class MinareDownSocketFactory(ReconnectingClientFactory, WebSocketClientFactory)
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
 
-# Entity types that should sync state to their Evennia counterpart
+# ---------------------------------------------------------------------------
+# Entity sync system
+#
+# Each Minare entity type that has player-facing verbs registers here with:
+#   - typeclasses: which Evennia typeclasses to search for a matching object
+#   - fields: whitelist of state keys Evennia is allowed to cache
+#   - hooks: field-specific callbacks fired when a value changes
+#
+# The hooks are where Evennia enforces its own concerns (locks, cmdsets,
+# player feedback) in response to simulation state — without owning the
+# decision itself.
+# ---------------------------------------------------------------------------
+
+# minare_id -> Evennia object cache.  Populated during init sync and updated
+# on cross-link registration.  Avoids O(n) table scans on every delta.
+_minare_id_cache = {}
+
+def _on_character_downed_changed(obj, old_val, new_val):
+    """Enforce downed state: lock/unlock commands, notify room."""
+    if new_val and not old_val:
+        obj.db.is_downed = True
+        obj.locks.add("cmd:false()")
+        if obj.location:
+            obj.location.msg_contents(
+                f"|R{obj.key} collapses!|n",
+                exclude=[obj]
+            )
+            obj.msg("|RYou collapse, unable to continue.|n")
+        logger.log_info(f"Minare sync: {obj.key} downed via entity sync")
+    elif not new_val and old_val:
+        obj.db.is_downed = False
+        obj.locks.add("cmd:true()")
+        if obj.location:
+            obj.location.msg_contents(
+                f"|G{obj.key} stirs and gets back up.|n",
+                exclude=[obj]
+            )
+            obj.msg("|GYou pull yourself together and get back up.|n")
+        logger.log_info(f"Minare sync: {obj.key} recovered via entity sync")
+
+
+def _on_character_dead_changed(obj, old_val, new_val):
+    """Enforce dead state: hard-lock commands and movement."""
+    if new_val and not old_val:
+        obj.db.is_dead = True
+        obj.locks.add("cmd:false();move:false()")
+        if obj.location:
+            obj.location.msg_contents(
+                f"|R{obj.key} collapses, lifeless.|n",
+                exclude=[obj]
+            )
+            obj.msg("|RDarkness closes in. You have died.|n")
+        logger.log_info(f"Minare sync: {obj.key} died via entity sync")
+
+
+def _on_character_combat_changed(obj, old_val, new_val):
+    """Sync combat membership flag for movement gating."""
+    obj.db.in_combat = bool(new_val)
+
+
+def _on_eo_description_changed(obj, old_val, new_val):
+    """Push EvenniaObject description directly to the Evennia object's db.desc."""
+    if new_val:
+        obj.db.desc = new_val
+
+
+def _on_eo_short_description_changed(obj, old_val, new_val):
+    """Push EvenniaObject shortDescription to the Evennia object's key (name)."""
+    pass  # shortDescription is informational; Evennia key is set at creation
+
+
 _SYNC_TYPE_MAP = {
-    "Room": ["typeclasses.rooms.Room"],
-    "EvenniaCharacter": [
-        "typeclasses.characters.PlayerCharacter",
-        "typeclasses.characters.NonplayerCharacter",
-    ],
+    "Room": {
+        "typeclasses": ["typeclasses.rooms.Room"],
+        "fields": {
+            "concealment", "dayDesc", "nightDesc",
+        },
+        "hooks": {},
+    },
+    "EvenniaObject": {
+        "typeclasses": [
+            "typeclasses.rooms.Room",
+            "typeclasses.objects.Object",
+            "typeclasses.characters.PlayerCharacter",
+            "typeclasses.characters.NonplayerCharacter",
+        ],
+        "fields": {
+            "description", "shortDescription",
+        },
+        "hooks": {
+            "description": _on_eo_description_changed,
+        },
+    },
+    "EvenniaCharacter": {
+        "typeclasses": [
+            "typeclasses.characters.PlayerCharacter",
+            "typeclasses.characters.NonplayerCharacter",
+        ],
+        "fields": {
+            "downed", "dead", "equipment", "health",
+            "currentRoomId", "combatId", "resources", "askTopics",
+        },
+        "hooks": {
+            "downed": _on_character_downed_changed,
+            "dead": _on_character_dead_changed,
+            "combatId": _on_character_combat_changed,
+        },
+    },
+    "ObjectActor": {
+        "typeclasses": ["typeclasses.objects.Object"],
+        "fields": {
+            "actorType",
+        },
+        "hooks": {},
+    },
+    "WorkSite": {
+        "typeclasses": ["typeclasses.objects.Object"],
+        "fields": {
+            "name", "skillName", "workers",
+        },
+        "hooks": {},
+    },
+    "Combat": {
+        "typeclasses": [],  # No Evennia counterpart — data-only for query
+        "fields": {
+            "members", "roomId",
+        },
+        "hooks": {},
+    },
 }
 
 
 def _handle_entity_updates(updates):
     """
     Handle entity update messages from Minare DownSocket.
-    For entity types in _SYNC_TYPE_MAP, looks up the Evennia object
-    by minare_id and writes the delta into db.sim_state.
+
+    For each entity type in _SYNC_TYPE_MAP:
+      1. Filter the delta to only whitelisted fields
+      2. Merge into db.sim_state
+      3. Fire per-field hooks for any changed values
     """
     for entity_id, update in updates.items():
         entity_type = update.get('type')
-        logger.log_info(f"Minare sync: entity_id={entity_id}, type={entity_type}")
-        if entity_type not in _SYNC_TYPE_MAP:
-            logger.log_info(f"Minare sync: type '{entity_type}' not in _SYNC_TYPE_MAP, skipping")
+        sync_config = _SYNC_TYPE_MAP.get(entity_type)
+        if not sync_config:
             continue
 
         delta = update.get('delta', {})
         if not delta:
-            logger.log_info(f"Minare sync: empty delta for {entity_id}, skipping")
             continue
 
-        module_paths = _SYNC_TYPE_MAP[entity_type]
+        # Filter to whitelisted fields
+        allowed = sync_config["fields"]
+        filtered = {k: v for k, v in delta.items() if k in allowed}
+        rejected = set(delta.keys()) - allowed
+        if rejected:
+            logger.log_warn(
+                f"Minare sync: rejected fields {rejected} for "
+                f"{entity_type} {entity_id}"
+            )
+        if not filtered:
+            continue
+
+        # Skip entity types with no Evennia counterpart
+        if not sync_config["typeclasses"]:
+            continue
+
+        # Look up the Evennia object
         evennia_obj = None
-        for module_path in module_paths:
-            evennia_obj = find_evennia_object_by_minare_id_cached(module_path, entity_id)
+        for module_path in sync_config["typeclasses"]:
+            evennia_obj = find_evennia_object_by_minare_id_cached(
+                module_path, entity_id
+            )
             if evennia_obj:
                 break
         if not evennia_obj:
-            logger.log_info(f"Minare sync: no Evennia object found for minare_id={entity_id}")
+            logger.log_info(
+                f"Minare sync: no Evennia object for "
+                f"{entity_type} minare_id={entity_id}"
+            )
             continue
 
+        # Merge into sim_state
         sim_state = evennia_obj.db.sim_state or {}
-        old_downed = sim_state.get('downed', False)
-        sim_state.update(delta)
+        old_values = {k: sim_state.get(k) for k in filtered}
+        sim_state.update(filtered)
         evennia_obj.db.sim_state = sim_state
-        logger.log_info(f"Minare sync: updated sim_state for {evennia_obj.key}: {sim_state}")
 
-        # Sync downed state to Evennia's is_downed flag when it changes
-        if 'downed' in delta and entity_type == 'EvenniaCharacter':
-            new_downed = delta['downed']
-            if new_downed and not old_downed:
-                evennia_obj.db.is_downed = True
-                evennia_obj.db.in_combat = False
-                evennia_obj.locks.add("cmd:false()")
-                if evennia_obj.location:
-                    evennia_obj.location.msg_contents(
-                        f"|R{evennia_obj.key} collapses!|n",
-                        exclude=[evennia_obj]
+        # Fire hooks for changed fields
+        hooks = sync_config.get("hooks", {})
+        for field, new_val in filtered.items():
+            if field in hooks and old_values.get(field) != new_val:
+                try:
+                    hooks[field](evennia_obj, old_values[field], new_val)
+                except Exception as e:
+                    logger.log_err(
+                        f"Minare sync: hook error for {field} on "
+                        f"{evennia_obj.key}: {e}"
                     )
-                    evennia_obj.msg("|RYou collapse, unable to continue.|n")
-                logger.log_info(f"Minare sync: {evennia_obj.key} downed via entity sync")
-            elif not new_downed and old_downed:
-                evennia_obj.db.is_downed = False
-                evennia_obj.locks.add("cmd:true()")
-                if evennia_obj.location:
-                    evennia_obj.location.msg_contents(
-                        f"|G{evennia_obj.key} stirs and gets back up.|n",
-                        exclude=[evennia_obj]
-                    )
-                    evennia_obj.msg("|GYou pull yourself together and get back up.|n")
-                logger.log_info(f"Minare sync: {evennia_obj.key} recovered via entity sync")
 
 
 def _handle_set_domain_link(msg):
@@ -352,6 +504,7 @@ def _handle_set_domain_link(msg):
         obj = ObjectDB.objects.get(id=int(evennia_id))
         obj.db.minare_domain_id = domain_entity_id
         obj.db.minare_domain_type = domain_entity_type
+        _minare_id_cache[domain_entity_id] = obj
         logger.log_info(
             f"Minare sync: Set domain link on '{obj.key}' "
             f"(evennia_id={evennia_id}): {domain_entity_type}={domain_entity_id}"
@@ -361,14 +514,21 @@ def _handle_set_domain_link(msg):
 
 
 def find_evennia_object_by_minare_id_cached(typeclass_path, minare_id):
-    """Find an Evennia object by minare_id, importing the typeclass by path."""
+    """Find an Evennia object by minare_id, using the in-memory cache."""
+    obj = _minare_id_cache.get(minare_id)
+    if obj is not None:
+        return obj
+    # Cache miss — fall back to DB scan and populate cache
     from django.utils.module_loading import import_string
     try:
         typeclass = import_string(typeclass_path)
     except ImportError:
         logger.log_err(f"Minare sync: Could not import {typeclass_path}")
         return None
-    return find_evennia_object_by_minare_id(typeclass, minare_id)
+    obj = find_evennia_object_by_minare_id(typeclass, minare_id)
+    if obj:
+        _minare_id_cache[minare_id] = obj
+    return obj
 
 
 def _sync_rooms(minare_entities, protocol):
@@ -390,33 +550,29 @@ def _sync_rooms(minare_entities, protocol):
         logger.log_info("Minare sync: No Room entities in sync data (rooms created via agent commands)")
         return
 
-    # Build lookup: minare_id attribute -> Evennia Room
+    # Build lookup: minare_id attribute -> Evennia Room (also populates cache)
     evennia_rooms_by_minare_id = {}
     for room in EvenniaRoom.objects.all():
         mid = room.db.minare_eo_id
         if mid:
             evennia_rooms_by_minare_id[mid] = room
+            _minare_id_cache[mid] = room
 
-    # Log cross-link status — do NOT create or modify Evennia rooms
+    # Log cross-link status, register cross-links, and populate cache
+    client = get_minare_client()
     for minare_id, entity in minare_rooms.items():
         if minare_id in evennia_rooms_by_minare_id:
             room = evennia_rooms_by_minare_id[minare_id]
-            logger.log_info(f"Minare sync: Room '{room.key}' cross-linked to minare_id={minare_id}")
-        else:
-            logger.log_info(f"Minare sync: Room minare_id={minare_id} has no Evennia counterpart yet")
-
-    # Register cross-links for all synced rooms
-    client = get_minare_client()
-    # Rebuild lookup to include newly created rooms
-    for room in EvenniaRoom.objects.all():
-        mid = room.db.minare_eo_id
-        if mid and mid in minare_rooms:
+            _minare_id_cache[minare_id] = room
             client.send_message({
                 "type": "register_cross_link",
                 "entity_type": "Room",
-                "minare_id": mid,
+                "minare_id": minare_id,
                 "evennia_id": str(room.id),
             })
+            logger.log_info(f"Minare sync: Room '{room.key}' cross-linked to minare_id={minare_id}")
+        else:
+            logger.log_info(f"Minare sync: Room minare_id={minare_id} has no Evennia counterpart yet")
 
 
 def _sync_exits(minare_entities, protocol):
@@ -441,19 +597,21 @@ def _sync_exits(minare_entities, protocol):
         if e.get('type') == 'Room'
     }
 
-    # Map minare_id -> Evennia Room
+    # Map minare_id -> Evennia Room (also populates cache)
     evennia_rooms_by_minare_id = {}
     for room in EvenniaRoom.objects.all():
         mid = room.db.minare_eo_id
         if mid:
             evennia_rooms_by_minare_id[mid] = room
+            _minare_id_cache[mid] = room
 
-    # Map minare_id -> Evennia Exit (existing)
+    # Map minare_id -> Evennia Exit (existing, also populates cache)
     evennia_exits_by_minare_id = {}
     for exit_obj in EvenniaExit.objects.all():
         mid = exit_obj.db.minare_eo_id
         if mid:
             evennia_exits_by_minare_id[mid] = exit_obj
+            _minare_id_cache[mid] = exit_obj
 
     # For each Room, look at its exits state to find source->exit mappings
     for room_minare_id, room_entity in minare_rooms.items():
@@ -487,6 +645,7 @@ def _sync_exits(minare_entities, protocol):
                 )
                 new_exit.db.minare_eo_id = exit_minare_id
                 new_exit.db.desc = exit_state.get('description', '')
+                evennia_exits_by_minare_id[exit_minare_id] = new_exit
                 logger.log_info(
                     f"Minare sync: Created Exit '{direction}' in '{source_evennia_room.key}' "
                     f"-> '{dest_evennia_room.key}'"
@@ -509,11 +668,11 @@ def _sync_exits(minare_entities, protocol):
             exit_obj.db.minare_eo_id = None
             exit_obj.db.minare_archived = True
 
-    # Register cross-links for all synced exits
+    # Register cross-links and populate cache from already-built dict
     client = get_minare_client()
-    for exit_obj in EvenniaExit.objects.all():
-        mid = exit_obj.db.minare_eo_id
-        if mid and mid in minare_exits:
+    for mid, exit_obj in evennia_exits_by_minare_id.items():
+        if mid in minare_exits:
+            _minare_id_cache[mid] = exit_obj
             client.send_message({
                 "type": "register_cross_link",
                 "entity_type": "Exit",
@@ -695,16 +854,18 @@ class MinareClient:
         The callback will be called with the response message dict when
         a response with the matching request_id arrives.
 
+        Callbacks are automatically reaped after CALLBACK_TIMEOUT seconds.
+
         Args:
             message_dict: Dictionary containing the message to send.
                           A request_id will be generated if not present.
             callback: Function to call with the response message dict.
         """
         if 'request_id' not in message_dict:
-            message_dict['request_id'] = f"evennia-{int(time.time() * 1000)}"
+            message_dict['request_id'] = f"evennia-{uuid.uuid4().hex[:12]}"
         request_id = message_dict['request_id']
         if self.upsocket_factory:
-            self.upsocket_factory.pending_callbacks[request_id] = callback
+            self.upsocket_factory.pending_callbacks[request_id] = (callback, time.time())
         self.send_message(message_dict)
 
 

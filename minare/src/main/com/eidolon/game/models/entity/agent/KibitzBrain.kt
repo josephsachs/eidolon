@@ -1,6 +1,8 @@
 package eidolon.game.models.entity.agent
 
 import com.eidolon.clients.ModelAPI
+import com.eidolon.game.evennia.CrossLinkRegistry
+import com.eidolon.game.models.entity.EvenniaObject
 import com.eidolon.game.models.entity.Room
 import com.minare.controller.EntityController
 import io.vertx.core.json.JsonObject
@@ -12,7 +14,8 @@ import kotlin.random.Random
 
 class KibitzBrain(
     private val entityController: EntityController,
-    private val modelAPI: ModelAPI
+    private val modelAPI: ModelAPI,
+    private val crossLinkRegistry: CrossLinkRegistry
 ) : Brain {
     private val log = LoggerFactory.getLogger(KibitzBrain::class.java)
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -84,8 +87,17 @@ class KibitzBrain(
         }
     }
 
-    private fun buildSystemPrompt(character: EvenniaCharacter, instruction: String): String {
-        return "You are ${character.evenniaName}. ${character.description}\n$instruction"
+    private suspend fun buildSystemPrompt(character: EvenniaCharacter, instruction: String): String {
+        val description = getCharacterDescription(character)
+        return "You are ${character.evenniaName}. $description\n$instruction"
+    }
+
+    private suspend fun getCharacterDescription(character: EvenniaCharacter): String {
+        val evenniaId = crossLinkRegistry.getEvenniaId("EvenniaCharacter", character._id) ?: return ""
+        val eoMinareId = crossLinkRegistry.getMinareId("EvenniaObject", evenniaId) ?: return ""
+        val entities = entityController.findByIds(listOf(eoMinareId))
+        val eo = entities[eoMinareId] as? EvenniaObject ?: return ""
+        return eo.description
     }
 
     private fun formatEchoes(echoes: io.vertx.core.json.JsonArray, limit: Int): String {

@@ -1,6 +1,7 @@
 package eidolon.game.models.entity.agent
 
 import com.eidolon.game.models.Attributes
+import com.eidolon.game.models.CharacterKnowledge
 import com.eidolon.game.models.CombatEquilibrium
 import com.eidolon.game.models.HardpointStatus
 import com.eidolon.game.models.HealthData
@@ -12,8 +13,11 @@ import com.eidolon.game.evennia.EvenniaShadow
 import com.eidolon.game.evennia.Viewable
 import com.google.inject.Inject
 import com.minare.controller.EntityController
+import com.minare.controller.OperationController
 import com.minare.core.entity.annotations.*
 import com.minare.core.entity.models.Entity
+import com.minare.core.operation.models.Operation
+import com.minare.core.operation.models.OperationType
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlin.random.Random
@@ -26,6 +30,8 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     private lateinit var coroutineScope: CoroutineScope
     @Inject
     private lateinit var entityController: EntityController
+    @Inject
+    private lateinit var operationController: OperationController
     @Inject
     private lateinit var evenniaCommUtils: EvenniaCommUtils
     @Inject
@@ -44,14 +50,6 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @State
     @Mutable
     var evenniaName: String = ""
-
-    @State
-    @Mutable
-    var description: String = ""
-
-    @State
-    @Mutable
-    var shortDescription: String = ""
 
     @State
     @Mutable
@@ -109,7 +107,8 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Property
     var targetId: String = ""
 
-    @Property
+    @State
+    @Mutable
     var combatId: String = ""
 
     @Property
@@ -121,6 +120,23 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Property
     var combatEquilibrium: CombatEquilibrium = CombatEquilibrium()
 
+    @State
+    @Mutable
+    var characterKnowledge: List<CharacterKnowledge> = emptyList()
+
+    @State
+    @Mutable
+    var askTopics: List<String> = emptyList()
+
+    @Property
+    var gossiping: Boolean = false
+
+    @Property
+    var gossipRoomId: String = ""
+
+    @Property
+    var lastGossipEvent: Long = 0L
+
     /**
      * Equipment slots: slot name -> item template ID.
      * Slots: HEAD, NECK, TORSO, RIGHT_ARM, RIGHT_HAND, LEFT_ARM, LEFT_HAND, RIGHT_LEG, LEFT_LEG (armor)
@@ -130,9 +146,16 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
     @Mutable
     var equipment: Map<String, String> = emptyMap()
 
+    /**
+     * Resource collections: template ID -> count.
+     * Tracks currencies, consumables, and other stackable non-object items.
+     */
+    @State
+    @Mutable
+    var resources: Map<String, Int> = emptyMap()
+
     // --- Regeneration ---
 
-    @FixedTask
     suspend fun regenerate() {
         val start = System.currentTimeMillis()
         try {
@@ -175,12 +198,12 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                 health = updated
                 val recovering = downed && updated.vitality > 0
 
-                val changes = JsonObject().put("health", healthToJson())
+                val delta = JsonObject().put("health", healthToJson())
                 if (recovering) {
                     downed = false
-                    changes.put("downed", false)
+                    delta.put("downed", false)
                 }
-                entityController.saveState(_id, changes)
+                queueStateMutation(delta)
 
                 if (recovering) {
                     damageService.flagUndowned(this)
@@ -211,7 +234,6 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
 
     // --- Status processing ---
 
-    @FixedTask
     suspend fun processStatuses() {
         val start = System.currentTimeMillis()
         try {
@@ -241,7 +263,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                         dead = true
                         health = updatedHealth
                         damageService.flagDead(this)
-                        entityController.saveState(_id, JsonObject()
+                        queueStateMutation(JsonObject()
                             .put("dead", true)
                             .put("health", healthToJson()))
                         entityController.saveProperties(_id, JsonObject()
@@ -252,7 +274,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                     downed = true
                     health = updatedHealth
                     damageService.flagDowned(this)
-                    entityController.saveState(_id!!, JsonObject()
+                    queueStateMutation(JsonObject()
                         .put("downed", true)
                         .put("health", healthToJson()))
                 }
@@ -270,7 +292,7 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
                 propChanges.put("statusEffects", remaining)
             }
 
-            if (!stateChanges.isEmpty) entityController.saveState(_id, stateChanges)
+            if (!stateChanges.isEmpty) queueStateMutation(stateChanges)
             if (!propChanges.isEmpty) entityController.saveProperties(_id, propChanges)
         } catch (e: Exception) {
             log.error("processStatuses failed for {} ({}): {}", evenniaName, _id, e.message)
@@ -278,6 +300,16 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             val elapsed = System.currentTimeMillis() - start
             if (elapsed > 200) log.warn("SLOW processStatuses for {} ({}): {}ms", evenniaName, _id, elapsed)
         }
+    }
+
+    private suspend fun queueStateMutation(delta: JsonObject) {
+        operationController.queue(
+            Operation()
+                .entity(_id)
+                .entityType(EvenniaCharacter::class)
+                .action(OperationType.MUTATE)
+                .delta(delta)
+        )
     }
 
     // --- Viewable interface ---
@@ -290,10 +322,14 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
             .put("health", healthToJson())
             .put("attributes", attributesToJson())
             .put("equipment", equipmentToJson())
+            .put("resources", resourcesToJson())
+            .put("characterKnowledge", knowledgeToJson())
         "skills" -> skillsToJson()
         "health" -> healthToJson()
         "attributes" -> attributesToJson()
         "equipment" -> equipmentToJson()
+        "resources" -> resourcesToJson()
+        "characterKnowledge" -> JsonObject().put("characterKnowledge", knowledgeToJson())
         else -> null
     }
 
@@ -341,6 +377,27 @@ class EvenniaCharacter: Entity(), Agent, EvenniaShadow, Viewable {
         val obj = JsonObject()
         equipment.forEach { (slot, templateId) ->
             obj.put(slot, templateId)
+        }
+        return obj
+    }
+
+    private fun knowledgeToJson(): JsonArray {
+        val arr = JsonArray()
+        characterKnowledge.forEach { ck ->
+            arr.add(JsonObject()
+                .put("name", ck.name)
+                .put("description", ck.description)
+                .put("longDescription", ck.longDescription)
+                .put("weight", ck.weight)
+                .put("tags", JsonArray(ck.tags)))
+        }
+        return arr
+    }
+
+    fun resourcesToJson(): JsonObject {
+        val obj = JsonObject()
+        resources.forEach { (templateId, count) ->
+            obj.put(templateId, count)
         }
         return obj
     }
